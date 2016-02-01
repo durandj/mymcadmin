@@ -24,7 +24,7 @@ class Server(object):
 		"""
 
 		self._path            = path
-		self._jar             = None
+		self._cache           = {}
 		self._properties_file = os.path.join(path, 'server.properties')
 		self._properties      = None
 		self._settings_file   = os.path.join(path, Server.SETTINGS_FILE)
@@ -39,15 +39,26 @@ class Server(object):
 		return self._path
 
 	@property
+	def java(self):
+		"""
+		Get the Java binary to use
+		"""
+
+		if 'java' not in self._cache:
+			self._cache['java'] = self._settings.get('java', 'java')
+
+		return self._cache['java']
+
+	@property
 	def jar(self):
 		"""
 		Get the server Jar to run
 		"""
 
-		if not self._jar and 'jar' in self.settings:
-			self._jar = self.settings['jar']
+		if 'jar' not in self._cache and 'jar' in self.settings:
+			self._cache['jar'] = self.settings['jar']
 
-		if not self._jar:
+		if 'jar' not in self._cache:
 			jars = glob.glob(os.path.join(self._path, '*.jar'))
 
 			if len(jars) == 0:
@@ -55,9 +66,9 @@ class Server(object):
 			elif len(jars) == 1:
 				raise errors.ServerError('Unable to determine server jar')
 
-			self._jar = jars[0]
+			self._cache['jar'] = jars[0]
 
-		return self._jar
+		return self._cache['jar']
 
 	@property
 	def properties(self):
