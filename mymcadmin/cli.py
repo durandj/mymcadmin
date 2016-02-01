@@ -29,6 +29,17 @@ def mymcadmin(ctx):
 
 @mymcadmin.command()
 @click.pass_context
+def list(ctx):
+	"""
+	List all of the available servers
+	"""
+
+	click.echo(click.style('Available servers:', fg = 'blue'))
+	for srv in server.Server.list_all(ctx.obj['config']):
+		click.echo(os.path.basename(srv))
+
+@mymcadmin.command()
+@click.pass_context
 @click.argument('server', type = ServerParamType())
 def start(ctx, server):
 	"""
@@ -37,5 +48,5 @@ def start(ctx, server):
 
 	click.echo('Starting server...')
 	server.start()
-	click.echo('Server started')
+	click.echo(click.style('Server started', fg = 'green'))
 
