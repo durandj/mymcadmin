@@ -44,9 +44,8 @@ class Server(object):
 		Get the server Jar to run
 		"""
 
-		if not self._jar:
-			# TODO(durandj): check the settings file
-			pass
+		if not self._jar and 'jar' in self.settings:
+			self._jar = self.settings['jar']
 
 		if not self._jar:
 			jars = glob.glob(os.path.join(self._path, '*.jar'))
