@@ -1,5 +1,6 @@
 import glob
 import json
+import re
 import os
 import os.path
 
@@ -10,7 +11,10 @@ class Server(object):
 	A Minecraft server instance
 	"""
 
-	SETTINGS_FILE = 'mymcadmin.settings'
+	PROPERTIES_REGEX      = re.compile(r'^([a-zA-Z0-9\-]+)=([^#]+)( *#.*)?$')
+	PROPERTIES_BOOL_REGEX = re.compile(r'^(true|false)$', re.IGNORECASE)
+	PROPERTIES_INT_REGEX  = re.compile(r'^([0-9]+)$')
+	SETTINGS_FILE         = 'mymcadmin.settings'
 
 	def __init__(self, path):
 		"""
@@ -66,12 +70,21 @@ class Server(object):
 		if not self._properties:
 			try:
 				with open(self._properties_file, 'r') as props_file:
-					self._properties = props_file.read() # TODO(durandj): parse this
+					props = props_file.readlines()
 			except FileNotFoundError:
 				raise errors.ServerError(
 					'Server properties file could not be found. ' +
 					'Try starting the server first to generate one.'
 				)
+
+			self._properties = {}
+			for line in props:
+				match = Server.PROPERTIES_REGEX.match(line.strip())
+				if not match:
+					continue
+
+				name, value, _ = match.groups()
+				self._properties[name] = Server._convert_property_value(value)
 
 		return self._properties
 
@@ -112,6 +125,10 @@ class Server(object):
 
 	@staticmethod
 	def list_all(config):
+		"""
+		List all available servers
+		"""
+
 		path = config.instance_path
 
 		# TODO(durandj): we could do some better checks
@@ -119,4 +136,20 @@ class Server(object):
 			os.path.join(path, f) for f in os.listdir(path)
 			if os.path.isdir(os.path.join(path, f))
 		]
+
+	@classmethod
+	def _convert_property_value(cls, value):
+		"""
+		Convert a value from the properties value to its correct type. IE
+		integers are converted to ints, true/false to boolean, etc.
+		"""
+
+		if value == '':
+			return None
+		elif cls.PROPERTIES_BOOL_REGEX.match(value):
+			return value.lower() == 'true'
+		elif cls.PROPERTIES_INT_REGEX.match(value):
+			return int(value)
+		else:
+			return value
 
