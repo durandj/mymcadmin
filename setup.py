@@ -10,6 +10,7 @@ setuptools.setup(
 	install_requires = REQUIREMENTS,
 	entry_points     = """
 		[console_scripts]
+		mymcadmin=mymcadmin.cli:mymcadmin
 	""",
 )
 
