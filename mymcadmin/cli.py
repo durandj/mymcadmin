@@ -62,3 +62,15 @@ def stop(ctx, server):
 	server.stop()
 	click.echo(click.style('Server stopped', fg = 'green'))
 
+@mymcadmin.command()
+@click.pass_context
+@click.argument('server', type = ServerParamType())
+def restart(ctx, server):
+	"""
+	Restart a Minecraft server
+	"""
+
+	click.echo('Restarting server...')
+	server.restart()
+	click.echo(click.style('Server restarted', fg = 'green'))
+
