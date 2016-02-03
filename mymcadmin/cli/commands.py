@@ -60,6 +60,7 @@ def stop(script, ctx, server):
 	"""
 
 	server.stop()
+	click.echo(click.style('Stopping server', fg = 'green'))
 
 @mymcadmin.command()
 @click.pass_context
