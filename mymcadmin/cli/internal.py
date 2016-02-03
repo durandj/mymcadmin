@@ -6,7 +6,7 @@ import logging
 import os.path
 
 from . import params
-from .. import config, errors, manager, server
+from .. import config, errors, manager, server, utils
 from .base import mymcadmin
 
 @mymcadmin.group()
@@ -31,19 +31,14 @@ def start(ctx, server):
 			stderr            = admin_log,
 			working_directory = server.path,
 		):
-		# TODO(durandj): make log format customizable
-		logging.basicConfig(
-			datefmt = '%Y-%m-%d %H:%M:%S',
-			format  = '%(asctime)s %(levelname)s %(message)s',
-			level   = logging.INFO,
-		)
+		utils.setup_logging()
 
 		instance_manager = manager.Manager(server)
 
 		logging.info('Setting up event loop')
 		loop = asyncio.get_event_loop()
 
-		socket_props = server.settings['socket']
+		socket_props = server.settings.get('socket', {})
 		if 'type' not in socket_props:
 			raise errors.ServerSettingsError('Missing socket type')
 

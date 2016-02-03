@@ -5,7 +5,7 @@ import re
 import os
 import os.path
 
-from . import errors
+from . import client, errors
 
 class Server(object):
 	"""
@@ -171,7 +171,7 @@ class Server(object):
 		Stop the Minecraft server
 		"""
 
-		raise NotImplementedError
+		self.send_command('stop')
 
 	def restart(self):
 		"""
@@ -180,6 +180,24 @@ class Server(object):
 
 		self.stop()
 		self.start()
+
+	def send_command(self, command):
+		socket_props = self.settings.get('socket', {})
+		if 'type' not in socket_props:
+			raise errors.ServerSettingsError('Missing socket type')
+
+		socket_type = socket_props['type']
+		if socket_type != 'tcp':
+			raise errors.ServerSettingsError('Invalid socket type')
+
+		if 'port' not in socket_props:
+			raise errors.ServerSettingsError('Missing socket port')
+
+		host = socket_props.get('host', 'localhost')
+		port = int(socket_props['port'])
+
+		with client.Client(host, port) as instance_client:
+			instance_client.send_message(command)
 
 	@staticmethod
 	def list_all(config):
