@@ -4,8 +4,9 @@ import logging
 
 class Manager(object):
 	def __init__(self, server):
-		self.server = server
-		self.proc   = None
+		self.server         = server
+		self.proc           = None
+		self.network_future = None
 
 	@asyncio.coroutine
 	def handle_network_connection(self, reader, writer):
@@ -21,8 +22,6 @@ class Manager(object):
 		)
 
 		yield from self.proc.communicate(data)
-		# writer.write(data)
-		# yield from writer.drain()
 
 		writer.close()
 
@@ -37,6 +36,7 @@ class Manager(object):
 		self.proc = yield from create
 
 		yield from self.proc.wait()
+		self.network_future.cancel()
 
 		return self.proc.returncode
 

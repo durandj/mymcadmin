@@ -65,7 +65,8 @@ def start(ctx, server):
 			loop = loop,
 		)
 
-		management_server = loop.run_until_complete(routine)
+		network_server = loop.run_until_complete(routine)
+		instance_manager.network_future = network_server
 
 		logging.info('Starting Minecraft server')
 		loop.run_until_complete(instance_manager.handle_proc())
@@ -74,8 +75,8 @@ def start(ctx, server):
 		loop.run_forever()
 
 		logging.info('Shutting down management process')
-		management_server.close()
-		loop.run_until_complete(management_server.wait_closed())
+		network_server.close()
+		loop.run_until_complete(network_server.wait_closed())
 		loop.close()
 
 	admin_log.close()
