@@ -36,7 +36,7 @@ class Manager(object):
 		self.proc = yield from create
 
 		yield from self.proc.wait()
-		self.network_future.cancel()
+		# self.network_future.cancel()
 
 		return self.proc.returncode
 

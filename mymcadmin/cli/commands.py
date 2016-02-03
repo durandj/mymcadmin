@@ -59,11 +59,7 @@ def stop(script, ctx, server):
 	Stop a Minecraft server
 	"""
 
-	run_process(
-		[script, 'internal', 'stop', server.name],
-		'Stopping the server',
-		'Error occurred while stopping the server',
-	)
+	server.stop()
 
 @mymcadmin.command()
 @click.pass_context

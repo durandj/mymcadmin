@@ -76,15 +76,3 @@ def start(ctx, server):
 
 	admin_log.close()
 
-@internal.command()
-@click.pass_context
-@click.argument('server', type = params.ServerParamType())
-def stop(ctx, server):
-	server.stop()
-
-@internal.command()
-@click.pass_context
-@click.argument('server', type = params.ServerParamType())
-def restart(ctx, server):
-	server.restart()
-
