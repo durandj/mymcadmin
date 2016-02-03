@@ -153,6 +153,28 @@ class Server(object):
 
 		return self._settings
 
+	@property
+	def socket_settings(self):
+		"""
+		Get the socket settings for the server
+		"""
+
+		socket_props = self.settings.get('socket', {})
+		if 'type' not in socket_props:
+			raise errors.ServerSettingsError('Missing socket type')
+
+		socket_type = socket_props['type']
+		if socket_type != 'tcp':
+			raise errors.ServerSettingsError('Invalid socket type')
+
+		if 'port' not in socket_props:
+			raise errors.ServerSettingsError('Missing socket port')
+
+		host = socket_props.get('host', 'localhost')
+		port = int(socket_props['port'])
+
+		return (socket_type, host, port)
+
 	def start(self, stdin = None, stdout = None, stderr = None):
 		"""
 		Start the Minecraft server
@@ -182,19 +204,7 @@ class Server(object):
 		self.start()
 
 	def send_command(self, command):
-		socket_props = self.settings.get('socket', {})
-		if 'type' not in socket_props:
-			raise errors.ServerSettingsError('Missing socket type')
-
-		socket_type = socket_props['type']
-		if socket_type != 'tcp':
-			raise errors.ServerSettingsError('Invalid socket type')
-
-		if 'port' not in socket_props:
-			raise errors.ServerSettingsError('Missing socket port')
-
-		host = socket_props.get('host', 'localhost')
-		port = int(socket_props['port'])
+		_, host, port = self.socket_settings
 
 		with client.Client(host, port) as instance_client:
 			instance_client.send_message(command)

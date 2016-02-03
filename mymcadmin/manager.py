@@ -13,24 +13,12 @@ class Manager(object):
 		self.proc         = None
 		self.network_task = None
 
-		socket_props = self.server.settings.get('socket', {})
-		if 'type' not in socket_props:
-			raise errors.ServerSettingsError('Missing socket type')
-
-		socket_type = socket_props['type']
-		if socket_type != 'tcp':
-			raise errors.ServerSettingsError('Invalid socket type')
-
-		if 'port' not in socket_props:
-			raise errors.ServerSettingsError('Missing socket port')
-
-		host = socket_props.get('host', 'localhost')
-		port = int(socket_props['port'])
+		_, host, port = self.server.socket_settings
 
 		logging.info('Setting up network connection')
 		self.network_task = self.event_loop.create_task(
 			asyncio.start_server(
-				self.handle_network_connection,
+				self._handle_network_connection,
 				host,
 				port,
 				loop = self.event_loop,
@@ -38,7 +26,7 @@ class Manager(object):
 		)
 
 		logging.info('Starting Minecraft server')
-		self.event_loop.run_until_complete(self.handle_proc())
+		self.event_loop.run_until_complete(self._handle_proc())
 
 	def run(self):
 		logging.info('Management process running')
@@ -48,7 +36,7 @@ class Manager(object):
 			logging.info('Shutting down management process')
 			self.event_loop.close()
 
-	async def handle_network_connection(self, reader, writer):
+	async def _handle_network_connection(self, reader, writer):
 		data    = await reader.readline()
 		message = data.decode()
 
@@ -64,7 +52,7 @@ class Manager(object):
 
 		writer.close()
 
-	async def handle_proc(self):
+	async def _handle_proc(self):
 		proc_future = asyncio.Future()
 		proc_future.add_done_callback(self._handle_proc_terminated)
 
