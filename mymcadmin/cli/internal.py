@@ -33,17 +33,8 @@ def start(ctx, server):
 		):
 		utils.setup_logging()
 
-		logging.info('Setting up event loop')
-		event_loop = asyncio.get_event_loop()
-
-		instance_manager = manager.Manager(server, event_loop)
-
-		logging.info('Management process running')
-		try:
-			event_loop.run_forever()
-		finally:
-			logging.info('Shutting down management process')
-			event_loop.close()
+		instance_manager = manager.Manager(server)
+		instance_manager.run()
 
 	admin_log.close()
 

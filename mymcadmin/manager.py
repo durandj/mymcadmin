@@ -5,9 +5,11 @@ import logging
 from . import errors
 
 class Manager(object):
-	def __init__(self, server, event_loop):
+	def __init__(self, server):
+		logging.info('Setting up event loop')
+
 		self.server       = server
-		self.event_loop   = event_loop
+		self.event_loop   = asyncio.get_event_loop()
 		self.proc         = None
 		self.network_task = None
 
@@ -37,6 +39,14 @@ class Manager(object):
 
 		logging.info('Starting Minecraft server')
 		self.event_loop.run_until_complete(self.handle_proc())
+
+	def run(self):
+		logging.info('Management process running')
+		try:
+			self.event_loop.run_forever()
+		finally:
+			logging.info('Shutting down management process')
+			self.event_loop.close()
 
 	async def handle_network_connection(self, reader, writer):
 		data    = await reader.readline()
