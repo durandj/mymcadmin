@@ -4,7 +4,7 @@ class MyMCAdminError(Exception):
 	"""
 
 	def __init__(self, message, *args, **kwargs):
-		super(MyMCAdmin, self).__init__(message.format(*args, **kwargs))
+		super(MyMCAdminError, self).__init__(message.format(*args, **kwargs))
 
 class ConfigurationError(Exception):
 	"""
@@ -14,5 +14,10 @@ class ConfigurationError(Exception):
 class ServerError(Exception):
 	"""
 	An error with the Minecraft server
+	"""
+
+class ServerSettingsError(ServerError):
+	"""
+	An error in the MyMCAdmin settings for the server
 	"""
 

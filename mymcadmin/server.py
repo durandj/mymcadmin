@@ -1,3 +1,4 @@
+import asyncio
 import glob
 import json
 import re
@@ -25,10 +26,20 @@ class Server(object):
 
 		self._path            = path
 		self._cache           = {}
+		self._admin_log       = os.path.join(path, 'mymcadmin.log')
+		self._pid_file        = os.path.join(path, 'server.pid')
 		self._properties_file = os.path.join(path, 'server.properties')
 		self._properties      = None
 		self._settings_file   = os.path.join(path, Server.SETTINGS_FILE)
 		self._settings        = None
+
+	@property
+	def pid_file(self):
+		"""
+		Get the instance PID
+		"""
+
+		return self._pid_file
 
 	@property
 	def path(self):
@@ -37,6 +48,14 @@ class Server(object):
 		"""
 
 		return self._path
+
+	@property
+	def name(self):
+		"""
+		Get the server name
+		"""
+
+		return os.path.basename(self._path)
 
 	@property
 	def java(self):
@@ -63,12 +82,29 @@ class Server(object):
 
 			if len(jars) == 0:
 				raise errors.ServerError('No server jar could be found')
-			elif len(jars) == 1:
+			elif len(jars) > 1:
 				raise errors.ServerError('Unable to determine server jar')
 
 			self._cache['jar'] = jars[0]
 
 		return self._cache['jar']
+
+	@property
+	def command_args(self):
+		"""
+		Get the command line arguments for starting the server
+		"""
+
+		# TODO(durandj): move nogui to an additional setting
+		return [self.java, '-jar', self.jar, 'nogui']
+
+	@property
+	def admin_log(self):
+		"""
+		Get the admin log used for operations on the server
+		"""
+
+		return self._admin_log
 
 	@property
 	def properties(self):
@@ -106,17 +142,29 @@ class Server(object):
 		"""
 
 		if not self._settings:
-			with open(self._settings_file, 'r') as settings_file:
-				self._settings = json.load(settings_file)
+			try:
+				with open(self._settings_file, 'r') as settings_file:
+					self._settings = json.load(settings_file)
+			except FileNotFoundError:
+				raise errors.ServerSettingsError(
+					'Server settings file (mymcadmin.settings) could not be ' +
+					'found.'
+				)
 
 		return self._settings
 
-	def start(self):
+	def start(self, stdin = None, stdout = None, stderr = None):
 		"""
 		Start the Minecraft server
 		"""
 
-		raise NotImplementedError
+		# TODO(durandj): pass signals to the subprocess
+		return asyncio.create_subprocess_exec(
+			*self.command_args,
+			stdin  = stdin,
+			stdout = stdout,
+			stderr = stderr,
+		)
 
 	def stop(self):
 		"""
