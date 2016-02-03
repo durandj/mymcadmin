@@ -1,28 +1,32 @@
 import click
-import functools
+import daemon
+import daemon.pidfile
+import multiprocessing
 import os.path
-import subprocess
-import sys
 
-from . import internal, params
-from .. import config, server
+from . import params
+from .. import config, errors, manager, server, utils
 from .base import mymcadmin
 
-def uses_internal(func):
-	@functools.wraps(func)
-	def wrapper(*args, **kwargs):
-		return func(sys.argv[0], *args, **kwargs)
+def start_server_daemon(server):
+	if os.path.exists(server.pid_file):
+		raise errors.MyMCAdminError('Server is already started')
 
-	return wrapper
+	admin_log = open(server.admin_log, 'a')
 
-def run_process(cmd, success_msg, error_msg):
-	proc = subprocess.Popen(cmd)
-	proc.wait()
+	with daemon.DaemonContext(
+			detach_process    = True,
+			pidfile           = daemon.pidfile.PIDLockFile(server.pid_file),
+			stdout            = admin_log,
+			stderr            = admin_log,
+			working_directory = server.path,
+		):
+		utils.setup_logging()
 
-	if proc.returncode == 0:
-		click.echo(click.style(success_msg, fg = 'green'))
-	else:
-		click.echo(click.style(error_msg, fg = 'red'))
+		instance_manager = manager.Manager(server)
+		instance_manager.run()
+
+	admin_log.close()
 
 @mymcadmin.command()
 @click.pass_context
@@ -37,24 +41,26 @@ def list(ctx):
 
 @mymcadmin.command()
 @click.pass_context
-@uses_internal
 @click.argument('server', type = params.ServerParamType())
-def start(script, ctx, server):
+def start(ctx, server):
 	"""
 	Start a Minecraft server
 	"""
 
-	run_process(
-		[script, 'internal', 'start', server.name],
-		'Server is starting',
-		'Error occurred while starting the server',
+	proc = multiprocessing.Process(
+		target = start_server_daemon,
+		args = (server,),
 	)
+
+	proc.start()
+	proc.join()
+
+	click.echo(click.style('Server is starting', fg = 'green'))
 
 @mymcadmin.command()
 @click.pass_context
-@uses_internal
 @click.argument('server', type = params.ServerParamType())
-def stop(script, ctx, server):
+def stop(ctx, server):
 	"""
 	Stop a Minecraft server
 	"""
@@ -64,16 +70,11 @@ def stop(script, ctx, server):
 
 @mymcadmin.command()
 @click.pass_context
-@uses_internal
 @click.argument('server', type = params.ServerParamType())
 def restart(script, ctx, server):
 	"""
 	Restart a Minecraft server
 	"""
 
-	run_process(
-		[script, 'internal', 'restart', server.name],
-		'Restarting the server',
-		'Error occurred while restarting the server',
-	)
+	raise NotImplementedError('Command not implemented')
 
