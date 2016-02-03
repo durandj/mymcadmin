@@ -8,9 +8,8 @@ class Manager(object):
 		self.proc           = None
 		self.network_future = None
 
-	@asyncio.coroutine
-	def handle_network_connection(self, reader, writer):
-		data    = yield from reader.readline()
+	async def handle_network_connection(self, reader, writer):
+		data    = await reader.readline()
 		message = data.decode()
 
 		address = writer.get_extra_info('peername')
@@ -21,21 +20,20 @@ class Manager(object):
 			)
 		)
 
-		yield from self.proc.communicate(data)
+		await self.proc.communicate(data)
 
 		writer.close()
 
-	@asyncio.coroutine
-	def handle_proc(self):
+	async def handle_proc(self):
 		create = self.server.start(
 			stdin  = asyncio.subprocess.PIPE,
 			stdout = asyncio.subprocess.PIPE,
 			stderr = asyncio.subprocess.PIPE,
 		)
 
-		self.proc = yield from create
+		self.proc = await create
 
-		yield from self.proc.wait()
+		await self.proc.wait()
 		# self.network_future.cancel()
 
 		return self.proc.returncode

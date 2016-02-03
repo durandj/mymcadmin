@@ -31,16 +31,14 @@ class Client(object):
 	def __exit__(self, exception_type, exception_value, traceback):
 		self.stop()
 
-	@asyncio.coroutine
-	def _setup(self):
-		self.reader, self.writer = yield from asyncio.open_connection(
+	async def _setup(self):
+		self.reader, self.writer = await asyncio.open_connection(
 			self.host,
 			self.port,
 			loop = self.event_loop,
 		)
 
-	@asyncio.coroutine
-	def _send(self, message):
+	async def _send(self, message):
 		logging.info('Sending "{}" to server'.format(message))
 
 		self.writer.write(message.encode())
