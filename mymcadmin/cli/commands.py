@@ -83,7 +83,11 @@ def restart(ctx, server):
 	Restart a Minecraft server
 	"""
 
-	raise NotImplementedError('Command not implemented')
+	_, host, port = server.socket_settings
+	with client.Client(host, port) as rpc_client:
+		rpc_client.server_restart()
+
+	click.echo(click.style('Server restarting', fg = 'green'))
 
 @mymcadmin.command()
 @click.pass_context

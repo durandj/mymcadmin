@@ -175,7 +175,7 @@ class Server(object):
 
 		return (socket_type, host, port)
 
-	def start(self, stdin = None, stdout = None, stderr = None):
+	def start(self):
 		"""
 		Start the Minecraft server
 		"""
@@ -183,9 +183,9 @@ class Server(object):
 		# TODO(durandj): pass signals to the subprocess
 		return asyncio.create_subprocess_exec(
 			*self.command_args,
-			stdin  = stdin,
-			stdout = stdout,
-			stderr = stderr,
+			stdin  = asyncio.subprocess.PIPE,
+			stdout = asyncio.subprocess.PIPE,
+			stderr = asyncio.subprocess.PIPE,
 		)
 
 	def stop(self):
@@ -196,14 +196,6 @@ class Server(object):
 		_, host, port = self.socket_settings
 		with client.Client(host, port) as rpc_client:
 			rpc_client.server_stop()
-
-	def restart(self):
-		"""
-		Restart the Minecraft server. This is an alias of stop and start
-		"""
-
-		self.stop()
-		self.start()
 
 	def send_command(self, command):
 		_, host, port = self.socket_settings

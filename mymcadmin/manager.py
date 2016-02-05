@@ -43,19 +43,13 @@ class Manager(object):
 	def _setup_rpc_handlers(self):
 		logging.info('Setting up JSON RPC handlers')
 
-		self.rpc_dispatcher.add_method(
-			self._rpc_command_terminate,
-			name = 'terminate',
-		)
-
-		self.rpc_dispatcher.add_method(
-			self._rpc_command_server_start,
-			name = 'serverStart',
-		)
-
-		self.rpc_dispatcher.add_method(
-			self._rpc_command_server_stop,
-			name = 'serverStop',
+		self.rpc_dispatcher.add_dict(
+			{
+				'terminate':     self._rpc_command_terminate,
+				'serverStart':   self._rpc_command_server_start,
+				'serverStop':    self._rpc_command_server_stop,
+				'serverRestart': self._rpc_command_server_restart,
+			}
 		)
 
 	async def _rpc_command_terminate(self, **kwargs):
@@ -81,6 +75,14 @@ class Manager(object):
 		await self.proc.communicate('stop'.encode())
 
 		return 'stopping server'
+
+	async def _rpc_command_server_restart(self, **kwargs):
+		logging.info('Sending restart command to server')
+
+		await self._rpc_command_server_stop()
+		await self._rpc_command_server_start()
+
+		return 'restarting server'
 
 	async def _handle_network_connection(self, reader, writer):
 		data    = await reader.readline()
@@ -109,11 +111,7 @@ class Manager(object):
 		writer.close()
 
 	async def _handle_proc(self):
-		create = self.server.start(
-			stdin  = asyncio.subprocess.PIPE,
-			stdout = asyncio.subprocess.PIPE,
-			stderr = asyncio.subprocess.PIPE,
-		)
+		create = self.server.start()
 
 		self.proc = await create
 

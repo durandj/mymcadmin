@@ -32,6 +32,9 @@ class Client(object):
 	def server_stop(self):
 		self.send_rpc_command('serverStop')
 
+	def server_restart(self):
+		self.send_rpc_command('serverRestart')
+
 	def send_rpc_command(self, command, params = {}):
 		self.event_loop.run_until_complete(self._send(command, params))
 
