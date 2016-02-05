@@ -23,7 +23,16 @@ class Client(object):
 	def stop(self):
 		self.event_loop.close()
 
-	def send_command(self, command, params = {}):
+	def terminate(self):
+		self.send_rpc_command('terminate')
+
+	def server_start(self):
+		self.send_rpc_command('serverStart')
+
+	def server_stop(self):
+		self.send_rpc_command('serverStop')
+
+	def send_rpc_command(self, command, params = {}):
 		self.event_loop.run_until_complete(self._send(command, params))
 
 	def __enter__(self):

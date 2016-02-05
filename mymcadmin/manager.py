@@ -38,24 +38,49 @@ class Manager(object):
 		finally:
 			logging.info('Shutting down management process')
 			self.event_loop.close()
+			logging.info('Management process terminated')
 
 	def _setup_rpc_handlers(self):
 		logging.info('Setting up JSON RPC handlers')
 
-		self.rpc_dispatcher.add_method(self._rpc_command_stop, name = 'stop')
+		self.rpc_dispatcher.add_method(
+			self._rpc_command_terminate,
+			name = 'terminate',
+		)
 
-	async def _rpc_command_stop(self, **kwargs):
+		self.rpc_dispatcher.add_method(
+			self._rpc_command_server_start,
+			name = 'serverStart',
+		)
+
+		self.rpc_dispatcher.add_method(
+			self._rpc_command_server_stop,
+			name = 'serverStop',
+		)
+
+	async def _rpc_command_terminate(self, **kwargs):
+		logging.info('Sending terminate command to management server')
+
+		if self.proc.returncode is None:
+			await self._rpc_command_server_stop()
+			await self.proc.wait()
+		self.event_loop.stop()
+
+		return 'terminating manager'
+
+	async def _rpc_command_server_start(self, **kwargs):
+		logging.info('Starting Minecraft server')
+
+		self.event_loop.create_task(self._handle_proc())
+
+		return 'starting server'
+
+	async def _rpc_command_server_stop(self, **kwargs):
 		logging.info('Sending stop command to server')
 
 		await self.proc.communicate('stop'.encode())
 
 		return 'stopping server'
-
-	async def _handle_rpc(self, rpc_data):
-		return await rpc.JsonRpcResponseManager.handle(
-			rpc_data,
-			self.rpc_dispatcher,
-		)
 
 	async def _handle_network_connection(self, reader, writer):
 		data    = await reader.readline()
@@ -63,13 +88,16 @@ class Manager(object):
 
 		address = writer.get_extra_info('peername')
 		logging.info(
-			'Recieved "{}" from {}'.format(
+			'Recieved "{}" from client {}'.format(
 				message.strip(),
 				address,
 			)
 		)
 
-		json_response = await self._handle_rpc(data)
+		json_response = await rpc.JsonRpcResponseManager.handle(
+			data,
+			self.rpc_dispatcher,
+		)
 
 		logging.info('Sending response back to {}:\n{}'.format(
 			address,
@@ -81,9 +109,6 @@ class Manager(object):
 		writer.close()
 
 	async def _handle_proc(self):
-		proc_future = asyncio.Future()
-		proc_future.add_done_callback(self._handle_proc_terminated)
-
 		create = self.server.start(
 			stdin  = asyncio.subprocess.PIPE,
 			stdout = asyncio.subprocess.PIPE,
@@ -93,9 +118,4 @@ class Manager(object):
 		self.proc = await create
 
 		await self.proc.wait()
-
-		proc_future.set_result(self.proc.returncode)
-
-	def _handle_proc_terminated(self, future):
-		self.event_loop.stop()
 

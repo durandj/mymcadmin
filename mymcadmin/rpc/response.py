@@ -53,7 +53,7 @@ class JsonRpcResponse(object):
 			data['result'] = self.result
 
 		if self.error:
-			data['result'] = self.error
+			data['error'] = self.error
 
 		if self.response_id:
 			data['id'] = self.response_id
@@ -91,7 +91,7 @@ class JsonRpcBatchResponse(object):
 class JsonRpcErrorResponse(JsonRpcResponse):
 	def __init__(self, code, message, request_id = None):
 		super(JsonRpcErrorResponse, self).__init__(
-			request_id = request_id,
+			response_id = request_id,
 			error      = {
 				'code':    code,
 				'message': message,

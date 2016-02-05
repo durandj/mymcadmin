@@ -5,7 +5,7 @@ import multiprocessing
 import os.path
 
 from . import params
-from .. import config, errors, manager, server, utils
+from .. import client, config, errors, manager, server, utils
 from .base import mymcadmin
 
 def start_server_daemon(server):
@@ -47,13 +47,20 @@ def start(ctx, server):
 	Start a Minecraft server
 	"""
 
-	proc = multiprocessing.Process(
-		target = start_server_daemon,
-		args = (server,),
-	)
+	# Check if the server management process is already running
+	if not os.path.exists(server.pid_file):
+		proc = multiprocessing.Process(
+			target = start_server_daemon,
+			args = (server,),
+		)
 
-	proc.start()
-	proc.join()
+		proc.start()
+		proc.join()
+	else:
+		# TODO(durandj): check if the minecraft server is already running
+		_, host, port = server.socket_settings
+		with client.Client(host, port) as rpc_client:
+			rpc_client.server_start()
 
 	click.echo(click.style('Server is starting', fg = 'green'))
 
@@ -71,10 +78,25 @@ def stop(ctx, server):
 @mymcadmin.command()
 @click.pass_context
 @click.argument('server', type = params.ServerParamType())
-def restart(script, ctx, server):
+def restart(ctx, server):
 	"""
 	Restart a Minecraft server
 	"""
 
 	raise NotImplementedError('Command not implemented')
+
+@mymcadmin.command()
+@click.pass_context
+@click.argument('server', type = params.ServerParamType())
+def terminate(ctx, server):
+	"""
+	Terminate the management process for the server. This will also shutdown
+	the Minecraft server
+	"""
+
+	_, host, port = server.socket_settings
+	with client.Client(host, port) as rpc_client:
+		rpc_client.terminate()
+
+	click.echo(click.style('Management process terminated', fg = 'green'))
 

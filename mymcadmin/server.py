@@ -193,7 +193,9 @@ class Server(object):
 		Stop the Minecraft server
 		"""
 
-		self.send_command('stop')
+		_, host, port = self.socket_settings
+		with client.Client(host, port) as rpc_client:
+			rpc_client.server_stop()
 
 	def restart(self):
 		"""
@@ -206,6 +208,7 @@ class Server(object):
 	def send_command(self, command):
 		_, host, port = self.socket_settings
 
+		# TODO(durandj): this needs to be repurposed as a general server command
 		with client.Client(host, port) as instance_client:
 			instance_client.send_command(command)
 
