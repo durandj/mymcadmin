@@ -207,7 +207,7 @@ class Server(object):
 		_, host, port = self.socket_settings
 
 		with client.Client(host, port) as instance_client:
-			instance_client.send_message(command)
+			instance_client.send_command(command)
 
 	@staticmethod
 	def list_all(config):

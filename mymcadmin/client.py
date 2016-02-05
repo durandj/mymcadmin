@@ -1,9 +1,12 @@
 import asyncio
+import json
 import logging
 
 from . import utils
 
 class Client(object):
+	JSONRPC_VERSION = '2.0'
+
 	def __init__(self, host, port):
 		self.event_loop = asyncio.get_event_loop()
 		self.host       = host
@@ -20,8 +23,8 @@ class Client(object):
 	def stop(self):
 		self.event_loop.close()
 
-	def send_message(self, message):
-		self.event_loop.run_until_complete(self._send(message))
+	def send_command(self, command, params = {}):
+		self.event_loop.run_until_complete(self._send(command, params))
 
 	def __enter__(self):
 		self.run()
@@ -38,8 +41,20 @@ class Client(object):
 			loop = self.event_loop,
 		)
 
-	async def _send(self, message):
-		logging.info('Sending "{}" to server'.format(message))
+	async def _send(self, method, params, request_id = 1):
+		data = json.dumps(
+			{
+				'jsonrpc': Client.JSONRPC_VERSION,
+				'id':      request_id,
+				'method':  method,
+				'params':  params,
+			}
+		) + '\n'
 
-		self.writer.write(message.encode())
+		logging.info('Sending "{}" to server'.format(data))
+		self.writer.write(data.encode())
+
+		logging.info('Waiting for server response')
+		await self.reader.read()
+		# TODO(durandj): handle response
 

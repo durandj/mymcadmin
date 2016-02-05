@@ -4,7 +4,9 @@ class MyMCAdminError(Exception):
 	"""
 
 	def __init__(self, message, *args, **kwargs):
-		super(MyMCAdminError, self).__init__(message.format(*args, **kwargs))
+		self.message = message.format(*args, **kwargs)
+
+		super(MyMCAdminError, self).__init__(self.message)
 
 class ConfigurationError(Exception):
 	"""

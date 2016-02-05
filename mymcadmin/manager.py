@@ -2,16 +2,19 @@ import asyncio
 import asyncio.subprocess
 import logging
 
-from . import errors
+from . import errors, rpc
 
 class Manager(object):
 	def __init__(self, server):
 		logging.info('Setting up event loop')
 
-		self.server       = server
-		self.event_loop   = asyncio.get_event_loop()
-		self.proc         = None
-		self.network_task = None
+		self.server         = server
+		self.event_loop     = asyncio.get_event_loop()
+		self.proc           = None
+		self.network_task   = None
+		self.rpc_dispatcher = rpc.Dispatcher()
+
+		self._setup_rpc_handlers()
 
 		_, host, port = self.server.socket_settings
 
@@ -36,6 +39,24 @@ class Manager(object):
 			logging.info('Shutting down management process')
 			self.event_loop.close()
 
+	def _setup_rpc_handlers(self):
+		logging.info('Setting up JSON RPC handlers')
+
+		self.rpc_dispatcher.add_method(self._rpc_command_stop, name = 'stop')
+
+	async def _rpc_command_stop(self, **kwargs):
+		logging.info('Sending stop command to server')
+
+		await self.proc.communicate('stop'.encode())
+
+		return 'stopping server'
+
+	async def _handle_rpc(self, rpc_data):
+		return await rpc.JsonRpcResponseManager.handle(
+			rpc_data,
+			self.rpc_dispatcher,
+		)
+
 	async def _handle_network_connection(self, reader, writer):
 		data    = await reader.readline()
 		message = data.decode()
@@ -43,12 +64,19 @@ class Manager(object):
 		address = writer.get_extra_info('peername')
 		logging.info(
 			'Recieved "{}" from {}'.format(
-				message,
+				message.strip(),
 				address,
 			)
 		)
 
-		await self.proc.communicate(data)
+		json_response = await self._handle_rpc(data)
+
+		logging.info('Sending response back to {}:\n{}'.format(
+			address,
+			json_response.json,
+		))
+		writer.write(json_response.json.encode())
+		await writer.drain()
 
 		writer.close()
 
