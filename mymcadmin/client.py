@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 
-from . import utils
+from . import rpc, utils
 
 class Client(object):
 	JSONRPC_VERSION = '2.0'
@@ -55,6 +55,14 @@ class Client(object):
 		self.writer.write(data.encode())
 
 		logging.info('Waiting for server response')
-		await self.reader.read()
-		# TODO(durandj): handle response
+		response = await self.reader.read()
+		response = response.decode()
+		logging.info('Received "{}" from the server'.format(response))
+		response = json.loads(response)
+
+		if 'error' in response:
+			raise rpc.JsonRpcError(
+				'RPC error: {}',
+				response['error']['message'],
+			)
 
