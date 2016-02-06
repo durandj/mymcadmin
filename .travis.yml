@@ -6,5 +6,5 @@ python:
 install:
     - pip install .
 script:
-    - nosetests
+    - nosetests --with-coverage --cover-package=mymcadmin
 
