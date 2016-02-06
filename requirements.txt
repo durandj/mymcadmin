@@ -3,4 +3,5 @@ coverage
 nose
 python-daemon
 rednose
+requests
 

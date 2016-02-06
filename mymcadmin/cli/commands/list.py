@@ -1,15 +1,38 @@
 import click
 import os.path
+import requests
 
 from ..base import mymcadmin
 from ... import server
 
 @mymcadmin.command()
 @click.pass_context
-def list_server_downloads(ctx):
+def list_server_versions(ctx):
 	"""
 	List possible server downloads
 	"""
+
+	resp = requests.get(
+		'https://launchermeta.mojang.com/mc/game/version_manifest.json'
+	)
+
+	if not resp.ok:
+		click.echo(click.style('Unable to retrieve version list', fg = 'red'))
+		return
+
+	versions     = resp.json()
+	latest       = versions['latest']
+	all_versions = versions['versions']
+
+	click.echo(click.style('Vanilla', fg = 'blue', bold = True))
+
+	click.echo(click.style('Latest:', fg = 'blue'))
+	click.echo('Snapshot: {}'.format(latest['snapshot']))
+	click.echo('Release:  {}'.format(latest['release']))
+
+	click.echo(click.style('All', fg = 'blue'))
+	for version in all_versions:
+		click.echo(version['id'])
 
 @mymcadmin.command()
 @click.pass_context
