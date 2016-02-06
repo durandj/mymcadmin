@@ -5,7 +5,7 @@ import pwd
 
 from .. import server
 
-class ServerParamType(click.ParamType):
+class Server(click.ParamType):
 	name = 'server'
 
 	def __init__(self, exists = True):
