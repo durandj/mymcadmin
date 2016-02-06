@@ -1,0 +1,20 @@
+#!/bin/sh
+
+CONFIG_FILE=/path/to/mymcadmin.json
+PYTHON=/usr/bin/python
+EXECUTABLE=/path/to/mymcadmin
+
+set -e
+
+case $1 in
+	start)
+		$PYTHON $EXECUTABLE --conf $CONFIG_FILE start_all
+		;;
+	stop)
+		$PYTHON $EXECUTABLE --conf $CONFIG_FILE stop_all
+		;;
+	restart)
+		$PYTHON $EXECUTABLE --conf $CONFIG_FILE restart_all
+		;;
+esac
+
