@@ -16,7 +16,7 @@ class Server(object):
 	LOG_FILE              = 'mymcadmin.log'
 	PID_FILE              = 'server.pid'
 	PROPERTIES_FILE       = 'server.properties'
-	PROPERTIES_REGEX      = re.compile(r'^([a-zA-Z0-9\-]+)=([^#]+)( *#.*)?$')
+	PROPERTIES_REGEX      = re.compile(r'^([a-zA-Z0-9\-]+)=([^#]*)( *#.*)?$')
 	PROPERTIES_BOOL_REGEX = re.compile(r'^(true|false)$', re.IGNORECASE)
 	PROPERTIES_INT_REGEX  = re.compile(r'^([0-9]+)$')
 	SETTINGS_FILE         = 'mymcadmin.settings'

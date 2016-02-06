@@ -7,6 +7,46 @@ import unittest
 
 from mymcadmin import errors, server
 
+SAMPLE_PROPERTIES = """#Minecraft server properties
+#Sat Feb 06 16:13:59 CST 2016
+max-tick-time=60000
+generator-settings=
+force-gamemode=false
+allow-nether=true
+gamemode=0
+enable-query=false
+player-idle-timeout=0
+difficulty=1
+spawn-monsters=true
+op-permission-level=4
+resource-pack-hash=
+announce-player-achievements=true
+pvp=true
+snooper-enabled=true
+level-type=DEFAULT
+hardcore=false
+enable-command-block=false
+max-players=20
+network-compression-threshold=256
+max-world-size=29999984
+server-port=25565
+server-ip=
+spawn-npcs=true
+allow-flight=false
+level-name=world
+view-distance=10
+resource-pack=
+spawn-animals=true
+white-list=false
+generate-structures=true
+online-mode=true
+max-build-height=256
+level-seed=
+use-native-transport=true
+motd=A Test Minecraft Server
+enable-rcon=false
+"""
+
 class TestServer(unittest.TestCase):
 	def setUp(self):
 		self.temp_dir    = tempfile.TemporaryDirectory()
@@ -17,6 +57,10 @@ class TestServer(unittest.TestCase):
 		os.mkdir(self.server_path)
 
 		self._set_server_settings({})
+
+		properties_file = os.path.join(self.server_path, 'server.properties')
+		with open(properties_file, 'w') as fh:
+			fh.write(SAMPLE_PROPERTIES)
 
 	def tearDown(self):
 		self.temp_dir.cleanup()
@@ -169,9 +213,53 @@ class TestServer(unittest.TestCase):
 	def test_set_admin_log(self):
 		self.server.admin_log = 'Bad!'
 
-	@unittest.skip('TODO(durandj): not implemented yet')
 	def test_get_properties(self):
-		pass
+		self.assertDictEqual(
+			{
+				'max-tick-time':                 60000,
+				'generator-settings':            None,
+				'force-gamemode':                False,
+				'allow-nether':                  True,
+				'gamemode':                      0,
+				'enable-query':                  False,
+				'player-idle-timeout':           0,
+				'difficulty':                    1,
+				'spawn-monsters':                True,
+				'op-permission-level':           4,
+				'resource-pack-hash':            None,
+				'announce-player-achievements':  True,
+				'pvp':                           True,
+				'snooper-enabled':               True,
+				'level-type':                    'DEFAULT',
+				'hardcore':                      False,
+				'enable-command-block':          False,
+				'max-players':                   20,
+				'network-compression-threshold': 256,
+				'max-world-size':                29999984,
+				'server-port':                   25565,
+				'server-ip':                     None,
+				'spawn-npcs':                    True,
+				'allow-flight':                  False,
+				'level-name':                    'world',
+				'view-distance':                 10,
+				'resource-pack':                 None,
+				'spawn-animals':                 True,
+				'white-list':                    False,
+				'generate-structures':           True,
+				'online-mode':                   True,
+				'max-build-height':              256,
+				'level-seed':                    None,
+				'use-native-transport':          True,
+				'motd':                          'A Test Minecraft Server',
+				'enable-rcon':                   False,
+			},
+			self.server.properties,
+			'Server properties did not match',
+		)
+
+	@nose.tools.raises(AttributeError)
+	def test_set_properties(self):
+		self.server.properties = 'Bad!'
 
 	def _set_server_settings(self, settings):
 		settings_file = os.path.join(self.server_path, 'mymcadmin.settings')
