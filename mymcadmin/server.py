@@ -1,6 +1,7 @@
 import asyncio
 import glob
 import json
+import logging
 import re
 import os
 import os.path
@@ -12,6 +13,9 @@ class Server(object):
 	A Minecraft server instance
 	"""
 
+	LOG_FILE              = 'mymcadmin.log'
+	PID_FILE              = 'server.pid'
+	PROPERTIES_FILE       = 'server.properties'
 	PROPERTIES_REGEX      = re.compile(r'^([a-zA-Z0-9\-]+)=([^#]+)( *#.*)?$')
 	PROPERTIES_BOOL_REGEX = re.compile(r'^(true|false)$', re.IGNORECASE)
 	PROPERTIES_INT_REGEX  = re.compile(r'^([0-9]+)$')
@@ -26,9 +30,9 @@ class Server(object):
 
 		self._path            = path
 		self._cache           = {}
-		self._admin_log       = os.path.join(path, 'mymcadmin.log')
-		self._pid_file        = os.path.join(path, 'server.pid')
-		self._properties_file = os.path.join(path, 'server.properties')
+		self._admin_log       = os.path.join(path, Server.LOG_FILE)
+		self._pid_file        = os.path.join(path, Server.PID_FILE)
+		self._properties_file = os.path.join(path, Server.PROPERTIES_FILE)
 		self._properties      = None
 		self._settings_file   = os.path.join(path, Server.SETTINGS_FILE)
 		self._settings        = None
@@ -95,8 +99,12 @@ class Server(object):
 		Get the command line arguments for starting the server
 		"""
 
-		# TODO(durandj): move nogui to an additional setting
-		return [self.java, '-jar', self.jar, 'nogui']
+		command_args  = [self.java]
+		command_args += self.settings.get('jvm_args', [])
+		command_args += ['-jar', self.jar]
+		command_args += self.settings.get('args', [])
+
+		return command_args
 
 	@property
 	def admin_log(self):
@@ -180,9 +188,12 @@ class Server(object):
 		Start the Minecraft server
 		"""
 
+		command_args = self.command_args
+		logging.info('Starting server with: {}'.format(command_args))
+
 		# TODO(durandj): pass signals to the subprocess
 		return asyncio.create_subprocess_exec(
-			*self.command_args,
+			*command_args,
 			stdin  = asyncio.subprocess.PIPE,
 			stdout = asyncio.subprocess.PIPE,
 			stderr = asyncio.subprocess.PIPE,
