@@ -19,7 +19,11 @@ from ... import server
 	'--betas/--no-betas',
 	default = True,
 	help    = 'Include betas')
-def list_server_versions(ctx, snapshots, releases, betas):
+@click.option(
+	'--alphas/--no-alphas',
+	default = True,
+	help    = 'Include alphas')
+def list_server_versions(ctx, snapshots, releases, betas, alphas):
 	"""
 	List possible server downloads
 	"""
@@ -53,6 +57,8 @@ def list_server_versions(ctx, snapshots, releases, betas):
 		elif version_type == 'release' and not releases:
 			continue
 		elif version_type == 'old_beta' and not betas:
+			continue
+		elif version_type == 'old_alpha' and not alphas:
 			continue
 
 		click.echo(version['id'])
