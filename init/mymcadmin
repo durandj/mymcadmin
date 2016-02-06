@@ -3,12 +3,14 @@
 CONFIG_FILE=/path/to/mymcadmin.json
 PYTHON=/usr/bin/python
 EXECUTABLE=/path/to/mymcadmin
+USER=`id -u yourusername`
+GROUP=`id -g yourusername`
 
 set -e
 
 case $1 in
 	start)
-		$PYTHON $EXECUTABLE --conf $CONFIG_FILE start_all
+		$PYTHON $EXECUTABLE --conf $CONFIG_FILE start_all --user $USER --group $GROUP
 		;;
 	stop)
 		$PYTHON $EXECUTABLE --conf $CONFIG_FILE stop_all

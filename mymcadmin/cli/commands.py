@@ -35,16 +35,36 @@ def list(ctx):
 @mymcadmin.command()
 @click.pass_context
 @click.argument('server', type = params.ServerParamType())
-def start(ctx, server):
+@click.option(
+	'--user',
+	type    = params.User(),
+	default = None,
+	help    = 'The user to run the server as')
+@click.option(
+	'--group',
+	type    = params.Group(),
+	default = None,
+	help    = 'The group to run the server as')
+def start(ctx, server, user, group):
 	"""
 	Start a Minecraft server
 	"""
 
-	start_server(server)
+	start_server(server, user, group)
 
 @mymcadmin.command()
 @click.pass_context
-def start_all(ctx):
+@click.option(
+	'--user',
+	type    = params.User(),
+	default = None,
+	help    = 'The user to run the servers as')
+@click.option(
+	'--group',
+	type    = params.Group(),
+	default = None,
+	help    = 'The group to run the servers as')
+def start_all(ctx, user, group):
 	"""
 	Start all Minecraft servers
 	"""
@@ -55,7 +75,7 @@ def start_all(ctx):
 	]
 
 	for srv in servers:
-		start_server(srv)
+		start_server(srv, user, group)
 
 @mymcadmin.command()
 @click.pass_context
@@ -133,7 +153,7 @@ def terminate_all(ctx):
 	for srv in servers:
 		terminate_server(srv)
 
-def start_server_daemon(server):
+def start_server_daemon(server, user, group):
 	if os.path.exists(server.pid_file):
 		raise errors.MyMCAdminError('Server is already started')
 
@@ -141,9 +161,11 @@ def start_server_daemon(server):
 
 	with daemon.DaemonContext(
 			detach_process    = True,
+			gid               = group,
 			pidfile           = daemon.pidfile.PIDLockFile(server.pid_file),
 			stdout            = admin_log,
 			stderr            = admin_log,
+			uid               = user,
 			working_directory = server.path,
 		):
 		utils.setup_logging()
@@ -153,15 +175,22 @@ def start_server_daemon(server):
 
 	admin_log.close()
 
-def start_server(server):
-	click.echo('Attempting to start {}...'.format(server.name), nl = False)
+def start_server(server, user, group):
+	click.echo(
+		'Attempting to start {} as ({}, {})...'.format(
+			server.name,
+			user or 'default',
+			group or 'default',
+		),
+		nl = False
+	)
 
 	try:
 		# Check if the server management process is already running
 		if not os.path.exists(server.pid_file):
 			proc = multiprocessing.Process(
 				target = start_server_daemon,
-				args = (server,),
+				args = (server, user, group),
 			)
 
 			proc.start()
