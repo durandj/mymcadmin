@@ -5,7 +5,14 @@ import multiprocessing
 import os.path
 
 from . import params
-from .. import client, config, errors, manager, server, utils
+from .. import (
+	config,
+	errors,
+	manager,
+	rpc,
+	server,
+	utils
+)
 
 @click.group()
 @click.pass_context
@@ -198,7 +205,7 @@ def start_server(server, user, group):
 		else:
 			# TODO(durandj): check if the minecraft server is already running
 			_, host, port = server.socket_settings
-			with client.Client(host, port) as rpc_client:
+			with rpc.RpcClient(host, port) as rpc_client:
 				rpc_client.server_start()
 	except Exception as e:
 		click.echo(click.style('Failure', fg = 'red'))
@@ -222,7 +229,7 @@ def restart_server(srv):
 
 	try:
 		_, host, port = srv.socket_settings
-		with client.Client(host, port) as rpc_client:
+		with rpc.RpcClient(host, port) as rpc_client:
 			rpc_client.server_restart()
 	except Exception as e:
 		click.echo(click.style('Failure', fg = 'red'))
@@ -235,7 +242,7 @@ def terminate_server(srv):
 
 	try:
 		_, host, port = srv.socket_settings
-		with client.Client(host, port) as rpc_client:
+		with rpc.RpcClient(host, port) as rpc_client:
 			rpc_client.terminate()
 	except Exception as e:
 		click.echo(click.style('Failure', fg = 'red'))

@@ -2,9 +2,10 @@ import asyncio
 import json
 import logging
 
-from . import rpc, utils
+from . import errors
+from .. import utils
 
-class Client(object):
+class RpcClient(object):
 	JSONRPC_VERSION = '2.0'
 
 	def __init__(self, host, port):
@@ -56,7 +57,7 @@ class Client(object):
 	async def _send(self, method, params, request_id = 1):
 		data = json.dumps(
 			{
-				'jsonrpc': Client.JSONRPC_VERSION,
+				'jsonrpc': RpcClient.JSONRPC_VERSION,
 				'id':      request_id,
 				'method':  method,
 				'params':  params,
@@ -73,7 +74,7 @@ class Client(object):
 		response = json.loads(response)
 
 		if 'error' in response:
-			raise rpc.JsonRpcError(
+			raise errors.JsonRpcError(
 				'RPC error: {}',
 				response['error']['message'],
 			)
