@@ -7,6 +7,17 @@ from ... import server
 
 @mymcadmin.command()
 @click.pass_context
+def list_servers(ctx):
+	"""
+	List all of the available servers
+	"""
+
+	info('Available servers:')
+	for srv in server.Server.list_all(ctx.obj['config']):
+		click.echo(os.path.basename(srv))
+
+@mymcadmin.command()
+@click.pass_context
 @click.option(
 	'--snapshots/--no-snapshots',
 	default = True,
@@ -23,9 +34,9 @@ from ... import server
 	'--alphas/--no-alphas',
 	default = True,
 	help    = 'Include alphas')
-def list_server_versions(ctx, snapshots, releases, betas, alphas):
+def list_versions(ctx, snapshots, releases, betas, alphas):
 	"""
-	List possible server downloads
+	List possible server download versions
 	"""
 
 	resp = requests.get(
@@ -62,15 +73,4 @@ def list_server_versions(ctx, snapshots, releases, betas, alphas):
 			continue
 
 		click.echo(version['id'])
-
-@mymcadmin.command()
-@click.pass_context
-def list_servers(ctx):
-	"""
-	List all of the available servers
-	"""
-
-	info('Available servers:')
-	for srv in server.Server.list_all(ctx.obj['config']):
-		click.echo(os.path.basename(srv))
 

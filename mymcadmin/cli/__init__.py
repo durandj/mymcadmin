@@ -1,7 +1,7 @@
 from .base import mymcadmin
 from .commands import (
-	list_server_versions,
 	list_servers,
+	list_versions,
 	start,
 	start_all,
 	stop,
