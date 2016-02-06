@@ -10,8 +10,16 @@ from ... import server
 @click.option(
 	'--snapshots/--no-snapshots',
 	default = True,
-	help = 'Include snapshots')
-def list_server_versions(ctx, snapshots):
+	help    = 'Include snapshots')
+@click.option(
+	'--releases/--no-releases',
+	default = True,
+	help    = 'Include releases')
+@click.option(
+	'--betas/--no-betas',
+	default = True,
+	help    = 'Include betas')
+def list_server_versions(ctx, snapshots, releases, betas):
 	"""
 	List possible server downloads
 	"""
@@ -33,11 +41,18 @@ def list_server_versions(ctx, snapshots):
 	click.echo(click.style('Latest:', fg = 'blue'))
 	if snapshots:
 		click.echo('Snapshot: {}'.format(latest['snapshot']))
-	click.echo('Release:  {}'.format(latest['release']))
+	if releases:
+		click.echo('Release:  {}'.format(latest['release']))
 
-	click.echo(click.style('All', fg = 'blue'))
+	click.echo(click.style('All:', fg = 'blue'))
 	for version in all_versions:
-		if version.get('type') == 'snapshot' and not snapshots:
+		version_type = version.get('type')
+
+		if version_type == 'snapshot' and not snapshots:
+			continue
+		elif version_type == 'release' and not releases:
+			continue
+		elif version_type == 'old_beta' and not betas:
 			continue
 
 		click.echo(version['id'])
