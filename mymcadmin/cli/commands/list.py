@@ -7,7 +7,11 @@ from ... import server
 
 @mymcadmin.command()
 @click.pass_context
-def list_server_versions(ctx):
+@click.option(
+	'--snapshots/--no-snapshots',
+	default = True,
+	help = 'Include snapshots')
+def list_server_versions(ctx, snapshots):
 	"""
 	List possible server downloads
 	"""
@@ -27,11 +31,15 @@ def list_server_versions(ctx):
 	click.echo(click.style('Vanilla', fg = 'blue', bold = True))
 
 	click.echo(click.style('Latest:', fg = 'blue'))
-	click.echo('Snapshot: {}'.format(latest['snapshot']))
+	if snapshots:
+		click.echo('Snapshot: {}'.format(latest['snapshot']))
 	click.echo('Release:  {}'.format(latest['release']))
 
 	click.echo(click.style('All', fg = 'blue'))
 	for version in all_versions:
+		if version.get('type') == 'snapshot' and not snapshots:
+			continue
+
 		click.echo(version['id'])
 
 @mymcadmin.command()
