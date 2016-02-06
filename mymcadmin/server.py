@@ -68,7 +68,7 @@ class Server(object):
 		"""
 
 		if 'java' not in self._cache:
-			self._cache['java'] = self._settings.get('java', 'java')
+			self._cache['java'] = self.settings.get('java', 'java')
 
 		return self._cache['java']
 
