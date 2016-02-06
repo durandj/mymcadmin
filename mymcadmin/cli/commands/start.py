@@ -5,7 +5,7 @@ import multiprocessing
 import os.path
 
 from .. import params
-from ..base import mymcadmin
+from ..base import mymcadmin, error, success, warn
 from ... import (
 	errors,
 	manager,
@@ -27,12 +27,12 @@ from ... import (
 	type    = params.Group(),
 	default = None,
 	help    = 'The group to run the server as')
-def start(ctx, srv, user, group):
+def start(ctx, server, user, group):
 	"""
 	Start a Minecraft server
 	"""
 
-	start_server(srv, user, group)
+	start_server(server, user, group)
 
 @mymcadmin.command()
 @click.pass_context
@@ -107,8 +107,8 @@ def start_server(server, user, group):
 			with rpc.RpcClient(host, port) as rpc_client:
 				rpc_client.server_start()
 	except Exception as e:
-		click.echo(click.style('Failure', fg = 'red'))
-		click.echo(click.style(str(e), color = 'yellow'))
+		error('Failure')
+		warn(str(e))
 	else:
-		click.echo(click.style('Success', fg = 'green'))
+		success('Success')
 

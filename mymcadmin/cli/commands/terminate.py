@@ -1,19 +1,19 @@
 import click
 
 from .. import params
-from ..base import mymcadmin
+from ..base import mymcadmin, error, success, warn
 from ... import rpc, server
 
 @mymcadmin.command()
 @click.pass_context
 @click.argument('server', type = params.Server())
-def terminate(ctx, srv):
+def terminate(ctx, server):
 	"""
 	Terminate the management process for the server. This will aso shutdown
 	the Minecraft server
 	"""
 
-	terminate_server(srv)
+	terminate_server(server)
 
 @mymcadmin.command()
 @click.pass_context
@@ -38,8 +38,8 @@ def terminate_server(srv):
 		with rpc.RpcClient(host, port) as rpc_client:
 			rpc_client.terminate()
 	except Exception as e:
-		click.echo(click.style('Failure', fg = 'red'))
-		click.echo(click.style(str(e), color = 'yellow'))
+		error('Failure')
+		warn(str(e))
 	else:
-		click.echo(click.style('Success', fg = 'green'))
+		success('Success')
 

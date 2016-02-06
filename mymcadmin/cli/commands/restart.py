@@ -1,7 +1,7 @@
 import click
 
 from .. import params
-from ..base import mymcadmin
+from ..base import mymcadmin, error, success, warn
 from ... import rpc, server
 
 @mymcadmin.command()
@@ -37,8 +37,8 @@ def restart_server(srv):
 		with rpc.RpcClient(host, port) as rpc_client:
 			rpc_client.server_restart()
 	except Exception as e:
-		click.echo(click.style('Failure', fg = 'red'))
-		click.echo(click.style(str(e), color = 'yellow'))
+		error('Failure')
+		warn(str(e))
 	else:
-		click.echo(click.style('Success', fg = 'green'))
+		success('Success')
 

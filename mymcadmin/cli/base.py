@@ -16,3 +16,15 @@ def mymcadmin(ctx, conf):
 
 	ctx.obj = {'config': config.Config(config_file = conf)}
 
+def success(message, **formatting):
+	click.secho(message, fg = 'green', **formatting)
+
+def info(message, **formatting):
+	click.secho(message, fg = 'blue', **formatting)
+
+def warn(message, **formatting):
+	click.secho(message, fg = 'yellow', **formatting)
+
+def error(message, **formatting):
+	click.secho(message, fg = 'red', **formatting)
+

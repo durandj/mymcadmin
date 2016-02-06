@@ -1,13 +1,13 @@
 import click
 
 from .. import params
-from ..base import mymcadmin
+from ..base import mymcadmin, error, success, warn
 from ... import rpc, server
 
 @mymcadmin.command()
 @click.pass_context
 @click.argument('server', type = params.Server())
-def stop(ctx, srv):
+def stop(ctx, server):
 	"""
 	Stop a Minecraft server
 	"""
@@ -35,21 +35,8 @@ def stop_server(srv):
 	try:
 		srv.stop()
 	except Exception as e:
-		click.echo(click.style('Failed', fg = 'red'))
-		click.echo(click.style(str(e), fg = 'yellow'))
+		error('Failed')
+		warn(str(e))
 	else:
-		click.echo(click.style('Success', fg = 'green'))
-
-def restart_server(srv):
-	click.echo('Attempting to restart {}'.format(srv.name), nl = False)
-
-	try:
-		_, host, port = srv.socket_settings
-		with rpc.RpcClient(host, port) as rpc_client:
-			rpc_client.server_restart()
-	except Exception as e:
-		click.echo(click.style('Failure', fg = 'red'))
-		click.echo(click.style(str(e), color = 'yellow'))
-	else:
-		click.echo(click.style('Success', fg = 'green'))
+		success('Success')
 

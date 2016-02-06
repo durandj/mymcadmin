@@ -2,7 +2,7 @@ import click
 import os.path
 import requests
 
-from ..base import mymcadmin
+from ..base import mymcadmin, error, info
 from ... import server
 
 @mymcadmin.command()
@@ -33,22 +33,22 @@ def list_server_versions(ctx, snapshots, releases, betas, alphas):
 	)
 
 	if not resp.ok:
-		click.echo(click.style('Unable to retrieve version list', fg = 'red'))
+		error('Unable to retrieve version list')
 		return
 
 	versions     = resp.json()
 	latest       = versions['latest']
 	all_versions = versions['versions']
 
-	click.echo(click.style('Vanilla', fg = 'blue', bold = True))
+	info('Vanilla', bold = True)
 
-	click.echo(click.style('Latest:', fg = 'blue'))
+	info('Latest:')
 	if snapshots:
 		click.echo('Snapshot: {}'.format(latest['snapshot']))
 	if releases:
 		click.echo('Release:  {}'.format(latest['release']))
 
-	click.echo(click.style('All:', fg = 'blue'))
+	info('All:')
 	for version in all_versions:
 		version_type = version.get('type')
 
@@ -70,7 +70,7 @@ def list_servers(ctx):
 	List all of the available servers
 	"""
 
-	click.echo(click.style('Available servers:', fg = 'blue'))
+	info('Available servers:')
 	for srv in server.Server.list_all(ctx.obj['config']):
 		click.echo(os.path.basename(srv))
 
