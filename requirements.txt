@@ -1,3 +1,4 @@
 click
+nose
 python-daemon
 
