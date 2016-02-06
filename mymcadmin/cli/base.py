@@ -16,4 +16,3 @@ def mymcadmin(ctx, conf):
 
 	ctx.obj = {'config': config.Config(config_file = conf)}
 
-
