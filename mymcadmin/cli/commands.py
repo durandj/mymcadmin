@@ -30,7 +30,7 @@ def mymcadmin(ctx, conf):
 
 @mymcadmin.command()
 @click.pass_context
-def list(ctx):
+def list_servers(ctx):
 	"""
 	List all of the available servers
 	"""
