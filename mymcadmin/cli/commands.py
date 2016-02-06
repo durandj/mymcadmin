@@ -6,7 +6,6 @@ import os.path
 
 from . import params
 from .. import client, config, errors, manager, server, utils
-from .base import mymcadmin
 
 def start_server_daemon(server):
 	if os.path.exists(server.pid_file):
@@ -27,6 +26,20 @@ def start_server_daemon(server):
 		instance_manager.run()
 
 	admin_log.close()
+
+@click.group()
+@click.pass_context
+@click.option(
+	'--conf',
+	type    = click.Path(dir_okay = False, exists = True),
+	default = None,
+	help    = 'Path to a configuration file to use')
+def mymcadmin(ctx, conf):
+	"""
+	MyMCAdmin CLI application
+	"""
+
+	ctx.obj = {'config': config.Config(config_file = conf)}
 
 @mymcadmin.command()
 @click.pass_context

@@ -1,5 +1,4 @@
-from .base import mymcadmin
-from .commands import list, start, stop, restart
+from .commands import mymcadmin
 
 __all__ = [
 	'mymcadmin',

@@ -16,8 +16,11 @@ class Config(object):
 		)
 	)
 
-	def __init__(self):
-		with open(Config.CONFIG_FILE, 'r') as config:
+	def __init__(self, config_file = None):
+		if config_file is None:
+			config_file = Config.CONFIG_FILE
+
+		with open(config_file, 'r') as config:
 			self._config = json.load(config)
 
 	def __getattr__(self, name):
