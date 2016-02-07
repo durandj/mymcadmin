@@ -491,6 +491,7 @@ class TestServer(unittest.TestCase):
 	def test_list_versions_default(self, requests_get):
 		response_mock = unittest.mock.Mock()
 		response_mock.configure_mock(
+			ok = True,
 			**{
 				'json.return_value': copy.deepcopy(SAMPLE_VERSIONS),
 			}
@@ -520,6 +521,7 @@ class TestServer(unittest.TestCase):
 		for i in range(16):
 			requests_get.reset_mock()
 			response_mock.configure_mock(
+				ok = True,
 				**{
 					'json.return_value': copy.deepcopy(SAMPLE_VERSIONS),
 				}
@@ -579,6 +581,16 @@ class TestServer(unittest.TestCase):
 					remaining_types,
 					'Alphas were found in data',
 				)
+
+	@nose.tools.raises(errors.MyMCAdminError)
+	@unittest.mock.patch('requests.get')
+	def test_list_versions_network_error(self, requests_get):
+		response_mock = unittest.mock.Mock()
+		response_mock.configure_mock(ok = False)
+
+		requests_get.return_value = response_mock
+
+		versions = server.Server.list_versions()
 
 	def _set_server_settings(self, settings):
 		settings_file = os.path.join(self.server_path, 'mymcadmin.settings')
