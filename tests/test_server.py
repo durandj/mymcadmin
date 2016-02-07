@@ -1,9 +1,11 @@
+import asyncio
 import json
 import nose
 import os
 import os.path
 import tempfile
 import unittest
+import unittest.mock
 
 from mymcadmin import errors, server
 
@@ -348,12 +350,25 @@ class TestServer(unittest.TestCase):
 		)
 
 	@nose.tools.raises(errors.ServerSettingsError)
-	def test_get_socket_settings_missing_type(self):
+	def test_get_socket_settings_missing_port(self):
 		self._set_server_settings(
 			{
 				'socket': {
 					'type': 'tcp',
 					'host': 'example.com',
+				},
+			}
+		)
+
+		socket_type, host, port = self.server.socket_settings
+
+	@nose.tools.raises(errors.ServerSettingsError)
+	def test_get_socket_settings_invalid_type(self):
+		self._set_server_settings(
+			{
+				'socket': {
+					'type': 'bad',
+					'port': 9001,
 				},
 			}
 		)
@@ -372,6 +387,50 @@ class TestServer(unittest.TestCase):
 		)
 
 		self.server.socket_settings
+
+	@unittest.mock.patch('asyncio.create_subprocess_exec')
+	def test_start(self, create_subprocess_exec):
+		fake_jar = self._touch_file('minecraft_test.jar')
+
+		self.server.start()
+
+		create_subprocess_exec.assert_called_with(
+			'java',
+			'-jar',
+			fake_jar,
+			stdin  = asyncio.subprocess.PIPE,
+			stdout = asyncio.subprocess.PIPE,
+			stderr = asyncio.subprocess.PIPE,
+		)
+
+	@unittest.mock.patch('mymcadmin.server.rpc.RpcClient')
+	def test_stop(self, rpc_client):
+		rpc_client.return_value = rpc_client
+		rpc_client.__enter__.return_value = rpc_client
+
+		self._set_server_settings(
+			{
+				'socket': {
+					'type': 'tcp',
+					'port': 9001,
+				}
+			}
+		)
+
+		self.server.stop()
+
+		rpc_client.assert_called_with('localhost', 9001)
+		self.assertTrue(rpc_client.server_stop.called)
+
+	def test_list_all(self):
+		mock_config = unittest.mock.Mock(instance_path = self.root_path)
+
+		servers = server.Server.list_all(mock_config)
+		self.assertEqual(
+			[self.server_path],
+			servers,
+			'Server list did not match',
+		)
 
 	def _set_server_settings(self, settings):
 		settings_file = os.path.join(self.server_path, 'mymcadmin.settings')
