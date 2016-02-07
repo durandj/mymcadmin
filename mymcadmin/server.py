@@ -2,9 +2,10 @@ import asyncio
 import glob
 import json
 import logging
-import re
 import os
 import os.path
+import re
+import shlex
 
 from . import errors, rpc
 
@@ -16,7 +17,7 @@ class Server(object):
 	LOG_FILE              = 'mymcadmin.log'
 	PID_FILE              = 'server.pid'
 	PROPERTIES_FILE       = 'server.properties'
-	PROPERTIES_REGEX      = re.compile(r'^([a-zA-Z0-9\-]+)=([^#]+)( *#.*)?$')
+	PROPERTIES_REGEX      = re.compile(r'^([a-zA-Z0-9\-]+)=([^#]*)( *#.*)?$')
 	PROPERTIES_BOOL_REGEX = re.compile(r'^(true|false)$', re.IGNORECASE)
 	PROPERTIES_INT_REGEX  = re.compile(r'^([0-9]+)$')
 	SETTINGS_FILE         = 'mymcadmin.settings'
@@ -99,10 +100,16 @@ class Server(object):
 		Get the command line arguments for starting the server
 		"""
 
-		command_args  = [self.java]
-		command_args += self.settings.get('jvm_args', [])
-		command_args += ['-jar', self.jar]
-		command_args += self.settings.get('args', [])
+		command_args = [self.java]
+		command_args += [
+			shlex.quote(arg)
+			for arg in self.settings.get('jvm_args', [])
+		]
+		command_args += ['-jar', shlex.quote(self.jar)]
+		command_args += [
+			shlex.quote(arg)
+			for arg in self.settings.get('args', [])
+		]
 
 		return command_args
 
@@ -179,7 +186,15 @@ class Server(object):
 			raise errors.ServerSettingsError('Missing socket port')
 
 		host = socket_props.get('host', 'localhost')
-		port = int(socket_props['port'])
+
+		try:
+			port = int(socket_props['port'])
+		except ValueError as e:
+			raise errors.ServerSettingsError(
+				'Port was not an integer: {}'.format(
+					socket_props['port']
+				)
+			)
 
 		return (socket_type, host, port)
 
