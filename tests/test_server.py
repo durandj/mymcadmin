@@ -200,6 +200,16 @@ class TestServer(unittest.TestCase):
 			'Program args were not set in command args',
 		)
 
+	def test_get_command_args_unsafe(self):
+		self._set_server_settings({'args': ['; rm -rf /;']})
+		fake_jar = self._touch_file('minecraft_test.jar')
+
+		self.assertEqual(
+			['java', '-jar', fake_jar, '\'; rm -rf /;\''],
+			self.server.command_args,
+			'Allowed unsafe bash commands to run',
+		)
+
 	@nose.tools.raises(AttributeError)
 	def test_set_command_args(self):
 		self.server.command_args = []

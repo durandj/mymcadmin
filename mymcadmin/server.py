@@ -2,9 +2,10 @@ import asyncio
 import glob
 import json
 import logging
-import re
 import os
 import os.path
+import re
+import shlex
 
 from . import errors, rpc
 
@@ -99,10 +100,16 @@ class Server(object):
 		Get the command line arguments for starting the server
 		"""
 
-		command_args  = [self.java]
-		command_args += self.settings.get('jvm_args', [])
-		command_args += ['-jar', self.jar]
-		command_args += self.settings.get('args', [])
+		command_args = [self.java]
+		command_args += [
+			shlex.quote(arg)
+			for arg in self.settings.get('jvm_args', [])
+		]
+		command_args += ['-jar', shlex.quote(self.jar)]
+		command_args += [
+			shlex.quote(arg)
+			for arg in self.settings.get('args', [])
+		]
 
 		return command_args
 
