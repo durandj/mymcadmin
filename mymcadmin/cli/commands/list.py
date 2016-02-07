@@ -1,6 +1,5 @@
 import click
 import os.path
-import requests
 
 from ..base import mymcadmin, error, info
 from ... import server
@@ -39,38 +38,23 @@ def list_versions(ctx, snapshots, releases, betas, alphas):
 	List possible server download versions
 	"""
 
-	resp = requests.get(
-		'https://launchermeta.mojang.com/mc/game/version_manifest.json'
+	versions = server.Server.list_versions(
+		snapshots = snapshots,
+		releases  = releases,
+		betas     = betas,
+		alphas    = alphas
 	)
 
-	if not resp.ok:
-		error('Unable to retrieve version list')
-		return
-
-	versions     = resp.json()
 	latest       = versions['latest']
 	all_versions = versions['versions']
 
 	info('Vanilla', bold = True)
 
 	info('Latest:')
-	if snapshots:
-		click.echo('Snapshot: {}'.format(latest['snapshot']))
-	if releases:
-		click.echo('Release:  {}'.format(latest['release']))
+	click.echo('Snapshot: {}'.format(latest.get('snapshot', '')))
+	click.echo('Release:  {}'.format(latest.get('release', '')))
 
 	info('All:')
 	for version in all_versions:
-		version_type = version.get('type')
-
-		if version_type == 'snapshot' and not snapshots:
-			continue
-		elif version_type == 'release' and not releases:
-			continue
-		elif version_type == 'old_beta' and not betas:
-			continue
-		elif version_type == 'old_alpha' and not alphas:
-			continue
-
 		click.echo(version['id'])
 

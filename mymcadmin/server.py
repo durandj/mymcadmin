@@ -5,6 +5,7 @@ import logging
 import os
 import os.path
 import re
+import requests
 import shlex
 
 from . import errors, rpc
@@ -21,6 +22,7 @@ class Server(object):
 	PROPERTIES_BOOL_REGEX = re.compile(r'^(true|false)$', re.IGNORECASE)
 	PROPERTIES_INT_REGEX  = re.compile(r'^([0-9]+)$')
 	SETTINGS_FILE         = 'mymcadmin.settings'
+	VERSION_URL           = 'https://launchermeta.mojang.com/mc/game/version_manifest.json'
 
 	def __init__(self, path):
 		"""
@@ -243,6 +245,51 @@ class Server(object):
 			os.path.join(path, f) for f in os.listdir(path)
 			if os.path.isdir(os.path.join(path, f))
 		]
+
+	@classmethod
+	def list_versions(
+			cls,
+			snapshots = True,
+			releases  = True,
+			betas     = True,
+			alphas    = True):
+		"""
+		List all available server versions
+		"""
+
+		def type_filter(version_filter, versions):
+			return [
+				v for v in versions
+				if v.get('type') != version_filter
+			]
+
+		resp = requests.get(cls.VERSION_URL)
+
+		if not resp.ok:
+			raise errors.MyMCAdminError('Unable to retrieve version list')
+
+		versions     = resp.json()
+		latest       = versions['latest']
+		all_versions = versions['versions']
+
+		if not snapshots:
+			del latest['snapshot']
+			all_versions = type_filter('snapshot', all_versions)
+
+		if not releases:
+			del latest['release']
+			all_versions = type_filter('release', all_versions)
+
+		if not betas:
+			all_versions = type_filter('old_beta', all_versions)
+
+		if not alphas:
+			all_versions = type_filter('old_alpha', all_versions)
+
+		return {
+			'latest':   latest,
+			'versions': all_versions,
+		}
 
 	@classmethod
 	def _convert_property_value(cls, value):

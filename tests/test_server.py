@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import json
 import nose
 import os
@@ -48,6 +49,43 @@ use-native-transport=true
 motd=A Test Minecraft Server
 enable-rcon=false
 """
+
+SAMPLE_VERSIONS = {
+	'latest': {
+		'snapshot': 'my_snapshot',
+		'release':  'my_release',
+	},
+	'versions': [
+		{
+			'id':          'my_snapshot',
+			'releaseTime': '2016-01-04T00:00:00+00:00',
+			'time':        '2016-01-04T00:10:00+00:00',
+			'type':        'snapshot',
+			'url':         'http://example.com/mc/my_snapshot.json',
+		},
+		{
+			'id':          'my_release',
+			'releaseTime': '2016-01-03T00:00:00+00:00',
+			'time':        '2016-01-03T00:20:00+00:00',
+			'type':        'release',
+			'url':         'http://example.com/mc/my_release.json',
+		},
+		{
+			'id':          'my_beta',
+			'releaseTime': '2016-01-02T00:00:00+00:00',
+			'time':        '2016-01-02T00:30:00+00:00',
+			'type':        'old_beta',
+			'url':         'http://example.com/mc/my_beta.json',
+		},
+		{
+			'id':          'my_alpha',
+			'releaseTime': '2016-01-01T00:00:00+00:00',
+			'time':        '2016-01-01T00:40:00+00:00',
+			'type':        'old_alpha',
+			'url':         'http://example.com/mc/my_alpha.json',
+		}
+	],
+}
 
 class TestServer(unittest.TestCase):
 	def setUp(self):
@@ -448,6 +486,99 @@ class TestServer(unittest.TestCase):
 			servers,
 			'Server list did not match',
 		)
+
+	@unittest.mock.patch('requests.get')
+	def test_list_versions_default(self, requests_get):
+		response_mock = unittest.mock.Mock()
+		response_mock.configure_mock(
+			**{
+				'json.return_value': copy.deepcopy(SAMPLE_VERSIONS),
+			}
+		)
+
+		requests_get.return_value = response_mock
+
+		versions = server.Server.list_versions()
+
+		self.assertTrue(
+			requests_get.called,
+			'No HTTP request initiated',
+		)
+
+		self.assertDictEqual(
+			SAMPLE_VERSIONS,
+			versions,
+			'Not all data was returned',
+		)
+
+	@unittest.mock.patch('requests.get')
+	def test_list_versions_filter(self, requests_get):
+		response_mock = unittest.mock.Mock()
+		requests_get.return_value = response_mock
+
+		# Iterate over every possible filter combination
+		for i in range(16):
+			requests_get.reset_mock()
+			response_mock.configure_mock(
+				**{
+					'json.return_value': copy.deepcopy(SAMPLE_VERSIONS),
+				}
+			)
+
+			snapshots = i & 0b1000 > 0
+			releases  = i & 0b0100 > 0
+			betas     = i & 0b0010 > 0
+			alphas    = i & 0b0001 > 0
+
+			versions = self.server.list_versions(
+				snapshots = snapshots,
+				releases  = releases,
+				betas     = betas,
+				alphas    = alphas,
+			)
+
+			remaining_types = [
+				v['type']
+				for v in versions['versions']
+			]
+
+			if not snapshots:
+				self.assertTrue(
+					'latest' not in versions['latest'],
+					'Snapshot not filtered from latest',
+				)
+
+				self.assertNotIn(
+					'snapshot',
+					remaining_types,
+					'Snapshots were found in data',
+				)
+
+			if not releases:
+				self.assertTrue(
+					'release' not in versions['latest'],
+					'Release not filtered from latest',
+				)
+
+				self.assertNotIn(
+					'release',
+					remaining_types,
+					'Releases were found in data',
+				)
+
+			if not betas:
+				self.assertNotIn(
+					'old_beta',
+					remaining_types,
+					'Betas were found in data',
+				)
+
+			if not alphas:
+				self.assertNotIn(
+					'old_alpha',
+					remaining_types,
+					'Alphas were found in data',
+				)
 
 	def _set_server_settings(self, settings):
 		settings_file = os.path.join(self.server_path, 'mymcadmin.settings')
