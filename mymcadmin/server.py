@@ -179,7 +179,15 @@ class Server(object):
 			raise errors.ServerSettingsError('Missing socket port')
 
 		host = socket_props.get('host', 'localhost')
-		port = int(socket_props['port'])
+
+		try:
+			port = int(socket_props['port'])
+		except ValueError as e:
+			raise errors.ServerSettingsError(
+				'Port was not an integer: {}'.format(
+					socket_props['port']
+				)
+			)
 
 		return (socket_type, host, port)
 

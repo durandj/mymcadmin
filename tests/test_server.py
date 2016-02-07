@@ -257,9 +257,121 @@ class TestServer(unittest.TestCase):
 			'Server properties did not match',
 		)
 
+	@nose.tools.raises(errors.ServerError)
+	def test_get_properties_missing(self):
+		os.remove(os.path.join(self.server_path, 'server.properties'))
+
+		self.server.properties
+
 	@nose.tools.raises(AttributeError)
 	def test_set_properties(self):
 		self.server.properties = 'Bad!'
+
+	def test_get_settings(self):
+		settings = {
+			'java': '/usr/local/bin/java',
+			'args': ['-test'],
+		}
+
+		self._set_server_settings(settings)
+
+		self.assertEqual(
+			settings,
+			self.server.settings,
+			'Server settings did not match',
+		)
+
+	@nose.tools.raises(AttributeError)
+	def test_set_settings(self):
+		self.server.settings = 'Bad!'
+
+	def test_get_socket_settings(self):
+		self._set_server_settings(
+			{
+				'socket': {
+					'type': 'tcp',
+					'host': 'example.com',
+					'port': 9001,
+				},
+			}
+		)
+
+		socket_type, host, port = self.server.socket_settings
+
+		self.assertEqual(
+			'tcp',
+			socket_type,
+			'Socket type did not match',
+		)
+
+		self.assertEqual(
+			'example.com',
+			host,
+			'The host did not match',
+		)
+
+		self.assertEqual(
+			9001,
+			port,
+			'The port did not match',
+		)
+
+	@nose.tools.raises(errors.ServerSettingsError)
+	def test_get_socket_settings_missing_type(self):
+		self._set_server_settings(
+			{
+				'socket': {
+					'host': 'example.com',
+					'port': 9001,
+				},
+			}
+		)
+
+		socket_type, host, port = self.server.socket_settings
+
+	def test_get_socket_settings_missing_host(self):
+		self._set_server_settings(
+			{
+				'socket': {
+					'type': 'tcp',
+					'port': 9001,
+				},
+			}
+		)
+
+		socket_type, host, port = self.server.socket_settings
+
+		self.assertEqual(
+			'localhost',
+			host,
+			'The default host did not match',
+		)
+
+	@nose.tools.raises(errors.ServerSettingsError)
+	def test_get_socket_settings_missing_type(self):
+		self._set_server_settings(
+			{
+				'socket': {
+					'type': 'tcp',
+					'host': 'example.com',
+				},
+			}
+		)
+
+		socket_type, host, port = self.server.socket_settings
+
+	@nose.tools.raises(errors.ServerSettingsError)
+	def test_get_socket_settings_invalid_port(self):
+		self._set_server_settings(
+			{
+				'socket': {
+					'type': 'tcp',
+					'port': 'test',
+				}
+			}
+		)
+
+		self.server.socket_settings
 
 	def _set_server_settings(self, settings):
 		settings_file = os.path.join(self.server_path, 'mymcadmin.settings')
