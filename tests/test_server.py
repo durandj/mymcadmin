@@ -293,6 +293,13 @@ class TestServer(unittest.TestCase):
 			'Server settings did not match',
 		)
 
+	@nose.tools.raises(errors.ServerSettingsError)
+	def test_get_settings_missing(self):
+		settings_file = os.path.join(self.server_path, 'mymcadmin.settings')
+		os.remove(settings_file)
+
+		self.server.settings
+
 	@nose.tools.raises(AttributeError)
 	def test_set_settings(self):
 		self.server.settings = 'Bad!'
