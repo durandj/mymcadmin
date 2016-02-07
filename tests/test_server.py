@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import io
 import json
 import nose
 import os
@@ -591,6 +592,165 @@ class TestServer(unittest.TestCase):
 		requests_get.return_value = response_mock
 
 		versions = server.Server.list_versions()
+
+	@unittest.mock.patch('requests.get')
+	@unittest.mock.patch('mymcadmin.server.Server.list_versions')
+	def test_download_server_jar_default(self, list_versions, requests_get):
+		list_versions.return_value = {
+			'versions': [
+				{
+					'id': 'test',
+					'downloads': {
+						'server': {
+							'url': 'http://example.com/mc/test/server.jar',
+							'sha1': '943a702d06f34599aee1f8da8ef9f7296031d699',
+						},
+					},
+				},
+			]
+		}
+
+		mock_response = unittest.mock.Mock()
+		mock_response.configure_mock(
+			ok = True,
+			**{
+				'iter_content.return_value': io.BytesIO(
+					'Hello, world!'.encode(),
+				),
+			}
+		)
+		requests_get.return_value = mock_response
+
+		cwd = os.getcwd()
+		os.chdir(self.root_path)
+		jar_path = server.Server.download_server_jar('test')
+		os.chdir(cwd)
+
+		requests_get.assert_called_with(
+			'http://example.com/mc/test/server.jar',
+			stream = True,
+		)
+
+		self.assertEqual(
+			os.path.join(self.root_path, 'minecraft_server_test.jar'),
+			jar_path,
+			'Jar path did not match',
+		)
+
+		self.assertTrue(
+			os.path.exists(jar_path),
+			'Jar was not written to disk',
+		)
+
+	@unittest.mock.patch('requests.get')
+	@unittest.mock.patch('mymcadmin.server.Server.list_versions')
+	def test_download_server_jar(self, list_versions, requests_get):
+		list_versions.return_value = {
+			'versions': [
+				{
+					'id': 'test',
+					'downloads': {
+						'server': {
+							'url': 'http://example.com/mc/test/server.jar',
+							'sha1': '943a702d06f34599aee1f8da8ef9f7296031d699',
+						},
+					},
+				},
+			]
+		}
+
+		mock_response = unittest.mock.Mock()
+		mock_response.configure_mock(
+			ok = True,
+			**{
+				'iter_content.return_value': io.BytesIO(
+					'Hello, world!'.encode(),
+				),
+			}
+		)
+		requests_get.return_value = mock_response
+
+		jar_path = server.Server.download_server_jar(
+			'test',
+			path = self.root_path,
+		)
+
+		requests_get.assert_called_with(
+			'http://example.com/mc/test/server.jar',
+			stream = True,
+		)
+
+		self.assertEqual(
+			os.path.join(self.root_path, 'minecraft_server_test.jar'),
+			jar_path,
+			'Jar path did not match',
+		)
+
+		self.assertTrue(
+			os.path.exists(jar_path),
+			'Jar was not written to disk',
+		)
+
+	@nose.tools.raises(errors.MyMCAdminError)
+	@unittest.mock.patch('requests.get')
+	@unittest.mock.patch('mymcadmin.server.Server.list_versions')
+	def test_download_server_jar_bad_version(self, list_versions, requests_get):
+		list_versions.return_value = {'versions': []}
+
+		mock_response = unittest.mock.Mock()
+		mock_response.configure_mock(ok = False)
+		requests_get.return_value = mock_response
+
+		jar_path = server.Server.download_server_jar('test')
+
+	@nose.tools.raises(errors.MyMCAdminError)
+	@unittest.mock.patch('requests.get')
+	@unittest.mock.patch('mymcadmin.server.Server.list_versions')
+	def test_download_server_jar(self, list_versions, requests_get):
+		list_versions.return_value = {
+			'versions': [
+				{
+					'id': 'test',
+					'downloads': {},
+				},
+			]
+		}
+
+		jar_path = server.Server.download_server_jar('test')
+
+	@nose.tools.raises(errors.MyMCAdminError)
+	@unittest.mock.patch('requests.get')
+	@unittest.mock.patch('mymcadmin.server.Server.list_versions')
+	def test_download_server_jar(self, list_versions, requests_get):
+		list_versions.return_value = {
+			'versions': [
+				{
+					'id': 'test',
+					'downloads': {
+						'server': {
+							'url': 'http://example.com/mc/test/server.jar',
+							'sha1': 'deadbeef',
+						},
+					},
+				},
+			]
+		}
+
+		mock_response = unittest.mock.Mock()
+		mock_response.configure_mock(
+			ok = True,
+			**{
+				'iter_content.return_value': io.BytesIO(
+					'Hello, world!'.encode(),
+				),
+			}
+		)
+		requests_get.return_value = mock_response
+
+		jar_path = server.Server.download_server_jar(
+			'test',
+			path = self.root_path,
+		)
 
 	def _set_server_settings(self, settings):
 		settings_file = os.path.join(self.server_path, 'mymcadmin.settings')

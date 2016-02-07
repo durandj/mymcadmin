@@ -1,5 +1,6 @@
 import asyncio
 import glob
+import hashlib
 import json
 import logging
 import os
@@ -290,6 +291,60 @@ class Server(object):
 			'latest':   latest,
 			'versions': all_versions,
 		}
+
+	@classmethod
+	def download_server_jar(cls, version_id, path = None):
+		"""
+		Download a server Jar based on its version ID
+		"""
+
+		if path is None:
+			path = os.getcwd()
+
+		jar_path = os.path.join(
+			path,
+			'minecraft_server_{}.jar'.format(version_id),
+		)
+
+		versions = cls.list_versions()['versions']
+		versions = [v for v in versions if v['id'] == version_id]
+
+		if len(versions) == 0:
+			raise errors.MyMCAdminError('Could not find version {}', version_id)
+
+		version   = versions[0]
+		downloads = version['downloads']
+
+		if 'server' not in downloads:
+			raise errors.MyMCAdminError('Version does not support multiplayer')
+
+		dl_info = downloads['server']
+		dl_url  = dl_info['url']
+		dl_sha1 = dl_info['sha1']
+
+		jar_resp = requests.get(dl_url, stream = True)
+		if not jar_resp.ok:
+			raise errors.MyMCAdminError('Unable to download server jar')
+
+		sha1 = hashlib.sha1()
+		with open(jar_path, 'wb') as jar_file:
+			for chunk in jar_resp.iter_content(chunk_size = 1024):
+				# Ignore keep-alive chunks
+				if not chunk:
+					continue
+
+				jar_file.write(chunk)
+				sha1.update(chunk)
+
+		sha1 = sha1.hexdigest()
+		if sha1 != dl_sha1:
+			raise errors.MyMCAdminError(
+				'Downloaded server jar\'s sha1 did not match the expected value. Was {}, should be {}.',
+				sha1,
+				dl_sha1,
+			)
+
+		return jar_path
 
 	@classmethod
 	def _convert_property_value(cls, value):
