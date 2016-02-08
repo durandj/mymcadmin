@@ -1,3 +1,4 @@
+from .create import create_server
 from .list import list_servers, list_versions
 from .restart import restart, restart_all
 from .start import start, start_all
@@ -5,6 +6,7 @@ from .stop import stop, stop_all
 from .terminate import terminate, terminate_all
 
 __all__ = [
+	'create_server',
 	'list_servers',
 	'list_versions',
 	'restart',
