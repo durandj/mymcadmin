@@ -4,14 +4,18 @@ from . import errors
 
 class JsonRpcResponse(object):
 	JSONRPC_VERSION = '2.0'
+	POSSIBLE_FIELDS = set(['jsonrpc', 'id', 'result', 'error'])
 
 	def __init__(self, result = None, error = None, response_id = None):
 		self._result      = result
 		self._error       = error
 		self._response_id = response_id
 
-		if not result and not error:
+		if result is None and error is None:
 			raise ValueError('Either result or error must be set')
+
+		if result is not None and error is not None:
+			raise ValueError('Can\'t set result and error')
 
 	@property
 	def result(self):
@@ -30,7 +34,7 @@ class JsonRpcResponse(object):
 
 	@error.setter
 	def error(self, value):
-		if self.value and value is not None:
+		if self.result and value is not None:
 			raise ValueError('Can\'t set result and error')
 
 		self._error = value
@@ -65,13 +69,33 @@ class JsonRpcResponse(object):
 		return json.dumps(self.data)
 
 	@classmethod
-	def from_json(self, json_str):
+	def from_json(cls, json_str):
 		data = json.loads(json_str)
 
 		if not isinstance(data, dict):
-			raise ValueError('data should be a dict')
+			raise ValueError('Data should be a dict')
 
-		return cls(**data)
+		if 'jsonrpc' not in data:
+			raise ValueError('Missing JSON RPC version')
+
+		if data['jsonrpc'] != '2.0':
+			raise ValueError(
+				'Unsupported JSON RPC version {}'.format(data['jsonrpc'])
+			)
+
+		fields = set(data.keys())
+		if fields.difference(cls.POSSIBLE_FIELDS):
+			raise ValueError(
+				'Extra field: {}'.format(
+					fields.difference(cls.POSSIBLE_FIELDS)
+				)
+			)
+
+		return cls(
+			result      = data.get('result'),
+			error       = data.get('error'),
+			response_id = data.get('id'),
+		)
 
 class JsonRpcBatchResponse(object):
 	def __init__(self, responses):
