@@ -260,6 +260,110 @@ class TestJsonRpcRequest(unittest.TestCase):
 
 			count += 1
 
+class TestJsonRpcBatchRequest(unittest.TestCase):
+	def test_get_json(self):
+		original_req = [
+			{
+				'jsonrpc': '2.0',
+				'method':  'test',
+				'id':      90,
+				'params':  [1, 2, 3, 4],
+			},
+			{
+				'jsonrpc': '2.0',
+				'method':  'boom',
+			}
+		]
+
+		req = request.JsonRpcBatchRequest(
+			[
+				request.JsonRpcRequest.from_json(
+					json.dumps(r)
+				)
+				for r in original_req
+			]
+		)
+
+		self.assertEqual(
+			json.dumps(original_req),
+			req.json,
+			'JSON string did not match',
+		)
+
+	def test_iterator(self):
+		original_req = [
+			{
+				'jsonrpc': '2.0',
+				'method':  'test',
+				'id':      90,
+				'params':  [1, 2, 3, 4],
+			},
+			{
+				'jsonrpc': '2.0',
+				'method':  'boom',
+			}
+		]
+
+		original_req = [
+			request.JsonRpcRequest.from_json(
+				json.dumps(r)
+			)
+			for r in original_req
+		]
+
+		req = request.JsonRpcBatchRequest(original_req)
+
+		count = 0
+		for r in req:
+			self.assertEqual(
+				original_req[count].json,
+				r.json,
+				'JSON data did not match',
+			)
+
+			count += 1
+
+	def test_from_json(self):
+		original_req = [
+			{
+				'jsonrpc': '2.0',
+				'method':  'test',
+				'id':      90,
+				'params':  [1, 2, 3, 4],
+			},
+			{
+				'jsonrpc': '2.0',
+				'method':  'boom',
+			}
+		]
+
+		json_str = json.dumps(original_req)
+
+		original_req = [
+			request.JsonRpcRequest.from_json(
+				json.dumps(r)
+			)
+			for r in original_req
+		]
+
+		req = request.JsonRpcBatchRequest.from_json(json_str)
+
+		self.assertIsInstance(
+			req,
+			request.JsonRpcBatchRequest,
+			'Request type did not match',
+		)
+
+		count = 0
+		for r in req:
+			self.assertEqual(
+				original_req[count].json,
+				r.json,
+				'JSON data did not match',
+			)
+
+			count += 1
+
 if __name__ == '__main__':
 	unittest.main()
 

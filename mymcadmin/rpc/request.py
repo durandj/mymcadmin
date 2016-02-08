@@ -130,14 +130,14 @@ class JsonRpcBatchRequest(object):
 	def __init__(self, requests):
 		self.requests = requests
 
-	@classmethod
-	def from_json(cls, json_str):
-		return JsonRpcRequest.from_json(json_str)
-
 	@property
 	def json(self):
 		return json.dumps([r.data for r in self.requests])
 
 	def __iter__(self):
 		return iter(self.requests)
+
+	@classmethod
+	def from_json(cls, json_str):
+		return JsonRpcRequest.from_json(json_str)
 
