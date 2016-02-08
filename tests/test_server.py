@@ -444,6 +444,31 @@ class TestServer(unittest.TestCase):
 
 		self.server.socket_settings
 
+	@unittest.mock.patch('mymcadmin.server.Server.list_versions')
+	def test_create_default(self, list_versions):
+		list_versions.return_value = {
+			'latest': {
+				'snapshot': 'my_snapshot',
+				'release':  'my_release',
+			},
+			'versions': {
+			},
+		}
+
+		self.fail()
+
+	@unittest.mock.patch('mymcadmin.server.Server.list_versions')
+	def test_create(self, list_versions):
+		self.fail()
+
+	@unittest.mock.patch('mymcadmin.server.Server.list_versions')
+	def test_create_invalid_name(self, list_versions):
+		self.fail()
+
+	@unittest.mock.patch('mymcadmin.server.Server.list_versions')
+	def test_create_invalid_vesrion(self, list_versions):
+		self.fail()
+
 	@unittest.mock.patch('asyncio.create_subprocess_exec')
 	def test_start(self, create_subprocess_exec):
 		fake_jar = self._touch_file('minecraft_test.jar')

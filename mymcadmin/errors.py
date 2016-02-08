@@ -18,6 +18,11 @@ class ServerError(Exception):
 	An error with the Minecraft server
 	"""
 
+class ServerCreationError(ServerError):
+	"""
+	An error with creating a new Minecraft server
+	"""
+
 class ServerSettingsError(ServerError):
 	"""
 	An error in the MyMCAdmin settings for the server

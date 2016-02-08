@@ -201,6 +201,31 @@ class Server(object):
 
 		return (socket_type, host, port)
 
+	def create(self, name, version = None):
+		"""
+		Create the Minecraft server
+		"""
+
+		versions = Server.list_versions()
+		if version is None:
+			version = versions['latest']['release']
+
+		versions = [
+			v for v in versions
+			if v['id'] == version
+		]
+
+		if len(versions) == 0:
+			raise errors.ServerCreationError('Invalid Minecraft version')
+
+		version = versions[0]
+
+		version_info = requests.get(version['url'])
+		if not version_info.ok:
+			raise errors.ServerCreationError('Unable to retrieve version info')
+
+		version_info = version_info.json()
+
 	def start(self):
 		"""
 		Start the Minecraft server
