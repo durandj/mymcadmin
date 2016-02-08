@@ -91,10 +91,10 @@ class JsonRpcRequest(object):
 		if not all(isinstance(d, dict) for d in data):
 			raise errors.JsonRpcInvalidRequestError('Expected Json object')
 
+		result = []
 		for req in data:
 			req_keys = set(req.keys())
 
-			result = []
 			if not cls.REQUIRED_FIELDS.issubset(req_keys):
 				raise errors.JsonRpcInvalidRequestError(
 					'Missing required fields: {}',
