@@ -285,8 +285,8 @@ class TestJsonRpcBatchRequest(unittest.TestCase):
 		)
 
 		self.assertEqual(
-			json.dumps(original_req),
-			req.json,
+			original_req,
+			json.loads(req.json),
 			'JSON string did not match',
 		)
 
