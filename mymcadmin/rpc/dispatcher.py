@@ -8,7 +8,7 @@ class Dispatcher(collections.MutableMapping):
 		self.method_handlers = {}
 
 		if methods is not None:
-			self
+			self.construct_method_map(methods)
 
 	def add_class(self, cls):
 		prefix = cls.__name__.lower() + '.'
