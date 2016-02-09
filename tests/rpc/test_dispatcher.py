@@ -191,15 +191,6 @@ class TestDispatcher(unittest.TestCase):
 			'Not all methods were iterated over',
 		)
 
-	def test_repr(self):
-		dispatcher = Dispatcher(methods = METHOD_MAP)
-
-		self.assertEqual(
-			repr(METHOD_MAP),
-			repr(dispatcher),
-			'Unable to get string representation',
-		)
-
 	def test_construct_method_map_dict(self):
 		dispatcher = Dispatcher()
 		dispatcher.construct_method_map(METHOD_MAP)

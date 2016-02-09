@@ -49,9 +49,6 @@ class Dispatcher(collections.MutableMapping):
 	def __iter__(self):
 		return iter(self.method_handlers)
 
-	def __repr__(self):
-		return repr(self.method_handlers)
-
 	def construct_method_map(self, method_map, prefix = ''):
 		if not isinstance(method_map, dict):
 			method_map = {
