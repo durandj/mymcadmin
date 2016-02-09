@@ -29,7 +29,7 @@ class JsonRpcResponseManager(object):
 		if not responses:
 			return
 
-		if isinstance(rpc_request, request.JsonRpcRequest):
+		if isinstance(rpc_request, request.JsonRpcBatchRequest):
 			return response.JsonRpcBatchResponse(responses)
 		else:
 			return responses[0]
