@@ -3,15 +3,15 @@ import unittest
 
 from mymcadmin.rpc import Dispatcher
 
-async def test_func1():
+async def func1():
 	return
 
-async def test_func2():
+async def func2():
 	return
 
 METHOD_MAP = {
-	'test1': test_func1,
-	'test2': test_func2,
+	'test1': func1,
+	'test2': func2,
 }
 
 class MethodMapObject(object):
@@ -115,20 +115,20 @@ class TestDispatcher(unittest.TestCase):
 
 	def test_add_method_default(self):
 		dispatcher = Dispatcher()
-		dispatcher.add_method(test_func1)
+		dispatcher.add_method(func1)
 
 		self.assertDictEqual(
-			{'test_func1': test_func1},
+			{'func1': func1},
 			dispatcher.method_handlers,
 			'Method map was not updated properly',
 		)
 
 	def test_add_method(self):
 		dispatcher = Dispatcher()
-		dispatcher.add_method(test_func1, name = 'test')
+		dispatcher.add_method(func1, name = 'test')
 
 		self.assertDictEqual(
-			{'test': test_func1},
+			{'test': func1},
 			dispatcher.method_handlers,
 			'Method map was not updated properly',
 		)
@@ -136,30 +136,33 @@ class TestDispatcher(unittest.TestCase):
 	def test_get(self):
 		dispatcher = Dispatcher(methods = METHOD_MAP)
 
-		self.assertTrue(
-			test_func1 == dispatcher['test1'],
+		self.assertEqual(
+			func1,
+			dispatcher['test1'],
 			'Unable to retrieve the correct handler',
 		)
 
-		self.assertTrue(
-			test_func2 == dispatcher['test2'],
+		self.assertEqual(
+			func2,
+			dispatcher['test2'],
 			'Unable to retrieve the correct handler',
 		)
 
 	def test_set(self):
 		dispatcher = Dispatcher()
 
-		dispatcher['func1'] = test_func1
+		dispatcher['func1'] = func1
 
-		self.assertTrue(
-			test_func1 == dispatcher['func1'],
+		self.assertEqual(
+			func1,
+			dispatcher['func1'],
 			'Unable to set a handler',
 		)
 
 	@nose.tools.raises(KeyError)
 	def test_delete(self):
 		dispatcher = Dispatcher()
-		dispatcher['func1'] = test_func1
+		dispatcher['func1'] = func1
 
 		del dispatcher['func1']
 
