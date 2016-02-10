@@ -1,10 +1,11 @@
 import asyncio
-import functools
 import json
 import logging
 import nose
 import unittest
 import unittest.mock
+
+from ... import utils
 
 from mymcadmin.rpc import (
 	Dispatcher,
@@ -19,20 +20,8 @@ from mymcadmin.rpc.response import (
 	JsonRpcServerErrorResponse,
 )
 
-def asynctest(f):
-	if not asyncio.iscoroutinefunction(f):
-		raise RuntimeError('Test function is not a coroutine')
-
-	@functools.wraps(f)
-	def wrapper(*args, **kwargs):
-		event_loop = asyncio.new_event_loop()
-		event_loop.run_until_complete(f(*args, **kwargs))
-		event_loop.close()
-
-	return wrapper
-
 class TestJsonRpcResponseManager(unittest.TestCase):
-	@asynctest
+	@utils.run_async
 	async def test_handle_single_string(self):
 		req = json.dumps(
 			{
@@ -45,7 +34,7 @@ class TestJsonRpcResponseManager(unittest.TestCase):
 
 		await self._run_single_req(req, 10)
 
-	@asynctest
+	@utils.run_async
 	async def test_handle_single_bytes(self):
 		req = json.dumps(
 			{
@@ -58,7 +47,7 @@ class TestJsonRpcResponseManager(unittest.TestCase):
 
 		await self._run_single_req(req, 10)
 
-	@asynctest
+	@utils.run_async
 	async def test_handle_batch(self):
 		req = json.dumps(
 			[
@@ -112,7 +101,7 @@ class TestJsonRpcResponseManager(unittest.TestCase):
 
 		mock_notify_handler.assert_called_with()
 
-	@asynctest
+	@utils.run_async
 	async def test_handle_notifications(self):
 		req = json.dumps(
 			{
@@ -135,7 +124,7 @@ class TestJsonRpcResponseManager(unittest.TestCase):
 			'Notifications did not return an empty response',
 		)
 
-	@asynctest
+	@utils.run_async
 	async def test_handle_invalid_json(self):
 		dispatcher = Dispatcher()
 
@@ -149,7 +138,7 @@ class TestJsonRpcResponseManager(unittest.TestCase):
 			'Error response was not the correct type',
 		)
 
-	@asynctest
+	@utils.run_async
 	async def test_handle_missing_method(self):
 		req = json.dumps(
 			{
@@ -169,7 +158,7 @@ class TestJsonRpcResponseManager(unittest.TestCase):
 			'Error response was not the correct type',
 		)
 
-	@asynctest
+	@utils.run_async
 	async def test_handle_server_error(self):
 		req = json.dumps(
 			{

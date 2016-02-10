@@ -5,11 +5,14 @@ import logging
 from . import errors, rpc
 
 class Manager(object):
-	def __init__(self, server):
+	def __init__(self, server, event_loop = None):
 		logging.info('Setting up event loop')
 
+		if event_loop is None:
+			event_loop = asyncio.get_event_loop()
+
 		self.server         = server
-		self.event_loop     = asyncio.get_event_loop()
+		self.event_loop     = event_loop
 		self.proc           = None
 		self.network_task   = None
 		self.rpc_dispatcher = rpc.Dispatcher()
