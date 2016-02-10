@@ -18,7 +18,8 @@ class TestListServers(unittest.TestCase):
 
 	@unittest.mock.patch('click.echo')
 	@unittest.mock.patch('mymcadmin.server.Server.list_all')
-	def test_command(self, list_all, echo):
+	@unittest.mock.patch('mymcadmin.config.Config')
+	def test_command(self, config, list_all, echo):
 		list_all.return_value = self.servers
 
 		result = self.cli_runner.invoke(mma_command, ['list_servers'])
@@ -48,7 +49,8 @@ class TestListVersions(unittest.TestCase):
 
 	@unittest.mock.patch('click.echo')
 	@unittest.mock.patch('mymcadmin.server.Server.list_versions')
-	def test_command(self, list_versions, echo):
+	@unittest.mock.patch('mymcadmin.config.Config')
+	def test_command(self, config, list_versions, echo):
 		list_versions.return_value = {
 			'latest': {
 				'snapshot': 'my_snapshot',
@@ -83,7 +85,8 @@ class TestListVersions(unittest.TestCase):
 
 	@unittest.mock.patch('click.echo')
 	@unittest.mock.patch('mymcadmin.server.Server.list_versions')
-	def test_command_no_snapshots(self, list_versions, echo):
+	@unittest.mock.patch('mymcadmin.config.Config')
+	def test_command_no_snapshots(self, config, list_versions, echo):
 		list_versions.return_value = {
 			'latest': {
 				'snapshot': '',
@@ -126,7 +129,8 @@ class TestListVersions(unittest.TestCase):
 
 	@unittest.mock.patch('click.echo')
 	@unittest.mock.patch('mymcadmin.server.Server.list_versions')
-	def test_command_no_releases(self, list_versions, echo):
+	@unittest.mock.patch('mymcadmin.config.Config')
+	def test_command_no_releases(self, config, list_versions, echo):
 		list_versions.return_value = {
 			'latest': {
 				'snapshot': 'my_snapshot',
@@ -169,7 +173,8 @@ class TestListVersions(unittest.TestCase):
 
 	@unittest.mock.patch('click.echo')
 	@unittest.mock.patch('mymcadmin.server.Server.list_versions')
-	def test_command_no_betas(self, list_versions, echo):
+	@unittest.mock.patch('mymcadmin.config.Config')
+	def test_command_no_betas(self, config, list_versions, echo):
 		list_versions.return_value = {
 			'latest': {
 				'snapshot': 'my_snapshot',
@@ -212,7 +217,8 @@ class TestListVersions(unittest.TestCase):
 
 	@unittest.mock.patch('click.echo')
 	@unittest.mock.patch('mymcadmin.server.Server.list_versions')
-	def test_command_no_alphas(self, list_versions, echo):
+	@unittest.mock.patch('mymcadmin.config.Config')
+	def test_command_no_alphas(self, config, list_versions, echo):
 		list_versions.return_value = {
 			'latest': {
 				'snapshot': 'my_snapshot',
