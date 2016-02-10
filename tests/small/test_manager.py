@@ -164,6 +164,8 @@ class TestManager(unittest.TestCase):
 	@utils.run_async
 	async def test_handle_proc(self, _handle_network_connection):
 		mock_event_loop = asynctest.Mock(spec = asyncio.BaseEventLoop)
+		mock_event_loop.run_until_complete.side_effect = \
+				self.event_loop.run_until_complete
 
 		mock_proc = asynctest.Mock(spec = asyncio.subprocess.Process)
 
@@ -173,8 +175,6 @@ class TestManager(unittest.TestCase):
 		self.mock_server.start.return_value = mock_proc_func()
 
 		manager = Manager(self.mock_server, event_loop = mock_event_loop)
-
-		await manager._handle_proc()
 
 		self.assertTrue(
 			self.mock_server.start.called,
