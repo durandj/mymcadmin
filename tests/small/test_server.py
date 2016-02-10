@@ -706,7 +706,7 @@ class TestServer(unittest.TestCase):
 	@nose.tools.raises(errors.MyMCAdminError)
 	@unittest.mock.patch('requests.get')
 	@unittest.mock.patch('mymcadmin.server.Server.list_versions')
-	def test_download_server_jar(self, list_versions, requests_get):
+	def test_download_server_jar_no_server(self, list_versions, requests_get):
 		list_versions.return_value = {
 			'versions': [
 				{
@@ -721,7 +721,7 @@ class TestServer(unittest.TestCase):
 	@nose.tools.raises(errors.MyMCAdminError)
 	@unittest.mock.patch('requests.get')
 	@unittest.mock.patch('mymcadmin.server.Server.list_versions')
-	def test_download_server_jar(self, list_versions, requests_get):
+	def test_download_server_jar_bad_sha(self, list_versions, requests_get):
 		list_versions.return_value = {
 			'versions': [
 				{
