@@ -706,6 +706,30 @@ class TestServer(unittest.TestCase):
 	@nose.tools.raises(errors.MyMCAdminError)
 	@unittest.mock.patch('requests.get')
 	@unittest.mock.patch('mymcadmin.server.Server.list_versions')
+	def test_download_server_jar_bad_response(self, list_versions, requests_get):
+		list_versions.return_value = {
+			'versions': [
+				{
+					'id': 'test',
+					'downloads': {
+						'server': {
+							'url': 'http://example.com/mc/test/server.jar',
+							'sha1': '943a702d06f34599aee1f8da8ef9f7296031d699',
+						},
+					},
+				},
+			]
+		}
+
+		mock_response = unittest.mock.Mock()
+		mock_response.configure_mock(ok = False)
+		requests_get.return_value = mock_response
+
+		server.Server.download_server_jar('test')
+
+	@nose.tools.raises(errors.MyMCAdminError)
+	@unittest.mock.patch('requests.get')
+	@unittest.mock.patch('mymcadmin.server.Server.list_versions')
 	def test_download_server_jar_no_server(self, list_versions, requests_get):
 		list_versions.return_value = {
 			'versions': [
