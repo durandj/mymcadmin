@@ -24,11 +24,27 @@ class User(click.ParamType):
 	name = 'user'
 
 	def convert(self, value, param, ctx):
-		return value if isinstance(value, int) else pwd.getpwnam(value).pw_uid
+		try:
+			if isinstance(value, int):
+				# This call should fail if the UID doesn't exist
+				pwd.getpwuid(value)
+				return value
+			else:
+				return pwd.getpwnam(value).pw_uid
+		except KeyError:
+			self.fail('User {} does not exist'.format(value))
 
 class Group(click.ParamType):
 	name = 'group'
 
 	def convert(self, value, param, ctx):
-		return value if isinstance(value, int) else grp.getgrnam(value).gr_gid
+		try:
+			if isinstance(value, int):
+				# This call should fail if the GID doesn't exist
+				grp.getgrgid(value)
+				return value
+			else:
+				return grp.getgrnam(value).gr_gid
+		except (KeyError, OverflowError):
+			self.fail('Group {} does not exist'.format(value))
 

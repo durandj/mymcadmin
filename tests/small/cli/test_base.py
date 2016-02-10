@@ -79,3 +79,6 @@ class TestMyMcAdmin(unittest.TestCase):
 		error('Hello, world!', bg = 'orange')
 		secho.assert_called_with('Hello, world!', fg = 'red', bg = 'orange')
 
+if __name__ == '__main__':
+	unittest.main()
+
