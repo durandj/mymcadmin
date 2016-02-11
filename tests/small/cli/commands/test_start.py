@@ -1,22 +1,37 @@
-import click.testing
-import nose
+"""
+Tests for the start CLI commands
+"""
+
 import os
 import unittest
 import unittest.mock
+
+import click.testing
+import nose
 
 from mymcadmin import errors
 from mymcadmin.cli import mymcadmin as mma_command
 from mymcadmin.cli.commands.start import start_server_daemon
 
+from .... import utils
+
 class TestStart(unittest.TestCase):
+    """
+    Tests for the server start command
+    """
+
     def setUp(self):
         self.cli_runner = click.testing.CliRunner()
 
     @unittest.mock.patch('multiprocessing.Process')
     @unittest.mock.patch('mymcadmin.server.Server')
     @unittest.mock.patch('os.path.exists')
-    @unittest.mock.patch('mymcadmin.config.Config')
-    def test_command(self, config, exists, server, process):
+    @utils.apply_mock('mymcadmin.config.Config')
+    def test_command(self, exists, server, process):
+        """
+        Test the command with no special options
+        """
+
         exists.side_effect = lambda p: p != 'test'
 
         server.return_value = server
@@ -44,8 +59,12 @@ class TestStart(unittest.TestCase):
     @unittest.mock.patch('multiprocessing.Process')
     @unittest.mock.patch('mymcadmin.server.Server')
     @unittest.mock.patch('os.path.exists')
-    @unittest.mock.patch('mymcadmin.config.Config')
-    def test_command_fail(self, config, exists, server, process):
+    @utils.apply_mock('mymcadmin.config.Config')
+    def test_command_fail(self, exists, server, process):
+        """
+        Tests that the command handles exceptions
+        """
+
         exists.side_effect = lambda p: p != 'test'
 
         server.return_value = server
@@ -65,8 +84,12 @@ class TestStart(unittest.TestCase):
     @unittest.mock.patch('mymcadmin.rpc.RpcClient')
     @unittest.mock.patch('mymcadmin.server.Server')
     @unittest.mock.patch('os.path.exists')
-    @unittest.mock.patch('mymcadmin.config.Config')
-    def test_command_manager_started(self, config, exists, server, rpc_client):
+    @utils.apply_mock('mymcadmin.config.Config')
+    def test_command_manager_started(self, exists, server, rpc_client):
+        """
+        Tests that the manager is started if it isn't already
+        """
+
         exists.return_value = True
 
         server.return_value = server
@@ -90,8 +113,12 @@ class TestStart(unittest.TestCase):
     @unittest.mock.patch('multiprocessing.Process')
     @unittest.mock.patch('mymcadmin.server.Server')
     @unittest.mock.patch('os.path.exists')
-    @unittest.mock.patch('mymcadmin.config.Config')
-    def test_command_user(self, config, exists, server, process):
+    @utils.apply_mock('mymcadmin.config.Config')
+    def test_command_user(self, exists, server, process):
+        """
+        Tests that the user option is used
+        """
+
         exists.side_effect = lambda p: p != 'test'
 
         server.return_value = server
@@ -122,8 +149,12 @@ class TestStart(unittest.TestCase):
     @unittest.mock.patch('multiprocessing.Process')
     @unittest.mock.patch('mymcadmin.server.Server')
     @unittest.mock.patch('os.path.exists')
-    @unittest.mock.patch('mymcadmin.config.Config')
-    def test_command_group(self, config, exists, server, process):
+    @utils.apply_mock('mymcadmin.config.Config')
+    def test_command_group(self, exists, server, process):
+        """
+        Tests that the group option is used
+        """
+
         exists.side_effect = lambda p: p != 'test'
 
         server.return_value = server
@@ -151,13 +182,18 @@ class TestStart(unittest.TestCase):
         process.start.assert_called_with()
         process.join.assert_called_with()
 
+    # pylint: disable=no-self-use, too-many-arguments
     @unittest.mock.patch('mymcadmin.manager.Manager')
     @unittest.mock.patch('daemon.pidfile.PIDLockFile')
     @unittest.mock.patch('daemon.DaemonContext')
     @unittest.mock.patch('builtins.open')
     @unittest.mock.patch('os.path.exists')
     @unittest.mock.patch('mymcadmin.server.Server')
-    def test_start_server_daemon(self, server, exists, open, daemon, pidfile, manager):
+    def test_start_server_daemon(self, server, exists, mock_open, daemon, pidfile, manager):
+        """
+        Tests that the server daemon is started properly
+        """
+
         server.return_value = server
         server.admin_log = 'test.txt'
         server.pid_file  = 'test.pid'
@@ -165,7 +201,7 @@ class TestStart(unittest.TestCase):
 
         exists.return_value = False
 
-        open.return_value = open
+        mock_open.return_value = mock_open
 
         pidfile.return_value = pidfile
 
@@ -173,7 +209,7 @@ class TestStart(unittest.TestCase):
 
         start_server_daemon(server, None, None)
 
-        open.assert_called_with('test.txt', 'a')
+        mock_open.assert_called_with('test.txt', 'a')
 
         daemon.assert_called_with(
             detach_process    = True,
@@ -187,24 +223,39 @@ class TestStart(unittest.TestCase):
 
         manager.assert_called_with(server)
         manager.run.assert_called_with()
+    # pylint: enable=no-self-use, too-many-arguments
 
+    # pylint: disable=no-self-use
     @nose.tools.raises(errors.MyMCAdminError)
     @unittest.mock.patch('os.path.exists')
     @unittest.mock.patch('mymcadmin.server.Server')
     def test_start_server_daemon_fail(self, server, exists):
+        """
+        Tests that the daemon won't start if it is already started
+        """
+
         exists.return_value = True
 
         start_server_daemon(server, None, None)
+    # pylint: enable=no-self-use
 
 class TestStartAll(unittest.TestCase):
+    """
+    start_all tests
+    """
+
     def setUp(self):
         self.cli_runner = click.testing.CliRunner()
 
     @unittest.mock.patch('multiprocessing.Process')
     @unittest.mock.patch('os.path.exists')
     @unittest.mock.patch('mymcadmin.server.Server')
-    @unittest.mock.patch('mymcadmin.config.Config')
-    def test_command(self, config, server, exists, process):
+    @utils.apply_mock('mymcadmin.config.Config')
+    def test_command(self, server, exists, process):
+        """
+        Tests that the command works properly with no extra options
+        """
+
         server.list_all.return_value = [
             'test0',
             'test1',
@@ -260,8 +311,12 @@ class TestStartAll(unittest.TestCase):
     @unittest.mock.patch('multiprocessing.Process')
     @unittest.mock.patch('os.path.exists')
     @unittest.mock.patch('mymcadmin.server.Server')
-    @unittest.mock.patch('mymcadmin.config.Config')
-    def test_command_user(self, config, server, exists, process):
+    @utils.apply_mock('mymcadmin.config.Config')
+    def test_command_user(self, server, exists, process):
+        """
+        Tests that the user option is used
+        """
+
         server.list_all.return_value = [
             'test0',
             'test1',
@@ -320,8 +375,12 @@ class TestStartAll(unittest.TestCase):
     @unittest.mock.patch('multiprocessing.Process')
     @unittest.mock.patch('os.path.exists')
     @unittest.mock.patch('mymcadmin.server.Server')
-    @unittest.mock.patch('mymcadmin.config.Config')
-    def test_command_group(self, config, server, exists, process):
+    @utils.apply_mock('mymcadmin.config.Config')
+    def test_command_group(self, server, exists, process):
+        """
+        Tests that the group option is used
+        """
+
         server.list_all.return_value = [
             'test0',
             'test1',
