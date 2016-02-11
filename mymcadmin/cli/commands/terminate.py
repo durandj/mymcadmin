@@ -39,7 +39,7 @@ def terminate_server(srv):
 			rpc_client.terminate()
 	except Exception as e:
 		error('Failure')
-		warn(str(e))
+		raise click.ClickException(e)
 	else:
 		success('Success')
 
