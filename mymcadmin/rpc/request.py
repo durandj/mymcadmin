@@ -112,17 +112,14 @@ class JsonRpcRequest(object):
 					'Invalid JSON RPC version',
 				)
 
-			try:
-				result.append(
-					JsonRpcRequest(
-						method          = req['method'],
-						params          = req.get('params'),
-						request_id      = req.get('id'),
-						is_notification = 'id' not in req,
-					)
+			result.append(
+				JsonRpcRequest(
+					method          = req['method'],
+					params          = req.get('params'),
+					request_id      = req.get('id'),
+					is_notification = 'id' not in req,
 				)
-			except ValueError as e:
-				raise errors.JsonRpcInvalidRequestError(str(e))
+			)
 
 		return JsonRpcBatchRequest(result) if is_batch else result[0]
 
