@@ -4,12 +4,13 @@ JSON RPC responses
 
 import json
 
-class JsonRpcResponse(object):
+from . import base
+
+class JsonRpcResponse(base.JsonSerializable):
     """
     A JSON RPC response to a request
     """
 
-    JSONRPC_VERSION = '2.0'
     POSSIBLE_FIELDS = set(['jsonrpc', 'id', 'result', 'error'])
 
     def __init__(self, result = None, error = None, response_id = None):
@@ -67,13 +68,7 @@ class JsonRpcResponse(object):
 
     @property
     def data(self):
-        """
-        A dictionary representation of a response
-        """
-
-        data = {
-            'jsonrpc': self.JSONRPC_VERSION,
-        }
+        data = super(JsonRpcResponse, self).data
 
         if self.result:
             data['result'] = self.result
@@ -86,20 +81,8 @@ class JsonRpcResponse(object):
 
         return data
 
-    @property
-    def json(self):
-        """
-        The response as a JSON string
-        """
-
-        return json.dumps(self.data)
-
     @classmethod
     def from_json(cls, json_str):
-        """
-        Build a JSON response from a JSON string
-        """
-
         data = json.loads(json_str)
 
         if not isinstance(data, dict):
@@ -127,7 +110,7 @@ class JsonRpcResponse(object):
             response_id = data.get('id'),
         )
 
-class JsonRpcBatchResponse(object):
+class JsonRpcBatchResponse(base.JsonSerializable):
     """
     A batch of JSON RPC responses
     """
@@ -137,19 +120,7 @@ class JsonRpcBatchResponse(object):
 
     @property
     def data(self):
-        """
-        A list representation of the batch response
-        """
-
         return [r.data for r in self.responses]
-
-    @property
-    def json(self):
-        """
-        The batch of responses as a JSON string
-        """
-
-        return json.dumps(self.data)
 
     def __iter__(self):
         return iter(self.responses)

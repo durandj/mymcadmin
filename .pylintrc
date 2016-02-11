@@ -110,7 +110,7 @@ callbacks=cb_,_cb
 [SIMILARITIES]
 
 # Minimum lines number of a similarity.
-min-similarity-lines=4
+min-similarity-lines=5
 
 # Ignore comments when computing similarities.
 ignore-comments=yes
@@ -119,7 +119,7 @@ ignore-comments=yes
 ignore-docstrings=yes
 
 # Ignore imports when computing similarities.
-ignore-imports=no
+ignore-imports=yes
 
 
 [FORMAT]

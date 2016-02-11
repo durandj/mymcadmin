@@ -4,14 +4,12 @@ JSON RPC requests
 
 import json
 
-from . import errors
+from . import base, errors
 
-class JsonRpcRequest(object):
+class JsonRpcRequest(base.JsonSerializable):
     """
     A request via JSON RPC
     """
-
-    JSONRPC_VERSION = '2.0'
 
     REQUIRED_FIELDS = set(['jsonrpc', 'method'])
     POSSIBLE_FIELDS = set(['jsonrpc', 'method', 'params', 'id'])
@@ -70,14 +68,8 @@ class JsonRpcRequest(object):
 
     @property
     def data(self):
-        """
-        A dictionary representation of the request
-        """
-
-        data = {
-            'jsonrpc': self.JSONRPC_VERSION,
-            'method':  self.method
-        }
+        data = super(JsonRpcRequest, self).data
+        data['method'] = self.method
 
         if self.params:
             data['params'] = self.params
@@ -103,20 +95,8 @@ class JsonRpcRequest(object):
 
         return self.params if isinstance(self.params, dict) else {}
 
-    @property
-    def json(self):
-        """
-        The request as a JSON string
-        """
-
-        return json.dumps(self.data)
-
     @classmethod
     def from_json(cls, json_str):
-        """
-        Build a request object from a JSON string
-        """
-
         try:
             data = json.loads(json_str)
         except (json.JSONDecodeError, TypeError, ValueError):
@@ -163,7 +143,7 @@ class JsonRpcRequest(object):
 
         return JsonRpcBatchRequest(result) if is_batch else result[0]
 
-class JsonRpcBatchRequest(object):
+class JsonRpcBatchRequest(base.JsonSerializable):
     """
     A batch of JSON RPC requests
     """
@@ -172,12 +152,8 @@ class JsonRpcBatchRequest(object):
         self.requests = requests
 
     @property
-    def json(self):
-        """
-        The batch of requests as a JSON string
-        """
-
-        return json.dumps([r.data for r in self.requests])
+    def data(self):
+        return [r.data for r in self.requests]
 
     def __iter__(self):
         return iter(self.requests)
