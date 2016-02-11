@@ -1,6 +1,7 @@
 import nose
 import unittest
 
+from mymcadmin import errors
 from mymcadmin.rpc import Dispatcher
 
 async def func1():
@@ -132,6 +133,14 @@ class TestDispatcher(unittest.TestCase):
 			dispatcher.method_handlers,
 			'Method map was not updated properly',
 		)
+
+	@nose.tools.raises(errors.MyMCAdminError)
+	def test_add_method_non_coroutine(self):
+		def i_fail():
+			pass
+
+		dispatcher = Dispatcher()
+		dispatcher.add_method(i_fail)
 
 	def test_get(self):
 		dispatcher = Dispatcher(methods = METHOD_MAP)
