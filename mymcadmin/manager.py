@@ -8,7 +8,6 @@ import logging
 
 from . import rpc
 
-# pylint: disable=too-few-public-methods
 class Manager(object):
     """
     Minecraft server management system.
@@ -38,7 +37,7 @@ class Manager(object):
         logging.info('Setting up network connection')
         self.network_task = self.event_loop.create_task(
             asyncio.start_server(
-                self._handle_network_connection,
+                self.handle_network_connection,
                 host,
                 port,
                 loop = self.event_loop,
@@ -46,7 +45,7 @@ class Manager(object):
         )
 
         logging.info('Starting Minecraft server')
-        self.event_loop.run_until_complete(self._handle_proc())
+        self.event_loop.run_until_complete(self.handle_proc())
 
         logging.info('Management process running')
         try:
@@ -61,46 +60,66 @@ class Manager(object):
 
         self.rpc_dispatcher.add_dict(
             {
-                'terminate':     self._rpc_command_terminate,
-                'serverStart':   self._rpc_command_server_start,
-                'serverStop':    self._rpc_command_server_stop,
-                'serverRestart': self._rpc_command_server_restart,
+                'terminate':     self.rpc_command_terminate,
+                'serverStart':   self.rpc_command_server_start,
+                'serverStop':    self.rpc_command_server_stop,
+                'serverRestart': self.rpc_command_server_restart,
             }
         )
 
-    async def _rpc_command_terminate(self):
+    async def rpc_command_terminate(self):
+        """
+        Handle RPC command: terminate
+        """
+
         logging.info('Sending terminate command to management server')
 
         if self.proc.returncode is None:
-            await self._rpc_command_server_stop()
+            await self.rpc_command_server_stop()
             await self.proc.wait()
         self.event_loop.stop()
 
         return 'terminating manager'
 
-    async def _rpc_command_server_start(self):
+    async def rpc_command_server_start(self):
+        """
+        Handle RPC command: serverStart
+        """
+
         logging.info('Starting Minecraft server')
 
-        self.event_loop.create_task(self._handle_proc())
+        self.event_loop.create_task(self.handle_proc())
 
         return 'starting server'
 
-    async def _rpc_command_server_stop(self):
+    async def rpc_command_server_stop(self):
+        """
+        Handle RPC command: serverStop
+        """
+
         logging.info('Sending stop command to server')
 
         await self.proc.communicate('stop'.encode())
 
         return 'stopping server'
 
-    async def _rpc_command_server_restart(self):
+    async def rpc_command_server_restart(self):
+        """
+        Handle RPC command: serverRestart
+        """
+
         logging.info('Sending restart command to server')
 
-        await self._rpc_command_server_stop()
-        await self._rpc_command_server_start()
+        await self.rpc_command_server_stop()
+        await self.rpc_command_server_start()
 
         return 'restarting server'
 
-    async def _handle_network_connection(self, reader, writer):
+    async def handle_network_connection(self, reader, writer):
+        """
+        Handle network connections
+        """
+
         data    = await reader.readline()
         message = data.decode()
 
@@ -126,11 +145,12 @@ class Manager(object):
 
         writer.close()
 
-    async def _handle_proc(self):
-        create = self.server.start()
+    async def handle_proc(self):
+        """
+        Handle process management
+        """
 
-        self.proc = await create
+        self.proc = await self.server.start()
 
         await self.proc.wait()
-# pylint: enable=too-few-public-methods
 

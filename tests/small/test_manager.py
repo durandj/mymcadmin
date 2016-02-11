@@ -47,10 +47,10 @@ class TestManager(unittest.TestCase):
             'Dispatcher was not initialized with handlers',
         )
 
-    @asynctest.patch('mymcadmin.manager.Manager._handle_proc')
-    @asynctest.patch('mymcadmin.manager.Manager._handle_network_connection')
+    @asynctest.patch('mymcadmin.manager.Manager.handle_proc')
+    @asynctest.patch('mymcadmin.manager.Manager.handle_network_connection')
     @asynctest.patch('asyncio.start_server')
-    def test_run(self, start_server, _handle_network_connection, _handle_proc):
+    def test_run(self, start_server, handle_network_connection, handle_proc):
         """
         Check that the run function starts and stops the event loop
         """
@@ -64,13 +64,13 @@ class TestManager(unittest.TestCase):
         asyncio.set_event_loop(self.event_loop)
 
         start_server.assert_called_with(
-            _handle_network_connection,
+            handle_network_connection,
             self.host,
             self.port,
             loop = mock_event_loop,
         )
 
-        _handle_proc.assert_called_with()
+        handle_proc.assert_called_with()
         mock_event_loop.run_forever.assert_called_with()
         mock_event_loop.close.assert_called_with()
 
@@ -116,7 +116,7 @@ class TestManager(unittest.TestCase):
             ) + '\n').encode()
             mock_reader.readline.return_value = req
 
-            await manager._handle_network_connection(mock_reader, mock_writer)
+            await manager.handle_network_connection(mock_reader, mock_writer)
 
             self.assertTrue(
                 response_future.done(),
@@ -148,9 +148,9 @@ class TestManager(unittest.TestCase):
 
         manager = Manager(self.mock_server, event_loop = mock_event_loop)
         manager.proc = mock_proc
-        manager._rpc_command_server_stop = mock_server_stop
+        manager.rpc_command_server_stop = mock_server_stop
 
-        message = await manager._rpc_command_terminate()
+        message = await manager.rpc_command_terminate()
 
         self.assertEqual(
             'terminating manager',
