@@ -28,6 +28,11 @@ class Manager(object):
 
         self._setup_rpc_handlers()
 
+    def run(self):
+        """
+        Start and run the management process
+        """
+
         _, host, port = self.server.socket_settings
 
         logging.info('Setting up network connection')
@@ -42,11 +47,6 @@ class Manager(object):
 
         logging.info('Starting Minecraft server')
         self.event_loop.run_until_complete(self._handle_proc())
-
-    def run(self):
-        """
-        Start and run the management process
-        """
 
         logging.info('Management process running')
         try:
