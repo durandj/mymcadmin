@@ -1,3 +1,7 @@
+"""
+Minecraft Management process terminate commands
+"""
+
 import click
 
 from .. import params
@@ -30,6 +34,10 @@ def terminate_all(ctx):
         terminate_server(srv)
 
 def terminate_server(srv):
+    """
+    Terminate a server's management process
+    """
+
     click.echo('Attempting to terminate {}'.format(srv), nl = False)
 
     try:

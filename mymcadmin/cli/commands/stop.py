@@ -1,3 +1,7 @@
+"""
+CLI commands for stopping Minecraft servers
+"""
+
 import click
 
 from .. import params
@@ -29,6 +33,10 @@ def stop_all(ctx):
         stop_server(srv)
 
 def stop_server(srv):
+    """
+    Stop a Minecraft server
+    """
+
     click.echo('Attempting to stop {}...'.format(srv.name), nl = False)
 
     try:

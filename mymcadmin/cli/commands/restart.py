@@ -1,3 +1,7 @@
+"""
+Restart commands for Minecraft servers
+"""
+
 import click
 
 from .. import params
@@ -29,6 +33,10 @@ def restart_all(ctx):
         restart_server(srv)
 
 def restart_server(srv):
+    """
+    Restart a single server
+    """
+
     click.echo('Attempting to restart {}'.format(srv.name), nl = False)
 
     try:

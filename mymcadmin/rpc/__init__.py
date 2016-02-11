@@ -1,3 +1,7 @@
+"""
+JSON RPC interface
+"""
+
 from .client import RpcClient
 from .dispatcher import Dispatcher
 from .manager import JsonRpcResponseManager

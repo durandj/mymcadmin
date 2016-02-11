@@ -1,8 +1,13 @@
+"""
+Configuration for the MyMCAdmin commands and backend.
+"""
+
 import json
 import os.path
 
 import mymcadmin.errors
 
+# pylint: disable=too-few-public-methods
 class Config(object):
     """
     MyMCAdmin's configuration file for controlling things like where server
@@ -31,4 +36,5 @@ class Config(object):
             )
 
         return self._config[name]
+# pylint: enable=too-few-public-methods
 

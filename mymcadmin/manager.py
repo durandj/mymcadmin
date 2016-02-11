@@ -1,10 +1,19 @@
+"""
+Management process for Minecraft servers.
+"""
+
 import asyncio
 import asyncio.subprocess
 import logging
 
 from . import rpc
 
+# pylint: disable=too-few-public-methods
 class Manager(object):
+    """
+    Minecraft server management system.
+    """
+
     def __init__(self, server, event_loop = None):
         logging.info('Setting up event loop')
 
@@ -35,6 +44,10 @@ class Manager(object):
         self.event_loop.run_until_complete(self._handle_proc())
 
     def run(self):
+        """
+        Start and run the management process
+        """
+
         logging.info('Management process running')
         try:
             self.event_loop.run_forever()
@@ -119,4 +132,5 @@ class Manager(object):
         self.proc = await create
 
         await self.proc.wait()
+# pylint: enable=too-few-public-methods
 

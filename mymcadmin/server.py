@@ -1,3 +1,7 @@
+"""
+Minecraft server instance representation
+"""
+
 import asyncio
 import glob
 import hashlib
@@ -35,8 +39,6 @@ class Server(object):
 
         self._path            = path
         self._cache           = {}
-        self._admin_log       = os.path.join(path, Server.LOG_FILE)
-        self._pid_file        = os.path.join(path, Server.PID_FILE)
         self._properties_file = os.path.join(path, Server.PROPERTIES_FILE)
         self._properties      = None
         self._settings_file   = os.path.join(path, Server.SETTINGS_FILE)
@@ -48,7 +50,7 @@ class Server(object):
         Get the instance PID
         """
 
-        return self._pid_file
+        return os.path.join(self._path, Server.PID_FILE)
 
     @property
     def path(self):
@@ -123,7 +125,7 @@ class Server(object):
         Get the admin log used for operations on the server
         """
 
-        return self._admin_log
+        return os.path.join(self._path, Server.LOG_FILE)
 
     @property
     def properties(self):
@@ -228,6 +230,10 @@ class Server(object):
             rpc_client.server_stop()
 
     def send_command(self, command):
+        """
+        Send the server a command via JSON RPC
+        """
+
         _, host, port = self.socket_settings
 
         # TODO(durandj): this needs to be repurposed as a general server command
@@ -260,6 +266,10 @@ class Server(object):
         """
 
         def type_filter(version_filter, versions):
+            """
+            Filter out versions of a specific type
+            """
+
             return [
                 v for v in versions
                 if v.get('type') != version_filter

@@ -1,10 +1,22 @@
+"""
+JSON RPC response manager for handling requests
+"""
+
 import logging
 
 from . import errors, request, response
 
 class JsonRpcResponseManager(object):
+    """
+    JSON RPC response manager for handling requests
+    """
+
     @classmethod
     async def handle(cls, request_str, dispatcher):
+        """
+        Handle a JSON RPC request
+        """
+
         if isinstance(request_str, bytes):
             request_str = request_str.decode('utf-8')
 
@@ -19,6 +31,10 @@ class JsonRpcResponseManager(object):
 
     @classmethod
     async def handle_request(cls, rpc_request, dispatcher):
+        """
+        Backend handling of a request
+        """
+
         if not isinstance(rpc_request, request.JsonRpcBatchRequest):
             rpc_request = [rpc_request]
 
@@ -38,6 +54,7 @@ class JsonRpcResponseManager(object):
     async def _get_responses(cls, requests, dispatcher):
         responses = []
 
+        # pylint: disable=broad-except
         for req in requests:
             try:
                 try:
@@ -73,6 +90,7 @@ class JsonRpcResponseManager(object):
 
                 if not req.is_notification:
                     responses.append(resp)
+        # pylint: enable=broad-except
 
         return responses
 

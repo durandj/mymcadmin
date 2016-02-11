@@ -1,6 +1,14 @@
+"""
+JSON RPC responses
+"""
+
 import json
 
 class JsonRpcResponse(object):
+    """
+    A JSON RPC response to a request
+    """
+
     JSONRPC_VERSION = '2.0'
     POSSIBLE_FIELDS = set(['jsonrpc', 'id', 'result', 'error'])
 
@@ -17,6 +25,10 @@ class JsonRpcResponse(object):
 
     @property
     def result(self):
+        """
+        The result of a response
+        """
+
         return self._result
 
     @result.setter
@@ -28,6 +40,10 @@ class JsonRpcResponse(object):
 
     @property
     def error(self):
+        """
+        The error for a response
+        """
+
         return self._error
 
     @error.setter
@@ -39,6 +55,10 @@ class JsonRpcResponse(object):
 
     @property
     def response_id(self):
+        """
+        The ID of the response
+        """
+
         return self._response_id
 
     @response_id.setter
@@ -47,6 +67,10 @@ class JsonRpcResponse(object):
 
     @property
     def data(self):
+        """
+        A dictionary representation of a response
+        """
+
         data = {
             'jsonrpc': self.JSONRPC_VERSION,
         }
@@ -64,10 +88,18 @@ class JsonRpcResponse(object):
 
     @property
     def json(self):
+        """
+        The response as a JSON string
+        """
+
         return json.dumps(self.data)
 
     @classmethod
     def from_json(cls, json_str):
+        """
+        Build a JSON response from a JSON string
+        """
+
         data = json.loads(json_str)
 
         if not isinstance(data, dict):
@@ -96,21 +128,37 @@ class JsonRpcResponse(object):
         )
 
 class JsonRpcBatchResponse(object):
+    """
+    A batch of JSON RPC responses
+    """
+
     def __init__(self, responses):
         self.responses = responses
 
     @property
     def data(self):
+        """
+        A list representation of the batch response
+        """
+
         return [r.data for r in self.responses]
 
     @property
     def json(self):
+        """
+        The batch of responses as a JSON string
+        """
+
         return json.dumps(self.data)
 
     def __iter__(self):
         return iter(self.responses)
 
 class JsonRpcErrorResponse(JsonRpcResponse):
+    """
+    A general JSON RPC error response
+    """
+
     def __init__(self, code, message, request_id = None):
         super(JsonRpcErrorResponse, self).__init__(
             response_id = request_id,
@@ -121,6 +169,10 @@ class JsonRpcErrorResponse(JsonRpcResponse):
         )
 
 class JsonRpcParseErrorResponse(JsonRpcErrorResponse):
+    """
+    A JSON RPC error response for invalid JSON formatting
+    """
+
     def __init__(self):
         super(JsonRpcParseErrorResponse, self).__init__(
             -32700,
@@ -128,6 +180,10 @@ class JsonRpcParseErrorResponse(JsonRpcErrorResponse):
         )
 
 class JsonRpcInvalidRequestResponse(JsonRpcErrorResponse):
+    """
+    A JSON RPC error response for an invalid request
+    """
+
     def __init__(self, request_id = None):
         super(JsonRpcInvalidRequestResponse, self).__init__(
             -32600,
@@ -136,6 +192,10 @@ class JsonRpcInvalidRequestResponse(JsonRpcErrorResponse):
         )
 
 class JsonRpcMethodNotFoundResponse(JsonRpcErrorResponse):
+    """
+    A JSON RPC error response for a request for a non-existant method
+    """
+
     def __init__(self, request_id):
         super(JsonRpcMethodNotFoundResponse, self).__init__(
             -32601,
@@ -144,6 +204,10 @@ class JsonRpcMethodNotFoundResponse(JsonRpcErrorResponse):
         )
 
 class JsonRpcServerErrorResponse(JsonRpcErrorResponse):
+    """
+    A JSON RPC error response for a general server error
+    """
+
     def __init__(self, request_id):
         super(JsonRpcServerErrorResponse, self).__init__(
             -32000,

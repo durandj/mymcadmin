@@ -1,3 +1,7 @@
+"""
+Custom parameter types for MyMCAdmin
+"""
+
 import grp
 import os.path
 import pwd
@@ -7,6 +11,10 @@ import click
 from .. import server
 
 class Server(click.ParamType):
+    """
+    A server defined by its name
+    """
+
     name = 'server'
 
     def __init__(self, exists = True):
@@ -22,6 +30,10 @@ class Server(click.ParamType):
         return server.Server(server_path)
 
 class User(click.ParamType):
+    """
+    A system user defined by its username or UID
+    """
+
     name = 'user'
 
     def convert(self, value, param, ctx):
@@ -36,6 +48,10 @@ class User(click.ParamType):
             self.fail('User {} does not exist'.format(value))
 
 class Group(click.ParamType):
+    """
+    A system user group defined by its name or GID
+    """
+
     name = 'group'
 
     def convert(self, value, param, ctx):

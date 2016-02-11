@@ -1,3 +1,7 @@
+"""
+JSON RPC client
+"""
+
 import asyncio
 import json
 import logging
@@ -6,6 +10,10 @@ from . import errors
 from .. import utils
 
 class RpcClient(object):
+    """
+    JSON RPC client
+    """
+
     JSONRPC_VERSION = '2.0'
 
     def __init__(self, host, port):
@@ -16,27 +24,55 @@ class RpcClient(object):
         self.writer     = None
 
     def run(self):
+        """
+        Start the JSON RPC client
+        """
+
         utils.setup_logging()
 
         logging.info('Setting up network connection')
         self.event_loop.run_until_complete(self._setup())
 
     def stop(self):
+        """
+        Stop the JSON RPC client
+        """
+
         self.event_loop.close()
 
     def terminate(self):
+        """
+        Ask the management process to stop
+        """
+
         self.send_rpc_command('terminate')
 
     def server_start(self):
+        """
+        Ask the management process to start a Minecraft server
+        """
+
         self.send_rpc_command('serverStart')
 
     def server_stop(self):
+        """
+        Ask the management process to stop a Minecraft server
+        """
+
         self.send_rpc_command('serverStop')
 
     def server_restart(self):
+        """
+        Ask the management process to restart a Minecraft server
+        """
+
         self.send_rpc_command('serverRestart')
 
     def send_rpc_command(self, command, params = None):
+        """
+        Send an RPC command to the management process
+        """
+
         if params is None:
             params = {}
 

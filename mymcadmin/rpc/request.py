@@ -1,8 +1,16 @@
+"""
+JSON RPC requests
+"""
+
 import json
 
 from . import errors
 
 class JsonRpcRequest(object):
+    """
+    A request via JSON RPC
+    """
+
     JSONRPC_VERSION = '2.0'
 
     REQUIRED_FIELDS = set(['jsonrpc', 'method'])
@@ -17,6 +25,10 @@ class JsonRpcRequest(object):
 
     @property
     def method(self):
+        """
+        The requested method
+        """
+
         return self._method
 
     @method.setter
@@ -28,6 +40,10 @@ class JsonRpcRequest(object):
 
     @property
     def params(self):
+        """
+        The parameters for the request
+        """
+
         return self._params
 
     @params.setter
@@ -42,6 +58,10 @@ class JsonRpcRequest(object):
 
     @property
     def request_id(self):
+        """
+        The ID of the request
+        """
+
         return self._request_id
 
     @request_id.setter
@@ -50,6 +70,10 @@ class JsonRpcRequest(object):
 
     @property
     def data(self):
+        """
+        A dictionary representation of the request
+        """
+
         data = {
             'jsonrpc': self.JSONRPC_VERSION,
             'method':  self.method
@@ -65,18 +89,34 @@ class JsonRpcRequest(object):
 
     @property
     def args(self):
+        """
+        The parameters for the request as a tuple
+        """
+
         return tuple(self.params) if isinstance(self.params, list) else ()
 
     @property
     def kwargs(self):
+        """
+        The parameters for the request as a dictionary
+        """
+
         return self.params if isinstance(self.params, dict) else {}
 
     @property
     def json(self):
+        """
+        The request as a JSON string
+        """
+
         return json.dumps(self.data)
 
     @classmethod
     def from_json(cls, json_str):
+        """
+        Build a request object from a JSON string
+        """
+
         try:
             data = json.loads(json_str)
         except (json.JSONDecodeError, TypeError, ValueError):
@@ -124,11 +164,19 @@ class JsonRpcRequest(object):
         return JsonRpcBatchRequest(result) if is_batch else result[0]
 
 class JsonRpcBatchRequest(object):
+    """
+    A batch of JSON RPC requests
+    """
+
     def __init__(self, requests):
         self.requests = requests
 
     @property
     def json(self):
+        """
+        The batch of requests as a JSON string
+        """
+
         return json.dumps([r.data for r in self.requests])
 
     def __iter__(self):
@@ -136,5 +184,9 @@ class JsonRpcBatchRequest(object):
 
     @classmethod
     def from_json(cls, json_str):
+        """
+        Build a request from a JSON string
+        """
+
         return JsonRpcRequest.from_json(json_str)
 

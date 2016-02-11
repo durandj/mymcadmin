@@ -1,3 +1,7 @@
+"""
+JSON RPC errors and exceptions
+"""
+
 from . import response
 from .. import errors
 
@@ -11,6 +15,10 @@ class JsonRpcError(errors.MyMCAdminError):
 
     @property
     def response(self):
+        """
+        Get a JSON RPC response for this error
+        """
+
         return getattr(self, 'RESPONSE_TYPE')()
 
 class JsonRpcParseRequestError(JsonRpcError):

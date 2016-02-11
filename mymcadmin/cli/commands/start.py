@@ -1,3 +1,7 @@
+"""
+Minecraft server start commands
+"""
+
 import multiprocessing
 import os.path
 
@@ -60,6 +64,10 @@ def start_all(ctx, user, group):
         start_server(srv, user, group)
 
 def start_server_daemon(server, user, group):
+    """
+    Start a server daemon
+    """
+
     if os.path.exists(server.pid_file):
         raise errors.MyMCAdminError('Server is already started')
 
@@ -82,6 +90,10 @@ def start_server_daemon(server, user, group):
     admin_log.close()
 
 def start_server(server, user, group):
+    """
+    Start a Minecraft server
+    """
+
     click.echo(
         'Attempting to start {} as ({}, {})...'.format(
             server.name,

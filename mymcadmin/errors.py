@@ -1,3 +1,7 @@
+"""
+Error and exception types
+"""
+
 class MyMCAdminError(Exception):
     """
     A general MyMCAdmin error

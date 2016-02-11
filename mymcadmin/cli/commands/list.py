@@ -1,3 +1,7 @@
+"""
+Various list type commands for the CLI
+"""
+
 import os.path
 
 import click
