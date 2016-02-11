@@ -36,7 +36,7 @@ def stop_server(srv):
 		srv.stop()
 	except Exception as e:
 		error('Failed')
-		warn(str(e))
+		raise click.ClickException(e)
 	else:
 		success('Success')
 
