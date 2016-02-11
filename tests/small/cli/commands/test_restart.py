@@ -1,13 +1,19 @@
-import click.testing
+"""
+Tests for the CLI restart commands
+"""
+
 import os.path
 import unittest
 import unittest.mock
 
+from .... import utils
+
 from mymcadmin.cli import mymcadmin as mma_command
 
-class TestRestart(unittest.TestCase):
+class TestRestart(utils.CliRunnerMixin, unittest.TestCase):
     def setUp(self):
-        self.cli_runner  = click.testing.CliRunner()
+        super(TestRestart, self).setUp()
+
         self.socket_type = 'tcp'
         self.host        = 'localhost'
         self.port        = 8080
@@ -64,10 +70,7 @@ class TestRestart(unittest.TestCase):
             'Command did not terminate successfully',
         )
 
-class TestRestartAll(unittest.TestCase):
-    def setUp(self):
-        self.cli_runner = click.testing.CliRunner()
-
+class TestRestartAll(utils.CliRunnerMixin, unittest.TestCase):
     @unittest.mock.patch('mymcadmin.rpc.RpcClient')
     @unittest.mock.patch('mymcadmin.server.Server')
     @unittest.mock.patch('mymcadmin.config.Config')

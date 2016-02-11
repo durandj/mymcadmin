@@ -6,6 +6,8 @@ import asyncio
 import functools
 import unittest.mock
 
+import click.testing
+
 def run_async(func):
     """
     Allow a unittest to be a coroutine and still run normally
@@ -51,4 +53,18 @@ def apply_mock(target):
 
         return wrapper
     return decorator
+
+# pylint: disable=invalid-name, too-few-public-methods
+class CliRunnerMixin(object):
+    """
+    TestCase mixin for adding a CLI runner to the environment
+    """
+
+    def setUp(self):
+        """
+        Set up the test runner
+        """
+
+        self.cli_runner = click.testing.CliRunner()
+# pylint: enable=invalid-name, too-few-public-methods
 

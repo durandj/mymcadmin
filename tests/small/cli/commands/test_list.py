@@ -1,14 +1,19 @@
-import click.testing
+"""
+Tests for the CLI list commands
+"""
+
 import os.path
 import unittest
 import unittest.mock
 
-from mymcadmin.cli.base import mymcadmin as mma_command
-from mymcadmin.cli.commands.list import list_servers, list_versions
+from .... import utils
 
-class TestListServers(unittest.TestCase):
+from mymcadmin.cli.base import mymcadmin as mma_command
+
+class TestListServers(utils.CliRunnerMixin, unittest.TestCase):
     def setUp(self):
-        self.cli_runner = click.testing.CliRunner()
+        super(TestListServers, self).setUp()
+
         self.root         = 'root'
         self.server_names = ['server1', 'server2', 'server3']
         self.servers      = [
@@ -43,10 +48,7 @@ class TestListServers(unittest.TestCase):
             ]
         )
 
-class TestListVersions(unittest.TestCase):
-    def setUp(self):
-        self.cli_runner = click.testing.CliRunner()
-
+class TestListVersions(utils.CliRunnerMixin, unittest.TestCase):
     @unittest.mock.patch('click.echo')
     @unittest.mock.patch('mymcadmin.server.Server.list_versions')
     @unittest.mock.patch('mymcadmin.config.Config')

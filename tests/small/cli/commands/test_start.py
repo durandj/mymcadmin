@@ -6,22 +6,18 @@ import os
 import unittest
 import unittest.mock
 
-import click.testing
 import nose
+
+from .... import utils
 
 from mymcadmin import errors
 from mymcadmin.cli import mymcadmin as mma_command
 from mymcadmin.cli.commands.start import start_server_daemon
 
-from .... import utils
-
-class TestStart(unittest.TestCase):
+class TestStart(utils.CliRunnerMixin, unittest.TestCase):
     """
     Tests for the server start command
     """
-
-    def setUp(self):
-        self.cli_runner = click.testing.CliRunner()
 
     @unittest.mock.patch('multiprocessing.Process')
     @unittest.mock.patch('mymcadmin.server.Server')
@@ -239,13 +235,10 @@ class TestStart(unittest.TestCase):
         start_server_daemon(server, None, None)
     # pylint: enable=no-self-use
 
-class TestStartAll(unittest.TestCase):
+class TestStartAll(utils.CliRunnerMixin, unittest.TestCase):
     """
     start_all tests
     """
-
-    def setUp(self):
-        self.cli_runner = click.testing.CliRunner()
 
     @unittest.mock.patch('multiprocessing.Process')
     @unittest.mock.patch('os.path.exists')

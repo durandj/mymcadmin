@@ -1,13 +1,15 @@
-import click.testing
+"""
+Tests for the CLI stop commands
+"""
+
 import unittest
 import unittest.mock
 
+from .... import utils
+
 from mymcadmin.cli import mymcadmin as mma_command
 
-class TestStop(unittest.TestCase):
-    def setUp(self):
-        self.cli_runner = click.testing.CliRunner()
-
+class TestStop(utils.CliRunnerMixin, unittest.TestCase):
     @unittest.mock.patch('mymcadmin.server.Server')
     @unittest.mock.patch('os.path.exists')
     @unittest.mock.patch('mymcadmin.config.Config')
@@ -45,10 +47,7 @@ class TestStop(unittest.TestCase):
             'Command did not terminate properly',
         )
 
-class TestStopAll(unittest.TestCase):
-    def setUp(self):
-        self.cli_runner = click.testing.CliRunner()
-
+class TestStopAll(utils.CliRunnerMixin, unittest.TestCase):
     @unittest.mock.patch('mymcadmin.server.Server')
     @unittest.mock.patch('mymcadmin.config.Config')
     def test_command(self, config, server):

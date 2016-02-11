@@ -1,13 +1,11 @@
-import click.testing
 import unittest
 import unittest.mock
 
+from .... import utils
+
 from mymcadmin.cli import mymcadmin as mma_command
 
-class TestTerminate(unittest.TestCase):
-    def setUp(self):
-        self.cli_runner = click.testing.CliRunner()
-
+class TestTerminate(utils.CliRunnerMixin, unittest.TestCase):
     @unittest.mock.patch('mymcadmin.rpc.RpcClient')
     @unittest.mock.patch('mymcadmin.server.Server')
     @unittest.mock.patch('os.path.exists')
@@ -54,10 +52,7 @@ class TestTerminate(unittest.TestCase):
             'Command did not terminate properly',
         )
 
-class TestTerminateAll(unittest.TestCase):
-    def setUp(self):
-        self.cli_runner = click.testing.CliRunner()
-
+class TestTerminateAll(utils.CliRunnerMixin, unittest.TestCase):
     @unittest.mock.patch('mymcadmin.rpc.RpcClient')
     @unittest.mock.patch('mymcadmin.server.Server')
     @unittest.mock.patch('mymcadmin.config.Config')
