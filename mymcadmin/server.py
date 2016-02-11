@@ -212,7 +212,6 @@ class Server(object):
         command_args = self.command_args
         logging.info('Starting server with: %s', command_args)
 
-        # TODO(durandj): pass signals to the subprocess
         return asyncio.create_subprocess_exec(
             *command_args,
             stdin  = asyncio.subprocess.PIPE,
@@ -232,11 +231,12 @@ class Server(object):
     def send_command(self, command):
         """
         Send the server a command via JSON RPC
+
+        TODO(durandj): repurpose this as a general purpose command
         """
 
         _, host, port = self.socket_settings
 
-        # TODO(durandj): this needs to be repurposed as a general server command
         with rpc.RpcClient(host, port) as rpc_client:
             rpc_client.send_command(command)
 
@@ -248,7 +248,6 @@ class Server(object):
 
         path = config.instance_path
 
-        # TODO(durandj): we could do some better checks
         return [
             os.path.join(path, f) for f in os.listdir(path)
             if os.path.isdir(os.path.join(path, f))

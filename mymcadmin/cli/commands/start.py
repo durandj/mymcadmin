@@ -114,7 +114,6 @@ def start_server(server, user, group):
             proc.start()
             proc.join()
         else:
-            # TODO(durandj): check if the minecraft server is already running
             _, host, port = server.socket_settings
             with rpc.RpcClient(host, port) as rpc_client:
                 rpc_client.server_start()
