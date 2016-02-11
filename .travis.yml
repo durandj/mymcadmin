@@ -7,5 +7,5 @@ python:
 install:
     - pip install .
 script:
-    - nosetests --with-coverage --cover-package=mymcadmin
+    - nosetests --with-coverage --cover-package=mymcadmin --cover-min-percentage=95 --rednose
 
