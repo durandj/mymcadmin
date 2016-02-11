@@ -88,7 +88,7 @@ def start_server(server, user, group):
 			user or 'default',
 			group or 'default',
 		),
-		nl = False
+		nl = False,
 	)
 
 	try:
@@ -108,7 +108,7 @@ def start_server(server, user, group):
 				rpc_client.server_start()
 	except Exception as e:
 		error('Failure')
-		warn(str(e))
+		raise click.ClickException(e)
 	else:
 		success('Success')
 

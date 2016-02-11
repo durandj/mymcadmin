@@ -102,8 +102,6 @@ class TestRestartAll(unittest.TestCase):
 
 		result = self.cli_runner.invoke(mma_command, ['restart_all'])
 
-		print(result.output)
-
 		self.assertEqual(
 			0,
 			result.exit_code,
