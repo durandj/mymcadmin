@@ -6,6 +6,8 @@ python:
     - nightly
 install:
     - pip install .
+before_script:
+    - pylint --rcfile .pylintrc mymcadmin
 script:
     - nosetests --with-coverage --cover-package=mymcadmin --cover-min-percentage=95 --rednose
 

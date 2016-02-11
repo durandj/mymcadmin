@@ -6,76 +6,79 @@ from . import errors
 from .. import utils
 
 class RpcClient(object):
-	JSONRPC_VERSION = '2.0'
+    JSONRPC_VERSION = '2.0'
 
-	def __init__(self, host, port):
-		self.event_loop = asyncio.get_event_loop()
-		self.host       = host
-		self.port       = port
-		self.reader     = None
-		self.writer     = None
+    def __init__(self, host, port):
+        self.event_loop = asyncio.get_event_loop()
+        self.host       = host
+        self.port       = port
+        self.reader     = None
+        self.writer     = None
 
-	def run(self):
-		utils.setup_logging()
+    def run(self):
+        utils.setup_logging()
 
-		logging.info('Setting up network connection')
-		self.event_loop.run_until_complete(self._setup())
+        logging.info('Setting up network connection')
+        self.event_loop.run_until_complete(self._setup())
 
-	def stop(self):
-		self.event_loop.close()
+    def stop(self):
+        self.event_loop.close()
 
-	def terminate(self):
-		self.send_rpc_command('terminate')
+    def terminate(self):
+        self.send_rpc_command('terminate')
 
-	def server_start(self):
-		self.send_rpc_command('serverStart')
+    def server_start(self):
+        self.send_rpc_command('serverStart')
 
-	def server_stop(self):
-		self.send_rpc_command('serverStop')
+    def server_stop(self):
+        self.send_rpc_command('serverStop')
 
-	def server_restart(self):
-		self.send_rpc_command('serverRestart')
+    def server_restart(self):
+        self.send_rpc_command('serverRestart')
 
-	def send_rpc_command(self, command, params = {}):
-		self.event_loop.run_until_complete(self._send(command, params))
+    def send_rpc_command(self, command, params = None):
+        if params is None:
+            params = {}
 
-	def __enter__(self):
-		self.run()
+        self.event_loop.run_until_complete(self._send(command, params))
 
-		return self
+    def __enter__(self):
+        self.run()
 
-	def __exit__(self, exception_type, exception_value, traceback):
-		self.stop()
+        return self
 
-	async def _setup(self):
-		self.reader, self.writer = await asyncio.open_connection(
-			self.host,
-			self.port,
-			loop = self.event_loop,
-		)
+    def __exit__(self, exception_type, exception_value, traceback):
+        self.stop()
 
-	async def _send(self, method, params, request_id = 1):
-		data = json.dumps(
-			{
-				'jsonrpc': RpcClient.JSONRPC_VERSION,
-				'id':      request_id,
-				'method':  method,
-				'params':  params,
-			}
-		) + '\n'
+    async def _setup(self):
+        self.reader, self.writer = await asyncio.open_connection(
+            self.host,
+            self.port,
+            loop = self.event_loop,
+        )
 
-		logging.info('Sending "{}" to server'.format(data))
-		self.writer.write(data.encode())
+    async def _send(self, method, params, request_id = 1):
+        data = json.dumps(
+            {
+                'jsonrpc': RpcClient.JSONRPC_VERSION,
+                'id':      request_id,
+                'method':  method,
+                'params':  params,
+            }
+        ) + '\n'
 
-		logging.info('Waiting for server response')
-		response = await self.reader.read()
-		response = response.decode()
-		logging.info('Received "{}" from the server'.format(response))
-		response = json.loads(response)
+        logging.info('Sending "%s" to server', data)
+        self.writer.write(data.encode())
 
-		if 'error' in response:
-			raise errors.JsonRpcError(
-				'RPC error: {}',
-				response['error']['message'],
-			)
+        logging.info('Waiting for server response')
+        response = await self.reader.read()
+        response = response.decode()
+        logging.info('Received "%s" from the server', response)
+        response = json.loads(response)
+
+        if 'error' in response:
+            raise errors.JsonRpcError(
+                'RPC error: {}',
+                response['error']['message'],
+            )
 

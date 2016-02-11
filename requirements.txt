@@ -2,6 +2,7 @@ asynctest
 click
 coverage
 nose
+pylint
 python-daemon
 rednose
 requests
