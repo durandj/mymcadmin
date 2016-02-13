@@ -23,14 +23,9 @@ class TestManager(unittest.TestCase):
         self.event_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.event_loop)
 
-        self.socket_type = 'tcp'
-        self.host        = 'localhost'
-        self.port        = 8080
-
-        self.socket_settings = (self.socket_type, self.host, self.port)
-
-        self.mock_server = asynctest.Mock(spec = Server)
-        self.mock_server.socket_settings = self.socket_settings
+        self.host = 'example.com'
+        self.port = 8000
+        self.root = 'root'
 
     def tearDown(self):
         self.event_loop.close()
@@ -40,17 +35,16 @@ class TestManager(unittest.TestCase):
         Check that the constructor starts the handlers properly
         """
 
-        manager = Manager(self.mock_server)
+        manager = Manager(self.host, self.port, self.root)
 
         self.assertTrue(
             len(manager.rpc_dispatcher) > 0,
             'Dispatcher was not initialized with handlers',
         )
 
-    @asynctest.patch('mymcadmin.manager.Manager.handle_proc')
     @asynctest.patch('mymcadmin.manager.Manager.handle_network_connection')
     @asynctest.patch('asyncio.start_server')
-    def test_run(self, start_server, handle_network_connection, handle_proc):
+    def test_run(self, start_server, handle_network_connection):
         """
         Check that the run function starts and stops the event loop
         """
@@ -58,7 +52,7 @@ class TestManager(unittest.TestCase):
         mock_event_loop = asynctest.Mock(asyncio.BaseEventLoop)
         asyncio.set_event_loop(mock_event_loop)
 
-        manager = Manager(self.mock_server)
+        manager = Manager(self.host, self.port, self.root)
         manager.run()
 
         asyncio.set_event_loop(self.event_loop)
@@ -70,99 +64,122 @@ class TestManager(unittest.TestCase):
             loop = mock_event_loop,
         )
 
-        handle_proc.assert_called_with()
         mock_event_loop.run_forever.assert_called_with()
         mock_event_loop.close.assert_called_with()
 
+    @asynctest.patch('mymcadmin.rpc.JsonRpcResponseManager')
     @utils.run_async
-    async def test_handle_network_connection(self):
+    async def test_handle_network_connection(self, response_manager):
         """
         Check that the network handling handles all of the commands properly
         """
 
-        commands = {
-            'serverRestart': 'restarting server',
-            'serverStart':   'starting server',
-            'serverStop':    'stopping server',
-            'terminate':      'terminating manager',
-        }
+        mock_response = unittest.mock.Mock()
+        mock_response.json = json.dumps(
+            {
+                'jsonrpc': '2.0',
+                'id':      1,
+                'result':  {'mission': 'complete'},
+            }
+        )
+
+        response_manager.handle = asynctest.CoroutineMock()
+        response_manager.handle.return_value = mock_response
 
         mock_event_loop = asynctest.Mock(spec = asyncio.BaseEventLoop)
-        mock_proc = asynctest.Mock(spec = asyncio.subprocess.Process)
 
         mock_reader = asynctest.Mock(spec = asyncio.StreamReader)
 
         mock_writer = asynctest.Mock(spec = asyncio.StreamWriter)
         mock_writer.get_extra_info.return_value = '127.0.0.1'
 
-        manager = Manager(self.mock_server, mock_event_loop)
-        manager.proc = mock_proc
+        response_future = asyncio.Future()
+        mock_writer.write.side_effect = response_future.set_result
 
-        for name, response in commands.items():
-            mock_event_loop.reset_mock()
-            mock_reader.reset_mock()
-            mock_writer.reset_mock()
+        req = (json.dumps(
+            {
+                'jsonrpc': '2.0',
+                'method':  'test',
+                'params':  {'im': 'a test'},
+                'id':      1,
+            }
+        ) + '\n').encode()
+        mock_reader.readline.return_value = req
 
-            response_future = asyncio.Future()
-            mock_writer.write.side_effect = response_future.set_result
+        manager = Manager(
+            self.host,
+            self.port,
+            self.root,
+            event_loop = mock_event_loop,
+        )
 
-            req = (json.dumps(
-                {
-                    'jsonrpc': '2.0',
-                    'method':  name,
-                    'params':  {},
-                    'id':      1,
-                }
-            ) + '\n').encode()
-            mock_reader.readline.return_value = req
+        await manager.handle_network_connection(mock_reader, mock_writer)
 
-            await manager.handle_network_connection(mock_reader, mock_writer)
+        response_manager.handle.assert_called_with(req, manager.rpc_dispatcher)
 
-            self.assertTrue(
-                response_future.done(),
-                'Response was never sent',
-            )
+        self.assertTrue(
+            response_future.done(),
+            'Response was never sent',
+        )
 
-            resp = json.loads(response_future.result().decode())
-            self.assertDictEqual(
-                {
-                    'jsonrpc': '2.0',
-                    'id':      1,
-                    'result':  response,
-                },
-                resp,
-            )
+        resp = json.loads(response_future.result().decode())
+        self.assertDictEqual(
+            {
+                'jsonrpc': '2.0',
+                'id':      1,
+                'result':  {'mission': 'complete'},
+            },
+            resp,
+        )
 
     @utils.run_async
-    async def test_terminate_running_proc(self):
+    async def test_rpc_shutdown_running_proc(self):
         """
-        Check that the terminate command stops the proc if its running
+        Check that the shutdown command stops any running server instances
         """
+
+        instance_names = ['test0', 'test1', 'test2', 'test3']
+        instances      = {}
+        for name in instance_names:
+            mock      = asynctest.Mock(spec = asyncio.subprocess.Process)
+            mock.name = name
+
+            instances[name] = mock
 
         mock_event_loop = asynctest.Mock(spec = asyncio.BaseEventLoop)
 
-        mock_proc = asynctest.Mock(spec = asyncio.subprocess.Process)
-        mock_proc.returncode = None
-
         mock_server_stop = asynctest.CoroutineMock()
 
-        manager = Manager(self.mock_server, event_loop = mock_event_loop)
-        manager.proc = mock_proc
+        manager = Manager(
+            self.host,
+            self.port,
+            self.root,
+            event_loop = mock_event_loop,
+        )
+        manager.instances = {
+            name: asynctest.Mock(spec = asyncio.subprocess.Process)
+            for name in instance_names
+        }
         manager.rpc_command_server_stop = mock_server_stop
+        manager.rpc_command_server_stop.side_effect = instance_names
 
-        message = await manager.rpc_command_terminate()
+        result = await manager.rpc_command_shutdown()
 
         self.assertEqual(
-            'terminating manager',
-            message,
+            instance_names,
+            result,
             'Return message did not match',
         )
 
-        mock_server_stop.assert_called_with()
-        mock_proc.wait.assert_called_with()
+        mock_server_stop.assert_has_calls(
+            [
+                unittest.mock.call(name)
+                for name in instances.keys()
+            ]
+        )
 
     @utils.run_async
-    async def test_handle_proc(self):
+    async def test_start_server_proc(self):
         """
         Check that the proc is started and waited for properly
         """
@@ -176,12 +193,21 @@ class TestManager(unittest.TestCase):
         mock_proc_func = asynctest.CoroutineMock()
         mock_proc_func.return_value = mock_proc
 
-        self.mock_server.start.return_value = mock_proc_func()
+        mock_server = asynctest.Mock(spec = Server)
+        mock_server.name = 'test'
+        mock_server.start = asynctest.CoroutineMock()
+        mock_server.start.return_value = mock_proc_func()
 
-        manager = Manager(self.mock_server, event_loop = mock_event_loop)
-        manager.run()
+        manager = Manager(
+            self.host,
+            self.port,
+            self.root,
+            event_loop = mock_event_loop,
+        )
 
-        self.mock_server.start.assert_called_with()
+        await manager.start_server_proc(mock_server)
+
+        mock_server.start.assert_called_with()
         mock_proc.wait.assert_called_with()
 
 if __name__ == '__main__':

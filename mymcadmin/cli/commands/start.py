@@ -1,8 +1,9 @@
 """
-Minecraft server start commands
+Start commands
 """
 
 import multiprocessing
+import os
 import os.path
 
 import click
@@ -21,39 +22,40 @@ from ... import (
 
 @mymcadmin.command()
 @click.argument('server', type = params.Server())
-@click.option(
-    '--user',
-    type    = params.User(),
-    default = None,
-    help    = 'The user to run the server as')
-@click.option(
-    '--group',
-    type    = params.Group(),
-    default = None,
-    help    = 'The group to run the server as')
-def start(server, user, group):
+@click.option('--host', default = None, help = 'The host to connect to')
+@click.option('--port', default = None, help = 'The port to connect to')
+@click.pass_context
+def start(ctx, server, host, port):
     """
     Start a Minecraft server
     """
 
-    start_server(server, user, group)
+    rpc_config = ctx.obj['config'].rpc or {}
+
+    if not host:
+        host = rpc_config.get('host')
+
+    if not port:
+        port = rpc_config.get('port')
+
+    start_server(server, host, port)
 
 @mymcadmin.command()
+@click.option('--host', default = None, help = 'The host to connect to')
+@click.option('--port', default = None, help = 'The port to connect to')
 @click.pass_context
-@click.option(
-    '--user',
-    type    = params.User(),
-    default = None,
-    help    = 'The user to run the servers as')
-@click.option(
-    '--group',
-    type    = params.Group(),
-    default = None,
-    help    = 'The group to run the servers as')
-def start_all(ctx, user, group):
+def start_all(ctx, host, port):
     """
     Start all Minecraft servers
     """
+
+    rpc_config = ctx.obj['config'].rpc or {}
+
+    if not host:
+        host = rpc_config.get('host')
+
+    if not port:
+        port = rpc_config.get('port')
 
     servers = [
         mcserver.Server(srv)
@@ -61,65 +63,133 @@ def start_all(ctx, user, group):
     ]
 
     for srv in servers:
-        start_server(srv, user, group)
+        start_server(srv, host, port)
 
-def start_server_daemon(server, user, group):
+@mymcadmin.command()
+@click.option('--host', default = None, help = 'The host to listen on')
+@click.option(
+    '--port',
+    type    = click.INT,
+    default = None,
+    help    = 'The port to listen on')
+@click.option(
+    '--user',
+    type    = params.User(),
+    default = None,
+    help    = 'The user to run as')
+@click.option(
+    '--group',
+    type    = params.Group(),
+    default = None,
+    help    = 'The group to run as')
+@click.option(
+    '--root',
+    type    = click.Path(file_okay = False),
+    default = None,
+    help    = 'The location where instances are stored')
+@click.option(
+    '--pid',
+    type    = click.Path(dir_okay = False),
+    default = None,
+    help    = 'The location of the PID file')
+@click.option(
+    '--log',
+    type    = click.Path(dir_okay = False),
+    default = None,
+    help    = 'The log file to write to')
+@click.pass_context
+def start_daemon(ctx, **kwargs):
     """
-    Start a server daemon
+    Start management daemon
     """
 
-    if os.path.exists(server.pid_file):
-        raise errors.MyMCAdminError('Server is already started')
+    config        = ctx.obj['config']
+    daemon_config = config.daemon or {}
 
-    admin_log = open(server.admin_log, 'a')
+    def _get_option(name, default):
+        if kwargs[name] is not None:
+            return kwargs[name]
 
-    with daemon.DaemonContext(
-        detach_process    = True,
-        gid               = group,
-        pidfile           = daemon.pidfile.PIDLockFile(server.pid_file),
-        stdout            = admin_log,
-        stderr            = admin_log,
-        uid               = user,
-        working_directory = server.path,
-        ):
-        utils.setup_logging()
+        return daemon_config.get(name, default)
 
-        instance_manager = manager.Manager(server)
-        instance_manager.run()
+    host  = _get_option('host', 'localhost')
+    port  = _get_option('port', 2323)
+    user  = _get_option('user', os.getuid())
+    group = _get_option('group', os.getgid())
 
-    admin_log.close()
+    root = _get_option(
+        'root',
+        os.path.join(utils.get_user_home(user), 'mymcadmin'),
+    )
 
-def start_server(server, user, group):
+    pid = _get_option('pid', os.path.join(root, 'daemon.pid'))
+    log = _get_option('log', os.path.join(root, 'mymcadmin.log'))
+
+    click.echo('Starting daemon...', nl = False)
+
+    try:
+        if os.path.exists(pid):
+            raise errors.ManagerError('Management daemon is already started')
+
+        proc = multiprocessing.Process(
+            target = start_management_daemon,
+            args   = (host, port, user, group, root, pid, log),
+        )
+
+        proc.start()
+        proc.join()
+    except Exception as ex:
+        error('Failure')
+        raise click.ClickException(str(ex))
+    else:
+        success('Success')
+
+def start_server(server, host, port):
     """
     Start a Minecraft server
     """
 
-    click.echo(
-        'Attempting to start {} as ({}, {})...'.format(
-            server.name,
-            user or 'default',
-            group or 'default',
-        ),
-        nl = False,
-    )
+    click.echo('Starting {}...'.format(server.name), nl = False)
+
+    if not host:
+        host = 'localhost'
+
+    if not port:
+        port = 2323
 
     try:
-        # Check if the server management process is already running
-        if not os.path.exists(server.pid_file):
-            proc = multiprocessing.Process(
-                target = start_server_daemon,
-                args = (server, user, group),
-            )
-
-            proc.start()
-            proc.join()
-        else:
-            _, host, port = server.socket_settings
-            with rpc.RpcClient(host, port) as rpc_client:
-                rpc_client.server_start()
+        with rpc.RpcClient(host, port) as rpc_client:
+            rpc_client.server_start(server.name)
     except Exception as ex:
         error('Failure')
         raise click.ClickException(ex)
     else:
         success('Success')
+
+def start_management_daemon(**kwargs):
+    """
+    Start the management daemon
+    """
+
+    daemon_log = open(kwargs['log'], 'a')
+
+    with daemon.DaemonContext(
+        detach_process    = True,
+        gid               = kwargs['group'],
+        pidfile           = daemon.pidfile.PIDLockFile(kwargs['pid']),
+        stdout            = daemon_log,
+        stderr            = daemon_log,
+        uid               = kwargs['user'],
+        working_directory = kwargs['root'],
+        ):
+        utils.setup_logging()
+
+        proc = manager.Manager(
+            kwargs['host'],
+            kwargs['port'],
+            kwargs['root'],
+        )
+        proc.run()
+
+    daemon_log.close()
 

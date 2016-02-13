@@ -6,37 +6,40 @@ import os
 import unittest
 import unittest.mock
 
+import click
 import nose
 
 from .... import utils
 
-from mymcadmin import errors
 from mymcadmin.cli import mymcadmin as mma_command
-from mymcadmin.cli.commands.start import start_server_daemon
+from mymcadmin.cli.commands.start import start_management_daemon, start_server
 
 class TestStart(utils.CliRunnerMixin, unittest.TestCase):
     """
     Tests for the server start command
     """
 
-    @unittest.mock.patch('multiprocessing.Process')
+    @unittest.mock.patch('mymcadmin.cli.commands.start.start_server')
     @unittest.mock.patch('mymcadmin.server.Server')
     @unittest.mock.patch('os.path.exists')
-    @utils.apply_mock('mymcadmin.config.Config')
-    def test_command(self, exists, server, process):
+    @unittest.mock.patch('mymcadmin.config.Config')
+    def test_command(self, config, exists, server, mock_start_server):
         """
         Test the command with no special options
         """
 
-        exists.side_effect = lambda p: p != 'test'
+        config.return_value = config
+        config.rpc          = {}
+
+        exists.return_value = True
 
         server.return_value = server
-        server.name = 'test'
-        server.pid_file = 'test'
+        server.name         = 'test'
 
-        process.return_value = process
+        result = self.cli_runner.invoke(mma_command, ['start', 'test'])
 
-        result = self.cli_runner.invoke(mma_command, ['start', 'vanilla'])
+        if result.exit_code != 0:
+            print(result.output)
 
         self.assertEqual(
             0,
@@ -44,32 +47,166 @@ class TestStart(utils.CliRunnerMixin, unittest.TestCase):
             'Command did not terminate properly',
         )
 
-        process.assert_called_with(
-            target = start_server_daemon,
-            args   = (server, None, None),
-        )
+        mock_start_server.assert_called_with(server, None, None)
 
-        process.start.assert_called_with()
-        process.join.assert_called_with()
-
-    @unittest.mock.patch('multiprocessing.Process')
+    @unittest.mock.patch('mymcadmin.cli.commands.start.start_server')
     @unittest.mock.patch('mymcadmin.server.Server')
     @unittest.mock.patch('os.path.exists')
-    @utils.apply_mock('mymcadmin.config.Config')
-    def test_command_fail(self, exists, server, process):
+    @unittest.mock.patch('mymcadmin.config.Config')
+    def test_command_option_host(self, config, exists, server, mock_start_server):
         """
-        Tests that the command handles exceptions
+        Tests that the host option is used
         """
 
-        exists.side_effect = lambda p: p != 'test'
+        config.return_value = config
+        config.rpc          = {}
+
+        exists.return_value = True
 
         server.return_value = server
-        server.name = 'test'
-        server.pid_file = 'test'
+        server.name         = 'test'
 
-        process.side_effect = RuntimeError('Boom!')
+        result = self.cli_runner.invoke(
+            mma_command,
+            [
+                'start',
+                'test',
+                '--host',
+                'example.com',
+            ]
+        )
+
+        if result.exit_code != 0:
+            print(result.output)
+
+        self.assertEqual(
+            0,
+            result.exit_code,
+            'Command did not terminate properly',
+        )
+
+        mock_start_server.assert_called_with(server, 'example.com', None)
+
+    @unittest.mock.patch('mymcadmin.cli.commands.start.start_server')
+    @unittest.mock.patch('mymcadmin.server.Server')
+    @unittest.mock.patch('os.path.exists')
+    @unittest.mock.patch('mymcadmin.config.Config')
+    def test_command_option_port(self, config, exists, server, mock_start_server):
+        """
+        Tests that the port option is used
+        """
+
+        config.return_value = config
+        config.rpc          = {}
+
+        exists.return_value = True
+
+        server.return_value = server
+        server.name         = 'test'
+
+        result = self.cli_runner.invoke(
+            mma_command,
+            [
+                'start',
+                'test',
+                '--port',
+                2323,
+            ]
+        )
+
+        if result.exit_code != 0:
+            print(result.output)
+
+        self.assertEqual(
+            0,
+            result.exit_code,
+            'Command did not terminate properly',
+        )
+
+        mock_start_server.assert_called_with(server, None, 2323)
+
+    @unittest.mock.patch('mymcadmin.cli.commands.start.start_server')
+    @unittest.mock.patch('mymcadmin.server.Server')
+    @unittest.mock.patch('os.path.exists')
+    @unittest.mock.patch('mymcadmin.config.Config')
+    def test_command_config_host(self, config, exists, server, mock_start_server):
+        """
+        Tests that if the host option isn't given it defaults to the config
+        """
+
+        config.return_value = config
+        config.rpc          = {'host': 'example.com'}
+
+        exists.return_value = True
+
+        server.return_value = server
+        server.name         = 'test'
 
         result = self.cli_runner.invoke(mma_command, ['start', 'test'])
+
+        if result.exit_code != 0:
+            print(result.output)
+
+        self.assertEqual(
+            0,
+            result.exit_code,
+            'Command did not terminate properly',
+        )
+
+        mock_start_server.assert_called_with(server, 'example.com', None)
+
+    @unittest.mock.patch('mymcadmin.cli.commands.start.start_server')
+    @unittest.mock.patch('mymcadmin.server.Server')
+    @unittest.mock.patch('os.path.exists')
+    @unittest.mock.patch('mymcadmin.config.Config')
+    def test_command_config_port(self, config, exists, server, mock_start_server):
+        """
+        Tests that if the port option isn't given it defaults to the config
+        """
+
+        config.return_value = config
+        config.rpc          = {'port': 2323}
+
+        exists.return_value = True
+
+        server.return_value = server
+        server.name         = 'test'
+
+        result = self.cli_runner.invoke(mma_command, ['start', 'test'])
+
+        if result.exit_code != 0:
+            print(result.output)
+
+        self.assertEqual(
+            0,
+            result.exit_code,
+            'Command did not terminate properly',
+        )
+
+        mock_start_server.assert_called_with(server, None, 2323)
+
+    @unittest.mock.patch('mymcadmin.cli.commands.start.start_server')
+    @unittest.mock.patch('mymcadmin.server.Server')
+    @unittest.mock.patch('os.path.exists')
+    @unittest.mock.patch('mymcadmin.config.Config')
+    def test_command_fail(self, config, exists, server, mock_start_server):
+        """
+        Test that the command returns a non-zero exit code on error
+        """
+
+        config.return_value = config
+        config.rpc          = {}
+
+        exists.return_value = True
+
+        server.return_value = server
+
+        mock_start_server.side_effect = click.ClickException('boom')
+
+        result = self.cli_runner.invoke(mma_command, ['start', 'test'])
+
+        if result.exit_code != 1:
+            print(result.output)
 
         self.assertEqual(
             1,
@@ -77,162 +214,79 @@ class TestStart(utils.CliRunnerMixin, unittest.TestCase):
             'Command did not terminate properly',
         )
 
+    # pylint: disable=no-self-use
     @unittest.mock.patch('mymcadmin.rpc.RpcClient')
     @unittest.mock.patch('mymcadmin.server.Server')
-    @unittest.mock.patch('os.path.exists')
-    @utils.apply_mock('mymcadmin.config.Config')
-    def test_command_manager_started(self, exists, server, rpc_client):
+    def test_start_server(self, server, rpc_client):
         """
-        Tests that the manager is started if it isn't already
+        Tests that the start_server function sends the serverStart command
         """
 
-        exists.return_value = True
-
-        server.return_value = server
         server.name = 'test'
-        server.socket_settings = ('tcp', 'localhost', 8000)
 
         rpc_client.return_value = rpc_client
         rpc_client.__enter__.return_value = rpc_client
 
-        result = self.cli_runner.invoke(mma_command, ['start', 'test'])
+        start_server(server, None, None)
 
-        self.assertEqual(
-            0,
-            result.exit_code,
-            'Command did not terminate properly',
-        )
-
-        rpc_client.server_start.assert_called_with()
-        rpc_client.assert_called_with('localhost', 8000)
-
-    @unittest.mock.patch('multiprocessing.Process')
-    @unittest.mock.patch('mymcadmin.server.Server')
-    @unittest.mock.patch('os.path.exists')
-    @utils.apply_mock('mymcadmin.config.Config')
-    def test_command_user(self, exists, server, process):
-        """
-        Tests that the user option is used
-        """
-
-        exists.side_effect = lambda p: p != 'test'
-
-        server.return_value = server
-        server.name = 'test'
-        server.pid_file = 'test'
-
-        process.return_value = process
-
-        result = self.cli_runner.invoke(
-            mma_command,
-            ['start', 'vanilla', '--user', os.getuid()],
-        )
-
-        self.assertEqual(
-            0,
-            result.exit_code,
-            'Command did not terminate properly',
-        )
-
-        process.assert_called_with(
-            target = start_server_daemon,
-            args   = (server, os.getuid(), None),
-        )
-
-        process.start.assert_called_with()
-        process.join.assert_called_with()
-
-    @unittest.mock.patch('multiprocessing.Process')
-    @unittest.mock.patch('mymcadmin.server.Server')
-    @unittest.mock.patch('os.path.exists')
-    @utils.apply_mock('mymcadmin.config.Config')
-    def test_command_group(self, exists, server, process):
-        """
-        Tests that the group option is used
-        """
-
-        exists.side_effect = lambda p: p != 'test'
-
-        server.return_value = server
-        server.name = 'test'
-        server.pid_file = 'test'
-
-        process.return_value = process
-
-        result = self.cli_runner.invoke(
-            mma_command,
-            ['start', 'vanilla', '--group', os.getgid()],
-        )
-
-        self.assertEqual(
-            0,
-            result.exit_code,
-            'Command did not terminate properly',
-        )
-
-        process.assert_called_with(
-            target = start_server_daemon,
-            args   = (server, None, os.getgid()),
-        )
-
-        process.start.assert_called_with()
-        process.join.assert_called_with()
-
-    # pylint: disable=no-self-use, too-many-arguments
-    @unittest.mock.patch('mymcadmin.manager.Manager')
-    @unittest.mock.patch('daemon.pidfile.PIDLockFile')
-    @unittest.mock.patch('daemon.DaemonContext')
-    @unittest.mock.patch('builtins.open')
-    @unittest.mock.patch('os.path.exists')
-    @unittest.mock.patch('mymcadmin.server.Server')
-    def test_start_server_daemon(self, server, exists, mock_open, daemon, pidfile, manager):
-        """
-        Tests that the server daemon is started properly
-        """
-
-        server.return_value = server
-        server.admin_log = 'test.txt'
-        server.pid_file  = 'test.pid'
-        server.path      = 'home'
-
-        exists.return_value = False
-
-        mock_open.return_value = mock_open
-
-        pidfile.return_value = pidfile
-
-        manager.return_value = manager
-
-        start_server_daemon(server, None, None)
-
-        mock_open.assert_called_with('test.txt', 'a')
-
-        daemon.assert_called_with(
-            detach_process    = True,
-            gid               = None,
-            pidfile           = pidfile,
-            stdout            = open,
-            stderr            = open,
-            uid               = None,
-            working_directory = 'home',
-        )
-
-        manager.assert_called_with(server)
-        manager.run.assert_called_with()
-    # pylint: enable=no-self-use, too-many-arguments
+        rpc_client.assert_called_with('localhost', 2323)
+        rpc_client.server_start.assert_called_with('test')
+    # pylint: enable=no-self-use
 
     # pylint: disable=no-self-use
-    @nose.tools.raises(errors.MyMCAdminError)
-    @unittest.mock.patch('os.path.exists')
+    @unittest.mock.patch('mymcadmin.rpc.RpcClient')
     @unittest.mock.patch('mymcadmin.server.Server')
-    def test_start_server_daemon_fail(self, server, exists):
+    def test_start_server_host(self, server, rpc_client):
         """
-        Tests that the daemon won't start if it is already started
+        Tests that the start_server function uses the host option
         """
 
-        exists.return_value = True
+        server.name = 'test'
 
-        start_server_daemon(server, None, None)
+        rpc_client.return_value = rpc_client
+        rpc_client.__enter__.return_value = rpc_client
+
+        start_server(server, 'example.com', None)
+
+        rpc_client.assert_called_with('example.com', 2323)
+        rpc_client.server_start.assert_called_with('test')
+    # pylint: enable=no-self-use
+
+    # pylint: disable=no-self-use
+    @unittest.mock.patch('mymcadmin.rpc.RpcClient')
+    @unittest.mock.patch('mymcadmin.server.Server')
+    def test_start_server_port(self, server, rpc_client):
+        """
+        Tests that the start_server function uses the port option
+        """
+
+        server.name = 'test'
+
+        rpc_client.return_value = rpc_client
+        rpc_client.__enter__.return_value = rpc_client
+
+        start_server(server, None, 8080)
+
+        rpc_client.assert_called_with('localhost', 8080)
+        rpc_client.server_start.assert_called_with('test')
+    # pylint: enable=no-self-use
+
+    # pylint: disable=no-self-use
+    @nose.tools.raises(click.ClickException)
+    @unittest.mock.patch('mymcadmin.rpc.RpcClient')
+    @unittest.mock.patch('mymcadmin.server.Server')
+    def test_start_server_fail(self, server, rpc_client):
+        """
+        Tests that the start_server function handles errors properly
+        """
+
+        server.name = 'test'
+
+        rpc_client.return_value = rpc_client
+        rpc_client.__enter__.return_value = rpc_client
+        rpc_client.server_start.side_effect = RuntimeError
+
+        start_server(server, None, None)
     # pylint: enable=no-self-use
 
 class TestStartAll(utils.CliRunnerMixin, unittest.TestCase):
@@ -240,14 +294,17 @@ class TestStartAll(utils.CliRunnerMixin, unittest.TestCase):
     start_all tests
     """
 
-    @unittest.mock.patch('multiprocessing.Process')
+    @unittest.mock.patch('mymcadmin.cli.commands.start.start_server')
     @unittest.mock.patch('os.path.exists')
     @unittest.mock.patch('mymcadmin.server.Server')
-    @utils.apply_mock('mymcadmin.config.Config')
-    def test_command(self, server, exists, process):
+    @unittest.mock.patch('mymcadmin.config.Config')
+    def test_command(self, config, server, exists, mock_start_server):
         """
         Tests that the command works properly with no extra options
         """
+
+        config.return_value = config
+        config.rpc          = {}
 
         server.list_all.return_value = [
             'test0',
@@ -264,13 +321,8 @@ class TestStartAll(utils.CliRunnerMixin, unittest.TestCase):
         ]
 
         server.side_effect = servers
-        for srv in servers:
-            srv.name     = 'test'
-            srv.pid_file = 'test'
 
-        exists.side_effect = lambda p: p != 'test'
-
-        process.return_value = process
+        exists.side_effect = True
 
         result = self.cli_runner.invoke(mma_command, ['start_all'])
 
@@ -280,35 +332,24 @@ class TestStartAll(utils.CliRunnerMixin, unittest.TestCase):
             'Command did not terminate properly',
         )
 
-        for srv in servers:
-            process.assert_has_calls(
-                [
-                    unittest.mock.call(
-                        target = start_server_daemon,
-                        args   = (srv, None, None),
-                    )
-                ]
-            )
-
-        self.assertEqual(
-            len(servers),
-            process.start.call_count,
-            'Not all servers were started',
+        mock_start_server.assert_has_calls(
+            [
+                unittest.mock.call(srv, None, None)
+                for srv in servers
+            ]
         )
 
-        self.assertEqual(
-            len(servers),
-            process.join.call_count,
-        )
-
-    @unittest.mock.patch('multiprocessing.Process')
+    @unittest.mock.patch('mymcadmin.cli.commands.start.start_server')
     @unittest.mock.patch('os.path.exists')
     @unittest.mock.patch('mymcadmin.server.Server')
-    @utils.apply_mock('mymcadmin.config.Config')
-    def test_command_user(self, server, exists, process):
+    @unittest.mock.patch('mymcadmin.config.Config')
+    def test_command_host_option(self, config, server, exists, mock_start_server):
         """
-        Tests that the user option is used
+        Tests that the host option is used
         """
+
+        config.return_value = config
+        config.rpc          = {}
 
         server.list_all.return_value = [
             'test0',
@@ -325,17 +366,16 @@ class TestStartAll(utils.CliRunnerMixin, unittest.TestCase):
         ]
 
         server.side_effect = servers
-        for srv in servers:
-            srv.name     = 'test'
-            srv.pid_file = 'test'
 
-        exists.side_effect = lambda p: p != 'test'
-
-        process.return_value = process
+        exists.side_effect = True
 
         result = self.cli_runner.invoke(
             mma_command,
-            ['start_all', '--user', os.getuid()],
+            [
+                'start_all',
+                '--host',
+                'example.com',
+            ]
         )
 
         self.assertEqual(
@@ -344,35 +384,24 @@ class TestStartAll(utils.CliRunnerMixin, unittest.TestCase):
             'Command did not terminate properly',
         )
 
-        for srv in servers:
-            process.assert_has_calls(
-                [
-                    unittest.mock.call(
-                        target = start_server_daemon,
-                        args   = (srv, os.getuid(), None),
-                    )
-                ]
-            )
-
-        self.assertEqual(
-            len(servers),
-            process.start.call_count,
-            'Not all servers were started',
+        mock_start_server.assert_has_calls(
+            [
+                unittest.mock.call(srv, 'example.com', None)
+                for srv in servers
+            ]
         )
 
-        self.assertEqual(
-            len(servers),
-            process.join.call_count,
-        )
-
-    @unittest.mock.patch('multiprocessing.Process')
+    @unittest.mock.patch('mymcadmin.cli.commands.start.start_server')
     @unittest.mock.patch('os.path.exists')
     @unittest.mock.patch('mymcadmin.server.Server')
-    @utils.apply_mock('mymcadmin.config.Config')
-    def test_command_group(self, server, exists, process):
+    @unittest.mock.patch('mymcadmin.config.Config')
+    def test_command_port_option(self, config, server, exists, mock_start_server):
         """
-        Tests that the group option is used
+        Tests that the port option is used
         """
+
+        config.return_value = config
+        config.rpc          = {}
 
         server.list_all.return_value = [
             'test0',
@@ -389,17 +418,16 @@ class TestStartAll(utils.CliRunnerMixin, unittest.TestCase):
         ]
 
         server.side_effect = servers
-        for srv in servers:
-            srv.name     = 'test'
-            srv.pid_file = 'test'
 
-        exists.side_effect = lambda p: p != 'test'
-
-        process.return_value = process
+        exists.side_effect = True
 
         result = self.cli_runner.invoke(
             mma_command,
-            ['start_all', '--group', os.getgid()],
+            [
+                'start_all',
+                '--port',
+                2323
+            ]
         )
 
         self.assertEqual(
@@ -408,25 +436,343 @@ class TestStartAll(utils.CliRunnerMixin, unittest.TestCase):
             'Command did not terminate properly',
         )
 
-        for srv in servers:
-            process.assert_has_calls(
-                [
-                    unittest.mock.call(
-                        target = start_server_daemon,
-                        args   = (srv, None, os.getgid()),
-                    )
-                ]
-            )
+        mock_start_server.assert_has_calls(
+            [
+                unittest.mock.call(srv, None, 2323)
+                for srv in servers
+            ]
+        )
+
+    @unittest.mock.patch('mymcadmin.cli.commands.start.start_server')
+    @unittest.mock.patch('os.path.exists')
+    @unittest.mock.patch('mymcadmin.server.Server')
+    @unittest.mock.patch('mymcadmin.config.Config')
+    def test_command_host_config(self, config, server, exists, mock_start_server):
+        """
+        Tests that the host config option is used
+        """
+
+        config.return_value = config
+        config.rpc          = {'host': 'example.com'}
+
+        server.list_all.return_value = [
+            'test0',
+            'test1',
+            'test2',
+            'test4',
+        ]
+
+        servers = [
+            unittest.mock.Mock(),
+            unittest.mock.Mock(),
+            unittest.mock.Mock(),
+            unittest.mock.Mock(),
+        ]
+
+        server.side_effect = servers
+
+        exists.side_effect = True
+
+        result = self.cli_runner.invoke(mma_command, ['start_all'])
 
         self.assertEqual(
-            len(servers),
-            process.start.call_count,
-            'Not all servers were started',
+            0,
+            result.exit_code,
+            'Command did not terminate properly',
+        )
+
+        mock_start_server.assert_has_calls(
+            [
+                unittest.mock.call(srv, 'example.com', None)
+                for srv in servers
+            ]
+        )
+
+    @unittest.mock.patch('mymcadmin.cli.commands.start.start_server')
+    @unittest.mock.patch('os.path.exists')
+    @unittest.mock.patch('mymcadmin.server.Server')
+    @unittest.mock.patch('mymcadmin.config.Config')
+    def test_command_port_config(self, config, server, exists, mock_start_server):
+        """
+        Tests that the port config option is used
+        """
+
+        config.return_value = config
+        config.rpc          = {'port': 2323}
+
+        server.list_all.return_value = [
+            'test0',
+            'test1',
+            'test2',
+            'test4',
+        ]
+
+        servers = [
+            unittest.mock.Mock(),
+            unittest.mock.Mock(),
+            unittest.mock.Mock(),
+            unittest.mock.Mock(),
+        ]
+
+        server.side_effect = servers
+
+        exists.side_effect = True
+
+        result = self.cli_runner.invoke(mma_command, ['start_all'])
+
+        self.assertEqual(
+            0,
+            result.exit_code,
+            'Command did not terminate properly',
+        )
+
+        mock_start_server.assert_has_calls(
+            [
+                unittest.mock.call(srv, None, 2323)
+                for srv in servers
+            ]
+        )
+
+    @unittest.mock.patch('mymcadmin.cli.commands.start.start_server')
+    @unittest.mock.patch('os.path.exists')
+    @unittest.mock.patch('mymcadmin.server.Server')
+    @unittest.mock.patch('mymcadmin.config.Config')
+    def test_command_fail(self, config, server, exists, mock_start_server):
+        """
+        Tests that the correct exit code is used if the command fails
+        """
+
+        config.return_value = config
+        config.rpc          = {}
+
+        server.list_all.return_value = [
+            'test0',
+            'test1',
+            'test2',
+            'test4',
+        ]
+
+        servers = [
+            unittest.mock.Mock(),
+            unittest.mock.Mock(),
+            unittest.mock.Mock(),
+            unittest.mock.Mock(),
+        ]
+
+        server.side_effect = servers
+
+        exists.side_effect = True
+
+        mock_start_server.side_effect = click.ClickException('boom')
+
+        result = self.cli_runner.invoke(mma_command, ['start_all'])
+
+        self.assertEqual(
+            1,
+            result.exit_code,
+            'Command did not terminate properly',
+        )
+
+class TestStartDaemon(utils.CliRunnerMixin, unittest.TestCase):
+    """
+    Tests the start_daemon command
+    """
+
+    @unittest.mock.patch('multiprocessing.Process')
+    @unittest.mock.patch('mymcadmin.utils.get_user_home')
+    @unittest.mock.patch('mymcadmin.config.Config')
+    @unittest.mock.patch('os.path.exists')
+    def test_command_default(self, exists, config, get_user_home, process):
+        """
+        Tests that the command works with no options and no config settings
+        """
+
+        root = os.path.join('home', 'mymcadmin')
+        pid  = os.path.join(root, 'daemon.pid')
+        log  = os.path.join(root, 'mymcadmin.log')
+
+        exists.side_effect = lambda p: p != pid
+
+        config.return_value = config
+        config.daemon = None
+
+        get_user_home.return_value = 'home'
+
+        process.return_value = process
+
+        result = self.cli_runner.invoke(mma_command, ['start_daemon'])
+
+        if result.exit_code != 0:
+            print(result.output)
+
+        self.assertEqual(
+            0,
+            result.exit_code,
+            'Command did not terminate properly',
+        )
+
+        process.assert_called_with(
+            target = start_management_daemon,
+            args   = (
+                'localhost',
+                2323,
+                os.getuid(),
+                os.getgid(),
+                root,
+                pid,
+                log,
+            ),
+        )
+
+        process.start.assert_called_with()
+        process.join.assert_called_with()
+
+    @unittest.mock.patch('multiprocessing.Process')
+    @unittest.mock.patch('mymcadmin.utils.get_user_home')
+    @unittest.mock.patch('mymcadmin.config.Config')
+    @unittest.mock.patch('os.path.exists')
+    def test_command_config(self, exists, config, get_user_home, process):
+        """
+        Tests that the command works with no options and a full config
+        """
+
+        root = os.path.join('home', 'mma')
+        pid  = os.path.join(root, 'test.pid')
+        log  = os.path.join(root, 'test.log')
+
+        exists.side_effect = lambda p: p != pid
+
+        config.return_value = config
+        config.daemon = {
+            'host':  'example.com',
+            'port':  8080,
+            'user':  9999,
+            'group': 5555,
+            'root':  root,
+            'pid':   pid,
+            'log':   log,
+        }
+
+        get_user_home.return_value = 'home'
+
+        process.return_value = process
+
+        result = self.cli_runner.invoke(mma_command, ['start_daemon'])
+
+        if result.exit_code != 0:
+            print(result.output)
+
+        self.assertEqual(
+            0,
+            result.exit_code,
+            'Command did not terminate properly',
+        )
+
+        process.assert_called_with(
+            target = start_management_daemon,
+            args   = (
+                'example.com',
+                8080,
+                9999,
+                5555,
+                root,
+                pid,
+                log,
+            ),
+        )
+
+        process.start.assert_called_with()
+        process.join.assert_called_with()
+
+    # pylint: disable=too-many-arguments
+    @unittest.mock.patch('multiprocessing.Process')
+    @unittest.mock.patch('mymcadmin.utils.get_user_home')
+    @unittest.mock.patch('grp.getgrgid')
+    @unittest.mock.patch('pwd.getpwuid')
+    @unittest.mock.patch('mymcadmin.config.Config')
+    @unittest.mock.patch('os.path.exists')
+    def test_command_options(self, exists, config, getpwuid, getgrgid, get_user_home, process):
+        """
+        Tests that the command uses the given options
+        """
+
+        user  = 5000
+        group = 5050
+        pid   = 'test.pid'
+
+        exists.side_effect = lambda p: p != pid
+
+        config.return_value = config
+        config.daemon = None
+
+        getpwuid.return_value = user
+        getgrgid.return_value = group
+
+        get_user_home.return_value = 'home'
+
+        process.return_value = process
+
+        result = self.cli_runner.invoke(
+            mma_command,
+            [
+                'start_daemon',
+                '--host',  'example.com',
+                '--port',  8080,
+                '--user',  user,
+                '--group', group,
+                '--root',  'test',
+                '--pid',   pid,
+                '--log',   'test.log',
+            ]
+        )
+
+        if result.exit_code != 0:
+            print(result.output)
+
+        self.assertEqual(
+            0,
+            result.exit_code,
+            'Command did not terminate properly',
+        )
+
+        process.assert_called_with(
+            target = start_management_daemon,
+            args   = (
+                'example.com',
+                8080,
+                user,
+                group,
+                'test',
+                pid,
+                'test.log',
+            ),
+        )
+
+        process.start.assert_called_with()
+        process.join.assert_called_with()
+    # pylint: enable=too-many-arguments
+
+    @unittest.mock.patch('os.path.exists')
+    @utils.apply_mock('mymcadmin.config.Config')
+    def test_command_port_invalid(self, exists):
+        """
+        Test that the command returns an exit code for an invalid port
+        """
+
+        exists.return_value = True
+
+        result = self.cli_runner.invoke(
+            mma_command,
+            [
+                'start_daemon',
+                '--port', '8000',
+            ]
         )
 
         self.assertEqual(
-            len(servers),
-            process.join.call_count,
+            -1,
+            result.exit_code,
+            'Command did not terminate properly',
         )
 
 if __name__ == '__main__':

@@ -12,12 +12,28 @@ class MyMCAdminError(Exception):
 
         super(MyMCAdminError, self).__init__(self.message)
 
-class ConfigurationError(Exception):
+class ConfigurationError(MyMCAdminError):
     """
     An error in a configuration of MyMCAdmin
     """
 
-class ServerError(Exception):
+class ManagerError(MyMCAdminError):
+    """
+    An error with the management process
+    """
+
+class ServerDoesNotExistError(ManagerError):
+    """
+    Raised when a requested server does not exist
+    """
+
+    def __init__(self, server_name):
+        super(ServerDoesNotExistError, self).__init__(
+            'Server {} does not exist',
+            server_name,
+        )
+
+class ServerError(MyMCAdminError):
     """
     An error with the Minecraft server
     """

@@ -5,23 +5,27 @@ Management process for Minecraft servers.
 import asyncio
 import asyncio.subprocess
 import logging
+import os.path
 
-from . import rpc
+from . import errors, rpc, server
+from .rpc import errors as rpc_errors
 
 class Manager(object):
     """
     Minecraft server management system.
     """
 
-    def __init__(self, server, event_loop = None):
+    def __init__(self, host, port, root, event_loop = None):
         logging.info('Setting up event loop')
 
         if event_loop is None:
             event_loop = asyncio.get_event_loop()
 
-        self.server         = server
+        self.host           = host
+        self.port           = port
+        self.root           = root
         self.event_loop     = event_loop
-        self.proc           = None
+        self.instances      = {}
         self.network_task   = None
         self.rpc_dispatcher = rpc.Dispatcher()
 
@@ -32,20 +36,17 @@ class Manager(object):
         Start and run the management process
         """
 
-        _, host, port = self.server.socket_settings
-
         logging.info('Setting up network connection')
         self.network_task = self.event_loop.create_task(
             asyncio.start_server(
                 self.handle_network_connection,
-                host,
-                port,
+                self.host,
+                self.port,
                 loop = self.event_loop,
             )
         )
 
-        logging.info('Starting Minecraft server')
-        self.event_loop.run_until_complete(self.handle_proc())
+        # TODO(durandj): check for servers to auto start
 
         logging.info('Management process running')
         try:
@@ -60,60 +61,75 @@ class Manager(object):
 
         self.rpc_dispatcher.add_dict(
             {
-                'terminate':     self.rpc_command_terminate,
+                'shutdown':      self.rpc_command_shutdown,
                 'serverStart':   self.rpc_command_server_start,
                 'serverStop':    self.rpc_command_server_stop,
                 'serverRestart': self.rpc_command_server_restart,
             }
         )
 
-    async def rpc_command_terminate(self):
+    async def rpc_command_shutdown(self):
         """
         Handle RPC command: terminate
         """
 
         logging.info('Sending terminate command to management server')
 
-        if self.proc.returncode is None:
-            await self.rpc_command_server_stop()
-            await self.proc.wait()
+        stopped_instances = []
+        if self.instances:
+            for server_id in self.instances.keys():
+                # TODO(durandj): can this method throw an exception that'll get in the way?
+                stopped_instances.append(
+                    await self.rpc_command_server_stop(server_id)
+                )
+
         self.event_loop.stop()
 
-        return 'terminating manager'
+        return stopped_instances
 
-    async def rpc_command_server_start(self):
+    # TODO(durandj): check for required parameters
+    async def rpc_command_server_start(self, server_id):
         """
         Handle RPC command: serverStart
         """
 
-        logging.info('Starting Minecraft server')
+        srv = self._get_server_by_name(server_id)
 
-        self.event_loop.create_task(self.handle_proc())
+        logging.info('Starting Minecraft server %s', server_id)
 
-        return 'starting server'
+        self.event_loop.create_task(self.start_server_proc(srv))
 
-    async def rpc_command_server_stop(self):
+        return server_id
+
+    async def rpc_command_server_stop(self, server_id):
         """
         Handle RPC command: serverStop
         """
 
-        logging.info('Sending stop command to server')
+        proc = self._get_proc_by_name(server_id)
+        if proc is None:
+            raise rpc_errors.JsonRpcInvalidRequestError(
+                'Server %s was not running',
+                server_id,
+            )
 
-        await self.proc.communicate('stop'.encode())
+        logging.info('Sending stop command to server %s', server_id)
 
-        return 'stopping server'
+        await self._send_to_server(proc, 'stop')
 
-    async def rpc_command_server_restart(self):
+        return server_id
+
+    async def rpc_command_server_restart(self, server_id):
         """
         Handle RPC command: serverRestart
         """
 
-        logging.info('Sending restart command to server')
+        logging.info('Sending restart command to server %s', server_id)
 
-        await self.rpc_command_server_stop()
-        await self.rpc_command_server_start()
+        await self.rpc_command_server_stop(server_id)
+        await self.rpc_command_server_start(server_id)
 
-        return 'restarting server'
+        return server_id
 
     async def handle_network_connection(self, reader, writer):
         """
@@ -145,12 +161,32 @@ class Manager(object):
 
         writer.close()
 
-    async def handle_proc(self):
+    async def start_server_proc(self, srv):
         """
         Handle process management
         """
 
-        self.proc = await self.server.start()
+        proc = await srv.start()
 
-        await self.proc.wait()
+        self.instances[srv.name] = proc
+
+        await proc.wait()
+
+    def _get_server_by_name(self, name):
+        server_path = os.path.join(self.root, name)
+        if not os.path.exists(server_path):
+            raise errors.ServerDoesNotExistError(name)
+
+        return server.Server(server_path)
+
+    def _get_proc_by_name(self, name):
+        server_path = os.path.join(self.root, name)
+        if not os.path.exists(server_path):
+            raise errors.ServerDoesNotExistError(name)
+
+        return self.instances.get(name, None)
+
+    @staticmethod
+    async def _send_to_server(proc, message):
+        return proc.communicate(message.encode())
 
