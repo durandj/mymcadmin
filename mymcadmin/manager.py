@@ -59,14 +59,154 @@ class Manager(object):
     def _setup_rpc_handlers(self):
         logging.info('Setting up JSON RPC handlers')
 
+        # TODO(durandj): switch to snake case for rpc methods
         self.rpc_dispatcher.add_dict(
             {
-                'shutdown':      self.rpc_command_shutdown,
-                'serverStart':   self.rpc_command_server_start,
-                'serverStop':    self.rpc_command_server_stop,
-                'serverRestart': self.rpc_command_server_restart,
+                'listServers':      self.rpc_command_list_servers,
+                'serverRestart':    self.rpc_command_server_restart,
+                'serverRestartAll': self.rpc_command_server_restart_all,
+                'serverStart':      self.rpc_command_server_start,
+                'serverStartAll':   self.rpc_command_list_servers,
+                'serverStop':       self.rpc_command_server_stop,
+                'serverStopAll':    self.rpc_command_server_stop_all,
+                'shutdown':         self.rpc_command_shutdown,
             }
         )
+
+    async def rpc_command_list_servers(self):
+        """
+        Handle RPC command: listServers
+        """
+
+        files = [
+            f
+            for f in os.listdir(self.root)
+            if os.path.isdir(os.path.join(self.root, f))
+        ]
+
+        return files
+
+    async def rpc_command_server_restart(self, server_id):
+        """
+        Handle RPC command: serverRestart
+        """
+
+        logging.info('Sending restart command to server %s', server_id)
+
+        await self.rpc_command_server_stop(server_id)
+        await self.rpc_command_server_start(server_id)
+
+        return server_id
+
+    async def rpc_command_server_restart_all(self):
+        """
+        Handle RPC command: serverRestartAll
+        """
+
+        logging.info('Restarting all servers...')
+
+        restarted_servers = []
+        for server_id in self.instances.keys():
+            # pylint: disable=broad-except
+            try:
+                result = await self.rpc_command_server_restart(server_id)
+
+                restarted_servers.append(result)
+            except Exception as ex:
+                logging.exception(
+                    'There was an error when restarting server %s: %s',
+                    server_id,
+                    str(ex),
+                )
+            # pylint: enable=broad-except
+
+        return restarted_servers
+
+    # TODO(durandj): check for required parameters
+    async def rpc_command_server_start(self, server_id):
+        """
+        Handle RPC command: serverStart
+        """
+
+        srv = self._get_server_by_name(server_id)
+
+        logging.info('Starting Minecraft server %s', server_id)
+
+        self.event_loop.create_task(self.start_server_proc(srv))
+
+        return server_id
+
+    async def rpc_command_server_start_all(self):
+        """
+        Handle RPC command: serverStartAll
+        """
+
+        server_ids  = await self.rpc_command_list_servers()
+        running_ids = self.instances.keys()
+        server_ids  = [
+            server_id
+            for server_id in server_ids
+            if server_id not in running_ids
+        ]
+
+        started_servers = []
+        for server_id in server_ids:
+            # pylint: disable=broad-except
+            try:
+                server_id = await self.rpc_command_server_start(server_id)
+
+                started_servers.append(server_id)
+            except Exception as ex:
+                logging.exception(
+                    'There was an error when starting server %s: %s',
+                    server_id,
+                    str(ex),
+                )
+            # pylint: enable=broad-except
+
+        return started_servers
+
+    async def rpc_command_server_stop(self, server_id):
+        """
+        Handle RPC command: serverStop
+        """
+
+        proc = self._get_proc_by_name(server_id)
+        if proc is None:
+            raise rpc_errors.JsonRpcInvalidRequestError(
+                'Server {} was not running',
+                server_id,
+            )
+
+        logging.info('Sending stop command to server %s', server_id)
+
+        await self._send_to_server(proc, 'stop')
+
+        return server_id
+
+    async def rpc_command_server_stop_all(self):
+        """
+        Handle RPC command: serverStopAll
+        """
+
+        server_ids = self.instances.keys()
+
+        stopped_servers = []
+        for server_id in server_ids:
+            # pylint: disable=broad-except
+            try:
+                result = await self.rpc_command_server_stop(server_id)
+
+                stopped_servers.append(result)
+            except Exception as ex:
+                logging.exception(
+                    'There was an error stopping server %s: %s',
+                    server_id,
+                    str(ex),
+                )
+            # pylint: enable=broad-except
+
+        return stopped_servers
 
     async def rpc_command_shutdown(self):
         """
@@ -86,50 +226,6 @@ class Manager(object):
         self.event_loop.stop()
 
         return stopped_instances
-
-    # TODO(durandj): check for required parameters
-    async def rpc_command_server_start(self, server_id):
-        """
-        Handle RPC command: serverStart
-        """
-
-        srv = self._get_server_by_name(server_id)
-
-        logging.info('Starting Minecraft server %s', server_id)
-
-        self.event_loop.create_task(self.start_server_proc(srv))
-
-        return server_id
-
-    async def rpc_command_server_stop(self, server_id):
-        """
-        Handle RPC command: serverStop
-        """
-
-        proc = self._get_proc_by_name(server_id)
-        if proc is None:
-            raise rpc_errors.JsonRpcInvalidRequestError(
-                'Server %s was not running',
-                server_id,
-            )
-
-        logging.info('Sending stop command to server %s', server_id)
-
-        await self._send_to_server(proc, 'stop')
-
-        return server_id
-
-    async def rpc_command_server_restart(self, server_id):
-        """
-        Handle RPC command: serverRestart
-        """
-
-        logging.info('Sending restart command to server %s', server_id)
-
-        await self.rpc_command_server_stop(server_id)
-        await self.rpc_command_server_start(server_id)
-
-        return server_id
 
     async def handle_network_connection(self, reader, writer):
         """
@@ -171,6 +267,9 @@ class Manager(object):
         self.instances[srv.name] = proc
 
         await proc.wait()
+
+        # TODO(durandj): check this with tests!
+        del self.instances[srv.name]
 
     def _get_server_by_name(self, name):
         server_path = os.path.join(self.root, name)
