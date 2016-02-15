@@ -6,15 +6,13 @@ import asyncio
 import json
 import logging
 
-from . import errors
+from . import errors, request
 from .. import utils
 
 class RpcClient(object):
     """
     JSON RPC client
     """
-
-    JSONRPC_VERSION = '2.0'
 
     def __init__(self, host, port, event_loop = None):
         if event_loop is None:
@@ -117,14 +115,11 @@ class RpcClient(object):
         )
 
     async def _send(self, method, params, request_id = 1):
-        data = json.dumps(
-            {
-                'jsonrpc': RpcClient.JSONRPC_VERSION,
-                'id':      request_id,
-                'method':  method,
-                'params':  params,
-            }
-        ) + '\n'
+        data = request.JsonRpcRequest(
+            method     = method,
+            params     = params,
+            request_id = request_id,
+        ).json
 
         logging.info('Sending "%s" to server', data)
         self.writer.write(data.encode())
