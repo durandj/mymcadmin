@@ -21,8 +21,6 @@ class Server(object):
     A Minecraft server instance
     """
 
-    LOG_FILE              = 'mymcadmin.log'
-    PID_FILE              = 'server.pid'
     PROPERTIES_FILE       = 'server.properties'
     PROPERTIES_REGEX      = re.compile(r'^([a-zA-Z0-9\-]+)=([^#]*)( *#.*)?$')
     PROPERTIES_BOOL_REGEX = re.compile(r'^(true|false)$', re.IGNORECASE)
@@ -43,14 +41,6 @@ class Server(object):
         self._properties      = None
         self._settings_file   = os.path.join(path, Server.SETTINGS_FILE)
         self._settings        = None
-
-    @property
-    def pid_file(self):
-        """
-        Get the instance PID
-        """
-
-        return os.path.join(self._path, Server.PID_FILE)
 
     @property
     def path(self):
@@ -120,14 +110,6 @@ class Server(object):
         return command_args
 
     @property
-    def admin_log(self):
-        """
-        Get the admin log used for operations on the server
-        """
-
-        return os.path.join(self._path, Server.LOG_FILE)
-
-    @property
     def properties(self):
         """
         Get the Minecraft server properties defined in the server.properties
@@ -174,36 +156,6 @@ class Server(object):
 
         return self._settings
 
-    @property
-    def socket_settings(self):
-        """
-        Get the socket settings for the server
-        """
-
-        socket_props = self.settings.get('socket', {})
-        if 'type' not in socket_props:
-            raise errors.ServerSettingsError('Missing socket type')
-
-        socket_type = socket_props['type']
-        if socket_type != 'tcp':
-            raise errors.ServerSettingsError('Invalid socket type')
-
-        if 'port' not in socket_props:
-            raise errors.ServerSettingsError('Missing socket port')
-
-        host = socket_props.get('host', 'localhost')
-
-        try:
-            port = int(socket_props['port'])
-        except ValueError:
-            raise errors.ServerSettingsError(
-                'Port was not an integer: {}'.format(
-                    socket_props['port']
-                )
-            )
-
-        return (socket_type, host, port)
-
     def start(self):
         """
         Start the Minecraft server
@@ -239,19 +191,6 @@ class Server(object):
 
         with rpc.RpcClient(host, port) as rpc_client:
             rpc_client.send_command(command)
-
-    @staticmethod
-    def list_all(config):
-        """
-        List all available servers
-        """
-
-        path = config.instance_path
-
-        return [
-            os.path.join(path, f) for f in os.listdir(path)
-            if os.path.isdir(os.path.join(path, f))
-        ]
 
     @classmethod
     def list_versions(

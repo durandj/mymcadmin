@@ -1,13 +1,18 @@
+"""
+Tests for the Server class
+"""
+
 import asyncio
 import copy
 import io
 import json
-import nose
 import os
 import os.path
 import tempfile
 import unittest
 import unittest.mock
+
+import nose
 
 from mymcadmin import errors, server
 
@@ -88,7 +93,12 @@ SAMPLE_VERSIONS = {
     ],
 }
 
+# pylint: disable=too-many-public-methods
 class TestServer(unittest.TestCase):
+    """
+    Tests for the Server class
+    """
+
     def setUp(self):
         self.temp_dir    = tempfile.TemporaryDirectory()
         self.root_path   = self.temp_dir.name
@@ -100,13 +110,17 @@ class TestServer(unittest.TestCase):
         self._set_server_settings({})
 
         properties_file = os.path.join(self.server_path, 'server.properties')
-        with open(properties_file, 'w') as fh:
-            fh.write(SAMPLE_PROPERTIES)
+        with open(properties_file, 'w') as settings_file:
+            settings_file.write(SAMPLE_PROPERTIES)
 
     def tearDown(self):
         self.temp_dir.cleanup()
 
     def test_get_path(self):
+        """
+        Test the path property works correctly
+        """
+
         self.assertEqual(
             self.server_path,
             self.server.path,
@@ -115,9 +129,17 @@ class TestServer(unittest.TestCase):
 
     @nose.tools.raises(AttributeError)
     def test_set_path(self):
+        """
+        Check that we can't assign the path property
+        """
+
         self.server.path = 'Bad!'
 
     def test_get_name(self):
+        """
+        Test the name property works correctly
+        """
+
         self.assertEqual(
             'test',
             self.server.name,
@@ -126,27 +148,17 @@ class TestServer(unittest.TestCase):
 
     @nose.tools.raises(AttributeError)
     def test_set_name(self):
+        """
+        Check that we can't assign the name property
+        """
+
         self.server.name = 'Bad!'
 
-    def test_get_pid_file(self):
-        self.assertEqual(
-            os.path.join(self.server_path, 'server.pid'),
-            self.server.pid_file,
-            'Server PID file did not match',
-        )
-
-    @nose.tools.raises(AttributeError)
-    def test_set_pid_file(self):
-        self.server.pid_file = 'Bad!'
-
-    def test_get_java_default(self):
-        self.assertEqual(
-            'java',
-            self.server.java,
-            'Server Java binary did not match',
-        )
-
     def test_get_java_config(self):
+        """
+        Test that we can get the Java binary from the config file
+        """
+
         self._set_server_settings(
             {
                 'java': '/usr/local/bin/java',
@@ -161,9 +173,17 @@ class TestServer(unittest.TestCase):
 
     @nose.tools.raises(AttributeError)
     def test_set_java(self):
+        """
+        Check that we can't assign the java property
+        """
+
         self.server.java = 'Bad!'
 
     def test_get_jar_default(self):
+        """
+        Test that we can get the Java binary default value
+        """
+
         fake_jar = self._touch_file('minecraft_test.jar')
 
         self.assertEqual(
@@ -174,16 +194,29 @@ class TestServer(unittest.TestCase):
 
     @nose.tools.raises(errors.ServerError)
     def test_get_jar_default_missing(self):
-        self.server.jar
+        """
+        Test that we raise the correct error if no jar is given or could be found
+        """
+
+        _ = self.server.jar
 
     @nose.tools.raises(errors.ServerError)
     def test_get_jar_default_multiple(self):
+        """
+        Test that we raise the correct error if no jar was specified and there
+        was more than one jar in the instance
+        """
+
         for i in range(2):
             self._touch_file('minecraft_test_{}.jar'.format(i))
 
-        self.server.jar
+        _ = self.server.jar
 
     def test_get_jar(self):
+        """
+        Test that we can get the jar from the config setting
+        """
+
         self._set_server_settings(
             {
                 'jar': 'minecraft_server.jar',
@@ -198,9 +231,17 @@ class TestServer(unittest.TestCase):
 
     @nose.tools.raises(AttributeError)
     def test_set_jar(self):
+        """
+        Test that we can't set the jar property
+        """
+
         self.server.jar = 'Bad!'
 
     def test_get_command_args_default(self):
+        """
+        Test that we can get the default value for the command line arguments
+        """
+
         fake_jar = self._touch_file('minecraft_test.jar')
 
         self.assertEqual(
@@ -210,6 +251,10 @@ class TestServer(unittest.TestCase):
         )
 
     def test_get_command_args_java(self):
+        """
+        Test that we can get the command line arguments from the settings file
+        """
+
         self._set_server_settings({'java': '/usr/local/bin/java'})
         fake_jar = self._touch_file('minecraft_test.jar')
 
@@ -220,6 +265,10 @@ class TestServer(unittest.TestCase):
         )
 
     def test_get_command_args_jvm_args(self):
+        """
+        Test that we get can get the JVM arguments from the settings
+        """
+
         self._set_server_settings({'jvm_args': ['-test']})
         fake_jar = self._touch_file('minecraft_test.jar')
 
@@ -230,6 +279,10 @@ class TestServer(unittest.TestCase):
         )
 
     def test_get_command_args_args(self):
+        """
+        Test that we get the program arguments from the settings
+        """
+
         self._set_server_settings({'args': ['-test']})
         fake_jar = self._touch_file('minecraft_test.jar')
 
@@ -240,6 +293,10 @@ class TestServer(unittest.TestCase):
         )
 
     def test_get_command_args_unsafe(self):
+        """
+        Test that we handle unsafe command line arguments
+        """
+
         self._set_server_settings({'args': ['; rm -rf /;']})
         fake_jar = self._touch_file('minecraft_test.jar')
 
@@ -251,20 +308,17 @@ class TestServer(unittest.TestCase):
 
     @nose.tools.raises(AttributeError)
     def test_set_command_args(self):
+        """
+        Check that we can't assign the comand_args property
+        """
+
         self.server.command_args = []
 
-    def test_get_admin_log(self):
-        self.assertEqual(
-            os.path.join(self.server_path, 'mymcadmin.log'),
-            self.server.admin_log,
-            'Admin log did not match',
-        )
-
-    @nose.tools.raises(AttributeError)
-    def test_set_admin_log(self):
-        self.server.admin_log = 'Bad!'
-
     def test_get_properties(self):
+        """
+        Check that we can get the server properties
+        """
+
         self.assertDictEqual(
             {
                 'max-tick-time':                 60000,
@@ -310,15 +364,27 @@ class TestServer(unittest.TestCase):
 
     @nose.tools.raises(errors.ServerError)
     def test_get_properties_missing(self):
+        """
+        Check that we raise the correct error if there is no properties file
+        """
+
         os.remove(os.path.join(self.server_path, 'server.properties'))
 
-        self.server.properties
+        _ = self.server.properties
 
     @nose.tools.raises(AttributeError)
     def test_set_properties(self):
+        """
+        Check that we don't allow assigning of the properties property
+        """
+
         self.server.properties = 'Bad!'
 
     def test_get_settings(self):
+        """
+        Check that we ca get the settings property
+        """
+
         settings = {
             'java': '/usr/local/bin/java',
             'args': ['-test'],
@@ -334,118 +400,29 @@ class TestServer(unittest.TestCase):
 
     @nose.tools.raises(errors.ServerSettingsError)
     def test_get_settings_missing(self):
+        """
+        Check that we raise the correct error if there is no settings file
+        """
+
         settings_file = os.path.join(self.server_path, 'mymcadmin.settings')
         os.remove(settings_file)
 
-        self.server.settings
+        _ = self.server.settings
 
     @nose.tools.raises(AttributeError)
     def test_set_settings(self):
+        """
+        Check that we can't assign the settings property
+        """
+
         self.server.settings = 'Bad!'
-
-    def test_get_socket_settings(self):
-        self._set_server_settings(
-            {
-                'socket': {
-                    'type': 'tcp',
-                    'host': 'example.com',
-                    'port': 9001,
-                },
-            }
-        )
-
-        socket_type, host, port = self.server.socket_settings
-
-        self.assertEqual(
-            'tcp',
-            socket_type,
-            'Socket type did not match',
-        )
-
-        self.assertEqual(
-            'example.com',
-            host,
-            'The host did not match',
-        )
-
-        self.assertEqual(
-            9001,
-            port,
-            'The port did not match',
-        )
-
-    @nose.tools.raises(errors.ServerSettingsError)
-    def test_get_socket_settings_missing_type(self):
-        self._set_server_settings(
-            {
-                'socket': {
-                    'host': 'example.com',
-                    'port': 9001,
-                },
-            }
-        )
-
-        socket_type, host, port = self.server.socket_settings
-
-    def test_get_socket_settings_missing_host(self):
-        self._set_server_settings(
-            {
-                'socket': {
-                    'type': 'tcp',
-                    'port': 9001,
-                },
-            }
-        )
-
-        socket_type, host, port = self.server.socket_settings
-
-        self.assertEqual(
-            'localhost',
-            host,
-            'The default host did not match',
-        )
-
-    @nose.tools.raises(errors.ServerSettingsError)
-    def test_get_socket_settings_missing_port(self):
-        self._set_server_settings(
-            {
-                'socket': {
-                    'type': 'tcp',
-                    'host': 'example.com',
-                },
-            }
-        )
-
-        socket_type, host, port = self.server.socket_settings
-
-    @nose.tools.raises(errors.ServerSettingsError)
-    def test_get_socket_settings_invalid_type(self):
-        self._set_server_settings(
-            {
-                'socket': {
-                    'type': 'bad',
-                    'port': 9001,
-                },
-            }
-        )
-
-        socket_type, host, port = self.server.socket_settings
-
-    @nose.tools.raises(errors.ServerSettingsError)
-    def test_get_socket_settings_invalid_port(self):
-        self._set_server_settings(
-            {
-                'socket': {
-                    'type': 'tcp',
-                    'port': 'test',
-                }
-            }
-        )
-
-        self.server.socket_settings
 
     @unittest.mock.patch('asyncio.create_subprocess_exec')
     def test_start(self, create_subprocess_exec):
+        """
+        Test the server start command works as expected
+        """
+
         fake_jar = self._touch_file('minecraft_test.jar')
 
         self.server.start()
@@ -461,6 +438,10 @@ class TestServer(unittest.TestCase):
 
     @unittest.mock.patch('mymcadmin.server.rpc.RpcClient')
     def test_stop(self, rpc_client):
+        """
+        Test the server stop command works as expected
+        """
+
         rpc_client.return_value = rpc_client
         rpc_client.__enter__.return_value = rpc_client
 
@@ -478,18 +459,12 @@ class TestServer(unittest.TestCase):
         rpc_client.assert_called_with('localhost', 9001)
         self.assertTrue(rpc_client.server_stop.called)
 
-    def test_list_all(self):
-        mock_config = unittest.mock.Mock(instance_path = self.root_path)
-
-        servers = server.Server.list_all(mock_config)
-        self.assertEqual(
-            [self.server_path],
-            servers,
-            'Server list did not match',
-        )
-
     @unittest.mock.patch('requests.get')
     def test_list_versions_default(self, requests_get):
+        """
+        Test that the list_versions method returns correctly
+        """
+
         response_mock = unittest.mock.Mock()
         response_mock.configure_mock(
             ok = True,
@@ -515,6 +490,10 @@ class TestServer(unittest.TestCase):
 
     @unittest.mock.patch('requests.get')
     def test_list_versions_filter(self, requests_get):
+        """
+        Check that we can filter out versions by their release type
+        """
+
         response_mock = unittest.mock.Mock()
         requests_get.return_value = response_mock
 
@@ -583,19 +562,29 @@ class TestServer(unittest.TestCase):
                     'Alphas were found in data',
                 )
 
+    # pylint: disable=no-self-use
     @nose.tools.raises(errors.MyMCAdminError)
     @unittest.mock.patch('requests.get')
-    def test_list_versions_network_error(self, requests_get):
+    def test_list_versions_network(self, requests_get):
+        """
+        Check that we handle networking errors when getting the version list
+        """
+
         response_mock = unittest.mock.Mock()
         response_mock.configure_mock(ok = False)
 
         requests_get.return_value = response_mock
 
-        versions = server.Server.list_versions()
+        server.Server.list_versions()
+    # pylint: enable=no-self-use
 
     @unittest.mock.patch('requests.get')
     @unittest.mock.patch('mymcadmin.server.Server.list_versions')
-    def test_download_server_jar_default(self, list_versions, requests_get):
+    def test_download_server_default(self, list_versions, requests_get):
+        """
+        Check that we get the latest version by default
+        """
+
         list_versions.return_value = {
             'versions': [
                 {
@@ -645,6 +634,10 @@ class TestServer(unittest.TestCase):
     @unittest.mock.patch('requests.get')
     @unittest.mock.patch('mymcadmin.server.Server.list_versions')
     def test_download_server_jar(self, list_versions, requests_get):
+        """
+        Test that we get that we can download a specific version
+        """
+
         list_versions.return_value = {
             'versions': [
                 {
@@ -691,22 +684,33 @@ class TestServer(unittest.TestCase):
             'Jar was not written to disk',
         )
 
+    # pylint: disable=no-self-use
     @nose.tools.raises(errors.MyMCAdminError)
     @unittest.mock.patch('requests.get')
     @unittest.mock.patch('mymcadmin.server.Server.list_versions')
-    def test_download_server_jar_bad_version(self, list_versions, requests_get):
+    def test_download_server_version(self, list_versions, requests_get):
+        """
+        Test that we handle bad versions
+        """
+
         list_versions.return_value = {'versions': []}
 
         mock_response = unittest.mock.Mock()
         mock_response.configure_mock(ok = False)
         requests_get.return_value = mock_response
 
-        jar_path = server.Server.download_server_jar('test')
+        _ = server.Server.download_server_jar('test')
+    # pylint: enable=no-self-use
 
+    # pylint: disable=no-self-use
     @nose.tools.raises(errors.MyMCAdminError)
     @unittest.mock.patch('requests.get')
     @unittest.mock.patch('mymcadmin.server.Server.list_versions')
-    def test_download_server_jar_bad_response(self, list_versions, requests_get):
+    def test_download_server_response(self, list_versions, requests_get):
+        """
+        Test that we handle bad responses while downloading
+        """
+
         list_versions.return_value = {
             'versions': [
                 {
@@ -726,11 +730,16 @@ class TestServer(unittest.TestCase):
         requests_get.return_value = mock_response
 
         server.Server.download_server_jar('test')
+    # pylint: enable=no-self-use
 
+    # pylint: disable=no-self-use
     @nose.tools.raises(errors.MyMCAdminError)
-    @unittest.mock.patch('requests.get')
     @unittest.mock.patch('mymcadmin.server.Server.list_versions')
-    def test_download_server_jar_no_server(self, list_versions, requests_get):
+    def test_download_server_no_server(self, list_versions):
+        """
+        Test that we handle when there was no server jar available for a version
+        """
+
         list_versions.return_value = {
             'versions': [
                 {
@@ -740,12 +749,17 @@ class TestServer(unittest.TestCase):
             ]
         }
 
-        jar_path = server.Server.download_server_jar('test')
+        server.Server.download_server_jar('test')
+    # pylint: enable=no-self-use
 
     @nose.tools.raises(errors.MyMCAdminError)
     @unittest.mock.patch('requests.get')
     @unittest.mock.patch('mymcadmin.server.Server.list_versions')
-    def test_download_server_jar_bad_sha(self, list_versions, requests_get):
+    def test_download_server_bad_sha(self, list_versions, requests_get):
+        """
+        Test that we handle when the downloadeds file has an incorrect sha
+        """
+
         list_versions.return_value = {
             'versions': [
                 {
@@ -771,15 +785,15 @@ class TestServer(unittest.TestCase):
         )
         requests_get.return_value = mock_response
 
-        jar_path = server.Server.download_server_jar(
+        server.Server.download_server_jar(
             'test',
             path = self.root_path,
         )
 
     def _set_server_settings(self, settings):
         settings_file = os.path.join(self.server_path, 'mymcadmin.settings')
-        with open(settings_file, 'w') as fh:
-            json.dump(settings, fh)
+        with open(settings_file, 'w') as settings_file:
+            json.dump(settings, settings_file)
 
     def _touch_file(self, file_name):
         file_name = os.path.join(self.server_path, file_name)
@@ -787,6 +801,7 @@ class TestServer(unittest.TestCase):
             pass
 
         return file_name
+# pylint: enable=too-many-public-methods
 
 if __name__ == '__main__':
     unittest.main()
