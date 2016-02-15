@@ -1,12 +1,12 @@
 # JSON RPC API
 
 The management process exposes a JSON RPC interface that you can use to
-communicate with it. All of the method names are in camel case. Parameters are
-given in snake case
+communicate with it. All of the method names and named parameters are in snake
+case
 
 ## Methods
 
-### listServers
+### list_servers
 
 Lists the available servers
 
@@ -18,7 +18,7 @@ None
 
 A list of server ID's
 
-### serverRestart
+### server_restart
 
 Restarts a server
 
@@ -30,7 +30,7 @@ Restarts a server
 
 TODO(durandj): document the return value
 
-### serverRestartAll
+### server_restart_all
 
 Restarts all of the running servers
 
@@ -42,7 +42,7 @@ None
 
 A list of servers that were restarted
 
-### serverStart
+### server_start
 
 Start a server
 
@@ -54,7 +54,7 @@ Start a server
 
 TODO(durandj): document the return value
 
-### serverStartAll
+### server_start_all
 
 Starts all of the servers that are not already running
 
@@ -66,7 +66,7 @@ None
 
 A list of servers that were started
 
-### serverStop
+### server_stop
 
 Stop a server
 
@@ -78,7 +78,7 @@ Stop a server
 
 TODO(durandj): document the return value
 
-### serverStopAll
+### server_stop_all
 
 Stops all of the running servers
 
