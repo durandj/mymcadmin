@@ -16,14 +16,17 @@ class RpcClient(object):
 
     JSONRPC_VERSION = '2.0'
 
-    def __init__(self, host, port):
-        self.event_loop = asyncio.get_event_loop()
+    def __init__(self, host, port, event_loop = None):
+        if event_loop is None:
+            event_loop = asyncio.get_event_loop()
+
+        self.event_loop = event_loop
         self.host       = host
         self.port       = port
         self.reader     = None
         self.writer     = None
 
-    def run(self):
+    def start(self):
         """
         Start the JSON RPC client
         """
@@ -31,7 +34,7 @@ class RpcClient(object):
         utils.setup_logging()
 
         logging.info('Setting up network connection')
-        self.event_loop.run_until_complete(self._setup())
+        self.event_loop.run_until_complete(self._connect())
 
     def stop(self):
         """
@@ -40,53 +43,73 @@ class RpcClient(object):
 
         self.event_loop.close()
 
-    def terminate(self):
+    def shutdown(self):
         """
         Ask the management process to stop
         """
 
-        self.send_rpc_command('terminate')
+        self.execute_rpc_method('shutdown')
 
-    def server_start(self):
+    def server_start(self, server_id):
         """
         Ask the management process to start a Minecraft server
         """
 
-        self.send_rpc_command('serverStart')
+        return self.execute_rpc_method('server_start', {'server_id': server_id})
 
-    def server_stop(self):
+    def server_start_all(self):
+        """
+        Ask the management process to start all the Minecraft servers
+        """
+
+        return self.execute_rpc_method('server_start_all')
+
+    def server_stop(self, server_id):
         """
         Ask the management process to stop a Minecraft server
         """
 
-        self.send_rpc_command('serverStop')
+        return self.execute_rpc_method('server_stop', {'server_id': server_id})
 
-    def server_restart(self):
+    def server_stop_all(self):
+        """
+        Ask the management process to stop all the Minecraft servers
+        """
+
+        return self.execute_rpc_method('server_stop_all')
+
+    def server_restart(self, server_id):
         """
         Ask the management process to restart a Minecraft server
         """
 
-        self.send_rpc_command('serverRestart')
+        return self.execute_rpc_method('server_restart', {'server_id': server_id})
 
-    def send_rpc_command(self, command, params = None):
+    def server_restart_all(self):
         """
-        Send an RPC command to the management process
+        Ask the management process to restart all the Minecraft servers
         """
 
-        if params is None:
-            params = {}
+        return self.execute_rpc_method('server_restart_all')
 
-        self.event_loop.run_until_complete(self._send(command, params))
+    def execute_rpc_method(self, method, params = None):
+        """
+        Execute a JSON RPC command on the management server
+        """
+
+        return self.event_loop.run_until_complete(
+            self._send(method, params)
+        )
 
     def __enter__(self):
-        self.run()
+        self.start()
 
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
         self.stop()
 
-    async def _setup(self):
+    async def _connect(self):
         self.reader, self.writer = await asyncio.open_connection(
             self.host,
             self.port,
@@ -117,4 +140,6 @@ class RpcClient(object):
                 'RPC error: {}',
                 response['error']['message'],
             )
+
+        return response['result']
 
