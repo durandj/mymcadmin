@@ -5,7 +5,7 @@ Configuration for the MyMCAdmin commands and backend.
 import json
 import os.path
 
-import mymcadmin.errors
+from . import errors
 
 # pylint: disable=too-few-public-methods
 class Config(object):
@@ -25,16 +25,16 @@ class Config(object):
         if config_file is None:
             config_file = Config.CONFIG_FILE
 
-        with open(config_file, 'r') as config:
-            self._config = json.load(config)
-
-    def __getattr__(self, name):
-        if name not in self._config:
-            raise mymcadmin.errors.ConfigurationError(
-                'No option "{}" in configuration file',
-                name,
+        try:
+            with open(config_file, 'r') as config:
+                self._config = json.load(config)
+        except Exception as ex:
+            raise errors.ConfigurationError(
+                'There was a problem loading the config file: {}',
+                str(ex),
             )
 
-        return self._config[name]
+    def __getattr__(self, name):
+        return self._config.get(name)
 # pylint: enable=too-few-public-methods
 
