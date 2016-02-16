@@ -16,7 +16,6 @@ from ... import (
     errors,
     manager,
     rpc,
-    server as mcserver,
     utils,
 )
 
