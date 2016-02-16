@@ -436,29 +436,6 @@ class TestServer(unittest.TestCase):
             stderr = asyncio.subprocess.PIPE,
         )
 
-    @unittest.mock.patch('mymcadmin.server.rpc.RpcClient')
-    def test_stop(self, rpc_client):
-        """
-        Test the server stop command works as expected
-        """
-
-        rpc_client.return_value = rpc_client
-        rpc_client.__enter__.return_value = rpc_client
-
-        self._set_server_settings(
-            {
-                'socket': {
-                    'type': 'tcp',
-                    'port': 9001,
-                }
-            }
-        )
-
-        self.server.stop()
-
-        rpc_client.assert_called_with('localhost', 9001)
-        self.assertTrue(rpc_client.server_stop.called)
-
     @unittest.mock.patch('requests.get')
     def test_list_versions_default(self, requests_get):
         """

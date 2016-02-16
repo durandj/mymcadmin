@@ -14,7 +14,7 @@ import shlex
 
 import requests
 
-from . import errors, rpc
+from . import errors
 
 class Server(object):
     """
@@ -170,27 +170,6 @@ class Server(object):
             stdout = asyncio.subprocess.PIPE,
             stderr = asyncio.subprocess.PIPE,
         )
-
-    def stop(self):
-        """
-        Stop the Minecraft server
-        """
-
-        _, host, port = self.socket_settings
-        with rpc.RpcClient(host, port) as rpc_client:
-            rpc_client.server_stop()
-
-    def send_command(self, command):
-        """
-        Send the server a command via JSON RPC
-
-        TODO(durandj): repurpose this as a general purpose command
-        """
-
-        _, host, port = self.socket_settings
-
-        with rpc.RpcClient(host, port) as rpc_client:
-            rpc_client.send_command(command)
 
     @classmethod
     def list_versions(

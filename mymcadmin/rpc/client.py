@@ -41,6 +41,13 @@ class RpcClient(object):
 
         self.event_loop.close()
 
+    def list_servers(self):
+        """
+        Get the list of available servers
+        """
+
+        return self.execute_rpc_method('list_servers')
+
     def shutdown(self):
         """
         Ask the management process to stop

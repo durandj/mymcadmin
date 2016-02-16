@@ -135,6 +135,16 @@ class TestRpcClient(unittest.TestCase):
             },
         )
 
+    def test_list_servers(self):
+        """
+        Tests that the list_servers method works properly
+        """
+
+        self._test_method(
+            'list_servers',
+            result = ['test0', 'test1', 'test2'],
+        )
+
     def test_server_start(self):
         """
         Tests that the server_start method works properly
