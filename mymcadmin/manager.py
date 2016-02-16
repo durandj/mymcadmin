@@ -59,17 +59,16 @@ class Manager(object):
     def _setup_rpc_handlers(self):
         logging.info('Setting up JSON RPC handlers')
 
-        # TODO(durandj): switch to snake case for rpc methods
         self.rpc_dispatcher.add_dict(
             {
-                'listServers':      self.rpc_command_list_servers,
-                'serverRestart':    self.rpc_command_server_restart,
-                'serverRestartAll': self.rpc_command_server_restart_all,
-                'serverStart':      self.rpc_command_server_start,
-                'serverStartAll':   self.rpc_command_list_servers,
-                'serverStop':       self.rpc_command_server_stop,
-                'serverStopAll':    self.rpc_command_server_stop_all,
-                'shutdown':         self.rpc_command_shutdown,
+                'list_servers':       self.rpc_command_list_servers,
+                'server_restart':     self.rpc_command_server_restart,
+                'server_restart_all': self.rpc_command_server_restart_all,
+                'server_start':       self.rpc_command_server_start,
+                'server_start_all':   self.rpc_command_server_start_all,
+                'server_stop':        self.rpc_command_server_stop,
+                'server_stop_all':    self.rpc_command_server_stop_all,
+                'shutdown':           self.rpc_command_shutdown,
             }
         )
 

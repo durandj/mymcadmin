@@ -174,6 +174,34 @@ class TestManager(unittest.TestCase):
         mock_server.start.assert_called_with()
         mock_proc.wait.assert_called_with()
 
+    @utils.run_async
+    async def test_rpc_method_handlers(self):
+        """
+        Tests that the correct handlers are assigned for RPC methods
+        """
+
+        manager = Manager(
+            self.host,
+            self.port,
+            self.root,
+        )
+
+        def _test_method(name, method):
+            self.assertEqual(
+                method,
+                manager.rpc_dispatcher[name],
+                'Method handler was not correct',
+            )
+
+        _test_method('list_servers',       manager.rpc_command_list_servers)
+        _test_method('server_restart',     manager.rpc_command_server_restart)
+        _test_method('server_restart_all', manager.rpc_command_server_restart_all)
+        _test_method('server_start',       manager.rpc_command_server_start)
+        _test_method('server_start_all',   manager.rpc_command_server_start_all)
+        _test_method('server_stop',        manager.rpc_command_server_stop)
+        _test_method('server_stop_all',    manager.rpc_command_server_stop_all)
+        _test_method('shutdown',           manager.rpc_command_shutdown)
+
 class TestRPCCommands(unittest.TestCase):
     """
     Tests for the JSON RPC commands
