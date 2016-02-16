@@ -21,11 +21,11 @@ from ... import (
 )
 
 @mymcadmin.command()
-@click.argument('server', type = params.Server())
+@click.argument('server_id')
 @click.option('--host', default = None, help = 'The host to connect to')
 @click.option('--port', default = None, help = 'The port to connect to')
 @click.pass_context
-def start(ctx, server, host, port):
+def start(ctx, server_id, host, port):
     """
     Start a Minecraft server
     """
@@ -33,12 +33,21 @@ def start(ctx, server, host, port):
     rpc_config = ctx.obj['config'].rpc or {}
 
     if not host:
-        host = rpc_config.get('host')
+        host = rpc_config.get('host', 'localhost')
 
     if not port:
-        port = rpc_config.get('port')
+        port = rpc_config.get('port', 2323)
 
-    start_server(server, host, port)
+    click.echo('Starting {}...'.format(server_id), nl = False)
+
+    try:
+        with rpc.RpcClient(host, port) as rpc_client:
+            rpc_client.server_start(server_id)
+    except Exception as ex:
+        error('Failure')
+        raise click.ClickException(ex)
+    else:
+        success('Success')
 
 @mymcadmin.command()
 @click.option('--host', default = None, help = 'The host to connect to')
@@ -52,18 +61,22 @@ def start_all(ctx, host, port):
     rpc_config = ctx.obj['config'].rpc or {}
 
     if not host:
-        host = rpc_config.get('host')
+        host = rpc_config.get('host', 'localhost')
 
     if not port:
-        port = rpc_config.get('port')
+        port = rpc_config.get('port', 2323)
 
-    servers = [
-        mcserver.Server(srv)
-        for srv in mcserver.Server.list_all(ctx.obj['config'])
-    ]
+    click.echo('Attempting to start all servers...')
 
-    for srv in servers:
-        start_server(srv, host, port)
+    try:
+        with rpc.RpcClient(host, port) as rpc_client:
+            server_ids = rpc_client.server_start_all()
+    except Exception as ex:
+        error('Failure')
+        raise click.ClickException(ex)
+    else:
+        for server_id in server_ids:
+            success('{} successfully started'.format(server_id))
 
 @mymcadmin.command()
 @click.option('--host', default = None, help = 'The host to listen on')
@@ -141,28 +154,6 @@ def start_daemon(ctx, **kwargs):
     except Exception as ex:
         error('Failure')
         raise click.ClickException(str(ex))
-    else:
-        success('Success')
-
-def start_server(server, host, port):
-    """
-    Start a Minecraft server
-    """
-
-    click.echo('Starting {}...'.format(server.name), nl = False)
-
-    if not host:
-        host = 'localhost'
-
-    if not port:
-        port = 2323
-
-    try:
-        with rpc.RpcClient(host, port) as rpc_client:
-            rpc_client.server_start(server.name)
-    except Exception as ex:
-        error('Failure')
-        raise click.ClickException(ex)
     else:
         success('Success')
 

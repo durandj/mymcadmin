@@ -4,48 +4,73 @@ Restart commands for Minecraft servers
 
 import click
 
-from .. import params
 from ..base import mymcadmin, error, success
-from ... import rpc, server as mcserver
+from ... import rpc
 
 @mymcadmin.command()
-@click.argument('server', type = params.Server())
-def restart(server):
+@click.argument('server_id')
+@click.option('--host', default = None, help = 'The host to connect to')
+@click.option(
+    '--port',
+    type    = click.INT,
+    default = None,
+    help    = 'The port to connect to')
+@click.pass_context
+def restart(ctx, server_id, host, port):
     """
     Restart a Minecraft server
     """
 
-    restart_server(server)
+    rpc_config = ctx.obj['config'].rpc or {}
 
-@mymcadmin.command()
-@click.pass_context
-def restart_all(ctx):
-    """
-    Restart all Minecraft servers
-    """
+    if host is None:
+        host = rpc_config.get('host', 'localhost')
 
-    servers = [
-        mcserver.Server(srv)
-        for srv in mcserver.Server.list_all(ctx.obj['config'])
-    ]
+    if port is None:
+        port = rpc_config.get('port', 2323)
 
-    for srv in servers:
-        restart_server(srv)
-
-def restart_server(srv):
-    """
-    Restart a single server
-    """
-
-    click.echo('Attempting to restart {}'.format(srv.name), nl = False)
+    click.echo('Attempting to restart {}'.format(server_id), nl = False)
 
     try:
-        _, host, port = srv.socket_settings
         with rpc.RpcClient(host, port) as rpc_client:
-            rpc_client.server_restart()
+            rpc_client.server_restart(server_id)
     except Exception as ex:
         error('Failure')
         raise click.ClickException(ex)
     else:
         success('Success')
+
+@mymcadmin.command()
+@click.option('--host', default = None, help = 'The host to connect to')
+@click.option(
+    '--port',
+    type    = click.INT,
+    default = None,
+    help    = 'The port to connect to')
+@click.pass_context
+def restart_all(ctx, host, port):
+    """
+    Restart all Minecraft servers
+    """
+
+    rpc_config = ctx.obj['config'].rpc or {}
+
+    if host is None:
+        host = rpc_config.get('host', 'localhost')
+
+    if port is None:
+        port = rpc_config.get('port', 2323)
+
+    click.echo('Restarting all servers...')
+
+    try:
+        with rpc.RpcClient(host, port) as rpc_client:
+            server_ids = rpc_client.server_restart_all()
+    except Exception as ex:
+        error('Failure')
+        raise click.ClickException(ex)
+    else:
+        # TODO(durandj): could be helpful to get a list of failures
+        for server_id in server_ids:
+            success('{} successfully restarted'.format(server_id))
 

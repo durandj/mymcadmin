@@ -10,34 +10,66 @@ from .... import utils
 from mymcadmin.cli import mymcadmin as mma_command
 
 class TestStop(utils.CliRunnerMixin, unittest.TestCase):
-    @unittest.mock.patch('mymcadmin.server.Server')
-    @unittest.mock.patch('os.path.exists')
+    """
+    Tests for the stop command
+    """
+
     @unittest.mock.patch('mymcadmin.config.Config')
-    def test_command(self, config, exists, server):
-        exists.return_value = True
+    def test_command_default(self, config):
+        """
+        Tests that the command functions properly with defaults
+        """
 
-        server.return_value = server
-        server.name         = 'test'
+        config.return_value = config
+        config.rpc = None
 
-        result = self.cli_runner.invoke(mma_command, ['stop', 'test'])
+        self._run_test('localhost', 2323)
 
-        self.assertEqual(
-            0,
-            result.exit_code,
-            'Command did not terminate properly',
+    @unittest.mock.patch('mymcadmin.config.Config')
+    def test_command_config(self, config):
+        """
+        Tests that the command uses the config options
+        """
+
+        config.return_value = config
+        config.rpc = {
+            'host': 'example.com',
+            'port': 8080,
+        }
+
+        self._run_test('example.com', 8080)
+
+    @unittest.mock.patch('mymcadmin.config.Config')
+    def test_command_options(self, config):
+        """
+        Tests that the command uses the command line options
+        """
+
+        config.return_value = config
+        config.rpc = None
+
+        self._run_test(
+            'example.com',
+            8080,
+            [
+                '--host', 'example.com',
+                '--port', 8080,
+            ],
         )
 
-        server.stop.assert_called_with()
-
-    @unittest.mock.patch('mymcadmin.server.Server')
-    @unittest.mock.patch('os.path.exists')
+    @unittest.mock.patch('mymcadmin.rpc.RpcClient')
     @unittest.mock.patch('mymcadmin.config.Config')
-    def test_command_fail(self, config, exists, server):
-        exists.return_value = True
+    def test_command_fail(self, config, rpc_client):
+        """
+        Tests that the command handles exceptions
+        """
 
-        server.return_value = server
-        server.name         = 'test'
-        server.stop.side_effect = RuntimeError
+        config.return_value = config
+        config.rpc = None
+
+        rpc_client.return_value = rpc_client
+        rpc_client.__enter__.return_value = rpc_client
+        rpc_client.server_stop.side_effect = RuntimeError('Boom!')
 
         result = self.cli_runner.invoke(mma_command, ['stop', 'test'])
 
@@ -46,68 +78,148 @@ class TestStop(utils.CliRunnerMixin, unittest.TestCase):
             result.exit_code,
             'Command did not terminate properly',
         )
+
+    def _run_test(self, expected_host, expected_port, params = None):
+        if params is None:
+            params = []
+
+        with unittest.mock.patch('mymcadmin.rpc.RpcClient') as rpc_client:
+            rpc_client.return_value = rpc_client
+            rpc_client.__enter__.return_value = rpc_client
+
+            result = self.cli_runner.invoke(
+                mma_command,
+                ['stop', 'test'] + params,
+            )
+
+            if result.exit_code != 0:
+                print(result.output)
+
+            self.assertEqual(
+                0,
+                result.exit_code,
+                'The command did not terminate properly',
+            )
+
+            rpc_client.assert_called_with(expected_host, expected_port)
+
+            rpc_client.server_stop.assert_called_with('test')
 
 class TestStopAll(utils.CliRunnerMixin, unittest.TestCase):
-    @unittest.mock.patch('mymcadmin.server.Server')
+    """
+    Tests for the stop_all command
+    """
+
     @unittest.mock.patch('mymcadmin.config.Config')
-    def test_command(self, config, server):
-        server_names = [
-            'test0',
-            'test1',
-            'test2',
-            'test3',
-        ]
+    def test_command_defaults(self, config):
+        """
+        Tests that the command functions properly with defaults
+        """
 
-        servers = [
-            unittest.mock.Mock(),
-            unittest.mock.Mock(),
-            unittest.mock.Mock(),
-            unittest.mock.Mock(),
-        ]
+        config.return_value = config
+        config.rpc = None
 
-        server.list_all.return_value = server_names
-        server.side_effect = servers
+        self._run_test('localhost', 2323)
 
-        result = self.cli_runner.invoke(mma_command, ['stop_all'])
+    @unittest.mock.patch('mymcadmin.config.Config')
+    def test_command_config(self, config):
+        """
+        Tests that the command uses the config options
+        """
 
-        self.assertEqual(
-            0,
-            result.exit_code,
-            'Command did not terminate properly',
+        config.return_value = config
+        config.rpc = {
+            'host': 'example.com',
+            'port': 8080,
+        }
+
+        self._run_test('example.com', 8080)
+
+    @unittest.mock.patch('mymcadmin.config.Config')
+    def test_command_options(self, config):
+        """
+        Tests that the command uses the command line options
+        """
+
+        config.return_value = config
+        config.rpc = None
+
+        self._run_test(
+            'example.com',
+            8080,
+            [
+                '--host', 'example.com',
+                '--port', 8080,
+            ],
         )
 
-        for srv in servers:
-            srv.stop.assert_called_with()
-
-    @unittest.mock.patch('mymcadmin.server.Server')
+    @unittest.mock.patch('mymcadmin.rpc.RpcClient')
     @unittest.mock.patch('mymcadmin.config.Config')
-    def test_command_fail(self, config, server):
-        server_names = [
-            'test0',
-            'test1',
-            'test2',
-            'test3',
-        ]
+    def test_command_fail(self, config, rpc_client):
+        """
+        Tests that the command handles exceptions
+        """
 
-        servers = [
-            unittest.mock.Mock(),
-            unittest.mock.Mock(),
-            unittest.mock.Mock(),
-            unittest.mock.Mock(),
-        ]
+        config.return_value = config
+        config.rpc = None
 
-        server.list_all.return_value = server_names
-        server.side_effect = servers
-
-        servers[0].stop.side_effect = RuntimeError
+        rpc_client.return_value = rpc_client
+        rpc_client.__enter__.return_value = rpc_client
+        rpc_client.server_stop_all.side_effect = RuntimeError('Boom!')
 
         result = self.cli_runner.invoke(mma_command, ['stop_all'])
+
+        if result.exit_code != 1:
+            print(result.output)
 
         self.assertEqual(
             1,
             result.exit_code,
             'Command did not terminate properly',
         )
+
+    def _run_test(self, expected_host, expected_port, params = None):
+        if params is None:
+            params = []
+
+        server_ids = [
+            'server0',
+            'server1',
+            'server2',
+            'server3',
+            'server4',
+        ]
+
+        with unittest.mock.patch('mymcadmin.rpc.RpcClient') as rpc_client, \
+                unittest.mock.patch('mymcadmin.cli.commands.stop.success') as success:
+            rpc_client.return_value = rpc_client
+            rpc_client.__enter__.return_value = rpc_client
+            rpc_client.server_stop_all.return_value = server_ids
+
+            result = self.cli_runner.invoke(
+                mma_command,
+                ['stop_all'] + params,
+            )
+
+            if result.exit_code != 0:
+                print(result.output)
+
+            self.assertEqual(
+                0,
+                result.exit_code,
+                'Command did not terminate properly',
+            )
+
+            rpc_client.assert_called_with(expected_host, expected_port)
+
+            rpc_client.server_stop_all.assert_called_with()
+
+            success.assert_has_calls(
+                [
+                    unittest.mock.call('{} successfully stopped'.format(server_id))
+                    for server_id in server_ids
+                ]
+            )
 
 if __name__ == '__main__':
     unittest.main()
