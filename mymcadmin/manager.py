@@ -85,6 +85,7 @@ class Manager(object):
 
         return files
 
+    @rpc.required_param('server_id')
     async def rpc_command_server_restart(self, server_id):
         """
         Handle RPC command: serverRestart
@@ -92,8 +93,8 @@ class Manager(object):
 
         logging.info('Sending restart command to server %s', server_id)
 
-        await self.rpc_command_server_stop(server_id)
-        await self.rpc_command_server_start(server_id)
+        await self.rpc_command_server_stop(server_id = server_id)
+        await self.rpc_command_server_start(server_id = server_id)
 
         return server_id
 
@@ -121,7 +122,7 @@ class Manager(object):
 
         return restarted_servers
 
-    # TODO(durandj): check for required parameters
+    @rpc.required_param('server_id')
     async def rpc_command_server_start(self, server_id):
         """
         Handle RPC command: serverStart
@@ -165,6 +166,7 @@ class Manager(object):
 
         return started_servers
 
+    @rpc.required_param('server_id')
     async def rpc_command_server_stop(self, server_id):
         """
         Handle RPC command: serverStop

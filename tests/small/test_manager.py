@@ -265,7 +265,9 @@ class TestRPCCommands(unittest.TestCase):
         self.manager.rpc_command_server_stop  = mock_rpc_server_stop
         self.manager.rpc_command_server_start = mock_rpc_server_start
 
-        result = await self.manager.rpc_command_server_restart(server_id)
+        result = await self.manager.rpc_command_server_restart(
+            server_id = server_id,
+        )
 
         self.assertEqual(
             server_id,
@@ -273,8 +275,8 @@ class TestRPCCommands(unittest.TestCase):
             'RPC method did not return the right value',
         )
 
-        mock_rpc_server_stop.assert_called_with(server_id)
-        mock_rpc_server_start.assert_called_with(server_id)
+        mock_rpc_server_stop.assert_called_with(server_id = server_id)
+        mock_rpc_server_start.assert_called_with(server_id = server_id)
 
     @nose.tools.raises(ServerDoesNotExistError)
     @utils.run_async
@@ -283,7 +285,18 @@ class TestRPCCommands(unittest.TestCase):
         Check that we return an error when we give an invalid ID
         """
 
-        await self.manager.rpc_command_server_restart('bad')
+        await self.manager.rpc_command_server_restart(
+            server_id = 'bad',
+        )
+
+    @nose.tools.raises(JsonRpcInvalidRequestError)
+    @utils.run_async
+    async def test_server_restart_missing(self):
+        """
+        Check that we require the server_id parameter
+        """
+
+        await self.manager.rpc_command_server_restart()
 
     @nose.tools.raises(RuntimeError)
     @utils.run_async
@@ -300,7 +313,9 @@ class TestRPCCommands(unittest.TestCase):
         self.manager.rpc_command_server_stop  = mock_rpc_server_stop
         self.manager.rpc_command_server_start = mock_rpc_server_start
 
-        await self.manager.rpc_command_server_restart('testification')
+        await self.manager.rpc_command_server_restart(
+            server_id = 'testification',
+        )
 
     @utils.run_async
     async def test_server_restart_all(self):
@@ -395,7 +410,9 @@ class TestRPCCommands(unittest.TestCase):
 
         self.manager.start_server_proc = mock_start_server_proc
 
-        result = await self.manager.rpc_command_server_start(server_id)
+        result = await self.manager.rpc_command_server_start(
+            server_id = server_id,
+        )
 
         self.assertEqual(
             server_id,
@@ -412,7 +429,18 @@ class TestRPCCommands(unittest.TestCase):
         Check that we return an error when we give an invalid ID
         """
 
-        await self.manager.rpc_command_server_start('bad')
+        await self.manager.rpc_command_server_start(
+            server_id = 'bad',
+        )
+
+    @nose.tools.raises(JsonRpcInvalidRequestError)
+    @utils.run_async
+    async def test_server_start_missing(self):
+        """
+        Chewck that we require the server_id parameter
+        """
+
+        await self.manager.rpc_command_server_start()
 
     @utils.run_async
     async def test_server_start_all(self):
@@ -542,7 +570,9 @@ class TestRPCCommands(unittest.TestCase):
             server_id: mock_proc,
         }
 
-        result = await self.manager.rpc_command_server_stop(server_id)
+        result = await self.manager.rpc_command_server_stop(
+            server_id = server_id,
+        )
 
         self.assertEqual(
             server_id,
@@ -559,7 +589,9 @@ class TestRPCCommands(unittest.TestCase):
         Check that we return an error when we given an invalid ID
         """
 
-        await self.manager.rpc_command_server_stop('bad')
+        await self.manager.rpc_command_server_stop(
+            server_id = 'bad',
+        )
 
     @nose.tools.raises(JsonRpcInvalidRequestError)
     @asynctest.patch('os.path.exists')

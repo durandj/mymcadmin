@@ -3,6 +3,7 @@ JSON RPC interface
 """
 
 from .client import RpcClient
+from .decorators import required_param
 from .dispatcher import Dispatcher
 from .manager import JsonRpcResponseManager
 from .response import JsonRpcBatchResponse, JsonRpcResponse
@@ -14,6 +15,7 @@ __all__ = [
     'JsonRpcBatchResponse',
     'JsonRpcResponse',
     'JsonRpcResponseManager',
+    'required_param',
     'RpcClient',
 ]
 
