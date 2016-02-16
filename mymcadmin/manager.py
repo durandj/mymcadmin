@@ -219,10 +219,14 @@ class Manager(object):
         stopped_instances = []
         if self.instances:
             for server_id in self.instances.keys():
-                # TODO(durandj): can this method throw an exception that'll get in the way?
-                stopped_instances.append(
-                    await self.rpc_command_server_stop(server_id)
-                )
+                # pylint: disable=broad-except
+                try:
+                    stopped_instances.append(
+                        await self.rpc_command_server_stop(server_id)
+                    )
+                except Exception as ex:
+                    logging.exception(str(ex))
+                # pylint: enable=broad-except
 
         self.event_loop.stop()
 
