@@ -162,17 +162,23 @@ class TestManager(unittest.TestCase):
         mock_server.start = asynctest.CoroutineMock()
         mock_server.start.return_value = mock_proc_func()
 
+        mock_instances = unittest.mock.MagicMock()
+
         manager = Manager(
             self.host,
             self.port,
             self.root,
             event_loop = mock_event_loop,
         )
+        manager.instances = mock_instances
 
         await manager.start_server_proc(mock_server)
 
         mock_server.start.assert_called_with()
         mock_proc.wait.assert_called_with()
+
+        mock_instances.__setitem__.assert_called_with('test', mock_proc)
+        mock_instances.__delitem__.assert_called_with('test')
 
     @utils.run_async
     async def test_rpc_method_handlers(self):
@@ -202,6 +208,7 @@ class TestManager(unittest.TestCase):
         _test_method('server_stop_all',    manager.rpc_command_server_stop_all)
         _test_method('shutdown',           manager.rpc_command_shutdown)
 
+# pylint: disable=too-many-public-methods
 class TestRPCCommands(unittest.TestCase):
     """
     Tests for the JSON RPC commands
@@ -726,6 +733,7 @@ class TestRPCCommands(unittest.TestCase):
                 for name in instances.keys()
             ]
         )
+# pylint: enable=too-many-public-methods
 
 if __name__ == '__main__':
     unittest.main()

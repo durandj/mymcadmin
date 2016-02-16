@@ -273,7 +273,6 @@ class Manager(object):
 
         await proc.wait()
 
-        # TODO(durandj): check this with tests!
         del self.instances[srv.name]
 
     def _get_server_by_name(self, name):
