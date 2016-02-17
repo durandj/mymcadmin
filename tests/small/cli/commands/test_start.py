@@ -245,11 +245,7 @@ class TestStartDaemon(utils.CliRunnerMixin, unittest.TestCase):
     Tests the start_daemon command
     """
 
-    @unittest.mock.patch('multiprocessing.Process')
-    @unittest.mock.patch('mymcadmin.utils.get_user_home')
-    @unittest.mock.patch('mymcadmin.config.Config')
-    @unittest.mock.patch('os.path.exists')
-    def test_command_default(self, exists, config, get_user_home, process):
+    def test_command_default(self):
         """
         Tests that the command works with no options and no config settings
         """
@@ -258,47 +254,17 @@ class TestStartDaemon(utils.CliRunnerMixin, unittest.TestCase):
         pid  = os.path.join(root, 'daemon.pid')
         log  = os.path.join(root, 'mymcadmin.log')
 
-        exists.side_effect = lambda p: p != pid
-
-        config.return_value = config
-        config.daemon = None
-
-        get_user_home.return_value = 'home'
-
-        process.return_value = process
-
-        result = self.cli_runner.invoke(mma_command, ['start_daemon'])
-
-        if result.exit_code != 0:
-            print(result.output)
-
-        self.assertEqual(
-            0,
-            result.exit_code,
-            'Command did not terminate properly',
+        self._run_test(
+            host  = 'localhost',
+            port  = 2323,
+            user  = os.getuid(),
+            group = os.getgid(),
+            root  = root,
+            pid   = pid,
+            log   = log,
         )
 
-        process.assert_called_with(
-            target = start_management_daemon,
-            kwargs = {
-                'host':  'localhost',
-                'port':  2323,
-                'user':  os.getuid(),
-                'group': os.getgid(),
-                'root':  root,
-                'pid':   pid,
-                'log':   log,
-            },
-        )
-
-        process.start.assert_called_with()
-        process.join.assert_called_with()
-
-    @unittest.mock.patch('multiprocessing.Process')
-    @unittest.mock.patch('mymcadmin.utils.get_user_home')
-    @unittest.mock.patch('mymcadmin.config.Config')
-    @unittest.mock.patch('os.path.exists')
-    def test_command_config(self, exists, config, get_user_home, process):
+    def test_command_config(self):
         """
         Tests that the command works with no options and a full config
         """
@@ -307,37 +273,15 @@ class TestStartDaemon(utils.CliRunnerMixin, unittest.TestCase):
         pid  = os.path.join(root, 'test.pid')
         log  = os.path.join(root, 'test.log')
 
-        exists.side_effect = lambda p: p != pid
-
-        config.return_value = config
-        config.daemon = {
-            'host':  'example.com',
-            'port':  8080,
-            'user':  9999,
-            'group': 5555,
-            'root':  root,
-            'pid':   pid,
-            'log':   log,
-        }
-
-        get_user_home.return_value = 'home'
-
-        process.return_value = process
-
-        result = self.cli_runner.invoke(mma_command, ['start_daemon'])
-
-        if result.exit_code != 0:
-            print(result.output)
-
-        self.assertEqual(
-            0,
-            result.exit_code,
-            'Command did not terminate properly',
-        )
-
-        process.assert_called_with(
-            target = start_management_daemon,
-            kwargs = {
+        self._run_test(
+            host   = 'example.com',
+            port   = 8080,
+            user   = 9999,
+            group  = 5555,
+            root   = root,
+            pid    = pid,
+            log    = log,
+            daemon = {
                 'host':  'example.com',
                 'port':  8080,
                 'user':  9999,
@@ -348,76 +292,29 @@ class TestStartDaemon(utils.CliRunnerMixin, unittest.TestCase):
             },
         )
 
-        process.start.assert_called_with()
-        process.join.assert_called_with()
-
-    # pylint: disable=too-many-arguments
-    @unittest.mock.patch('multiprocessing.Process')
-    @unittest.mock.patch('mymcadmin.utils.get_user_home')
-    @unittest.mock.patch('grp.getgrgid')
-    @unittest.mock.patch('pwd.getpwuid')
-    @unittest.mock.patch('mymcadmin.config.Config')
-    @unittest.mock.patch('os.path.exists')
-    def test_command_options(self, exists, config, getpwuid, getgrgid, get_user_home, process):
+    def test_command_options(self):
         """
         Tests that the command uses the given options
         """
 
-        user  = 5000
-        group = 5050
-        pid   = 'test.pid'
-
-        exists.side_effect = lambda p: p != pid
-
-        config.return_value = config
-        config.daemon = None
-
-        getpwuid.return_value = user
-        getgrgid.return_value = group
-
-        get_user_home.return_value = 'home'
-
-        process.return_value = process
-
-        result = self.cli_runner.invoke(
-            mma_command,
-            [
-                'start_daemon',
+        self._run_test(
+            host  = 'example.com',
+            port  = 8080,
+            user  = 5000,
+            group = 5050,
+            root  = 'test',
+            pid   = 'test.pid',
+            log   = 'test.log',
+            params = [
                 '--host',  'example.com',
                 '--port',  8080,
-                '--user',  user,
-                '--group', group,
+                '--user',  5000,
+                '--group', 5050,
                 '--root',  'test',
-                '--pid',   pid,
+                '--pid',   'test.pid',
                 '--log',   'test.log',
-            ]
+            ],
         )
-
-        if result.exit_code != 0:
-            print(result.output)
-
-        self.assertEqual(
-            0,
-            result.exit_code,
-            'Command did not terminate properly',
-        )
-
-        process.assert_called_with(
-            target = start_management_daemon,
-            kwargs = {
-                'host':  'example.com',
-                'port':  8080,
-                'user':  user,
-                'group': group,
-                'root':  'test',
-                'pid':   pid,
-                'log':   'test.log',
-            },
-        )
-
-        process.start.assert_called_with()
-        process.join.assert_called_with()
-    # pylint: enable=too-many-arguments
 
     @unittest.mock.patch('os.path.exists')
     @utils.apply_mock('mymcadmin.config.Config')
@@ -438,6 +335,52 @@ class TestStartDaemon(utils.CliRunnerMixin, unittest.TestCase):
 
         self.assertEqual(
             -1,
+            result.exit_code,
+            'Command did not terminate properly',
+        )
+
+    @unittest.mock.patch('mymcadmin.config.Config')
+    @utils.apply_mock('multiprocessing.Process')
+    def test_command_user_invalid_str(self, config):
+        """
+        Tests that the command returns an exit code for a non-existant user
+        """
+
+        config.return_value = config
+        config.daemon       = {
+            'user': 'i_hopefully_dont_exist',
+        }
+
+        result = self.cli_runner.invoke(mma_command, ['start_daemon'])
+
+        if result.exit_code != 1:
+            print(result.output)
+
+        self.assertEqual(
+            1,
+            result.exit_code,
+            'Command did not terminate properly',
+        )
+
+    @unittest.mock.patch('mymcadmin.config.Config')
+    @utils.apply_mock('multiprocessing.Process')
+    def test_command_group_invalid(self, config):
+        """
+        Tests that the command returns an exit code for a non-existant group
+        """
+
+        config.return_value = config
+        config.daemon       = {
+            'group': 'i_hopefully_dont_exist',
+        }
+
+        result = self.cli_runner.invoke(mma_command, ['start_daemon'])
+
+        if result.exit_code != 1:
+            print(result.output)
+
+        self.assertEqual(
+            1,
             result.exit_code,
             'Command did not terminate properly',
         )
@@ -487,6 +430,68 @@ class TestStartDaemon(utils.CliRunnerMixin, unittest.TestCase):
 
         mock_open.close.assert_called_with()
     # pylint: enable=no-self-use
+
+    def _run_test(self, **kwargs):
+        host   = kwargs.get('host')
+        port   = kwargs.get('port')
+        user   = kwargs.get('user')
+        group  = kwargs.get('group')
+        root   = kwargs.get('root')
+        pid    = kwargs.get('pid')
+        log    = kwargs.get('log')
+        daemon = kwargs.get('daemon')
+        params = kwargs.get('params', [])
+
+        with unittest.mock.patch('os.path.exists') as exists, \
+             unittest.mock.patch('mymcadmin.config.Config') as config, \
+             unittest.mock.patch('pwd.getpwuid') as getpwuid, \
+             unittest.mock.patch('grp.getgrgid') as getgrgid, \
+             unittest.mock.patch('mymcadmin.utils.get_user_home') as get_user_home, \
+             unittest.mock.patch('multiprocessing.Process') as process:
+            exists.side_effect = lambda p: p != pid
+
+            config.return_value = config
+            config.daemon       = daemon
+
+            get_user_home.return_value = 'home'
+
+            if user is not None:
+                getpwuid.return_value = user
+
+            if group is not None:
+                getgrgid.return_value = group
+
+            process.return_value = process
+
+            result = self.cli_runner.invoke(
+                mma_command,
+                ['start_daemon'] + params,
+            )
+
+            if result.exit_code != 0:
+                print(result.output)
+
+            self.assertEqual(
+                0,
+                result.exit_code,
+                'Command did not terminate properly',
+            )
+
+            process.assert_called_with(
+                target = start_management_daemon,
+                kwargs = {
+                    'host':  host,
+                    'port':  port,
+                    'user':  user,
+                    'group': group,
+                    'root':  root,
+                    'pid':   pid,
+                    'log':   log,
+                },
+            )
+
+            process.start.assert_called_with()
+            process.join.assert_called_with()
 
 if __name__ == '__main__':
     unittest.main()

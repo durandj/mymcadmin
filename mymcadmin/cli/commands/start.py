@@ -3,8 +3,10 @@ Start commands
 """
 
 import multiprocessing
+import grp
 import os
 import os.path
+import pwd
 
 import click
 import daemon
@@ -124,16 +126,48 @@ def start_daemon(ctx, **kwargs):
     config        = ctx.obj['config']
     daemon_config = config.daemon or {}
 
-    def _get_option(name, default):
+    def _get_option(name, default, validate = None):
         if kwargs[name] is not None:
             return kwargs[name]
 
-        return daemon_config.get(name, default)
+        value = daemon_config.get(name, default)
+        if validate and not validate(value):
+            raise click.ClickException(
+                'Configuration value is not valid. {}: {}'.format(name, value)
+            )
+
+        return value
+
+    def _validate_user(user):
+        try:
+            if isinstance(user, int):
+                pwd.getpwuid(user)
+
+                return True
+            else:
+                pwd.getpwnam(user)
+
+                return True
+        except KeyError:
+            return False
+
+    def _validate_group(group):
+        try:
+            if isinstance(group, int):
+                grp.getgrgid(group)
+
+                return True
+            else:
+                grp.getgrnam(group)
+
+                return True
+        except KeyError:
+            return False
 
     host  = _get_option('host', 'localhost')
     port  = _get_option('port', 2323)
-    user  = _get_option('user', os.getuid())
-    group = _get_option('group', os.getgid())
+    user  = _get_option('user', os.getuid(), validate = _validate_user)
+    group = _get_option('group', os.getgid(), validate = _validate_group)
 
     root = _get_option(
         'root',
