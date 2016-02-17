@@ -151,7 +151,15 @@ def start_daemon(ctx, **kwargs):
 
         proc = multiprocessing.Process(
             target = start_management_daemon,
-            args   = (host, port, user, group, root, pid, log),
+            kwargs = {
+                'host':  host,
+                'port':  port,
+                'user':  user,
+                'group': group,
+                'root':  root,
+                'pid':   pid,
+                'log':   log,
+            },
         )
 
         proc.start()

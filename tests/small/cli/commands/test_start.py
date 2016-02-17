@@ -280,15 +280,15 @@ class TestStartDaemon(utils.CliRunnerMixin, unittest.TestCase):
 
         process.assert_called_with(
             target = start_management_daemon,
-            args   = (
-                'localhost',
-                2323,
-                os.getuid(),
-                os.getgid(),
-                root,
-                pid,
-                log,
-            ),
+            kwargs = {
+                'host':  'localhost',
+                'port':  2323,
+                'user':  os.getuid(),
+                'group': os.getgid(),
+                'root':  root,
+                'pid':   pid,
+                'log':   log,
+            },
         )
 
         process.start.assert_called_with()
@@ -337,15 +337,15 @@ class TestStartDaemon(utils.CliRunnerMixin, unittest.TestCase):
 
         process.assert_called_with(
             target = start_management_daemon,
-            args   = (
-                'example.com',
-                8080,
-                9999,
-                5555,
-                root,
-                pid,
-                log,
-            ),
+            kwargs = {
+                'host':  'example.com',
+                'port':  8080,
+                'user':  9999,
+                'group': 5555,
+                'root':  root,
+                'pid':   pid,
+                'log':   log,
+            },
         )
 
         process.start.assert_called_with()
@@ -404,15 +404,15 @@ class TestStartDaemon(utils.CliRunnerMixin, unittest.TestCase):
 
         process.assert_called_with(
             target = start_management_daemon,
-            args   = (
-                'example.com',
-                8080,
-                user,
-                group,
-                'test',
-                pid,
-                'test.log',
-            ),
+            kwargs = {
+                'host':  'example.com',
+                'port':  8080,
+                'user':  user,
+                'group': group,
+                'root':  'test',
+                'pid':   pid,
+                'log':   'test.log',
+            },
         )
 
         process.start.assert_called_with()
