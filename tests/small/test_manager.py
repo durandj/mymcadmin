@@ -227,6 +227,39 @@ class TestManager(unittest.TestCase):
         mock_instances.__setitem__.assert_called_with('test', mock_proc)
         mock_instances.__delitem__.assert_called_with('test')
 
+    @unittest.mock.patch('logging.error')
+    @utils.run_async
+    async def test_start_server_proc_crash(self, mock_error):
+        """
+        Tests that we log when the server instance crashes
+        """
+
+        mock_event_loop = asynctest.Mock(spec = asyncio.BaseEventLoop)
+
+        mock_proc = asynctest.Mock(spec = asyncio.subprocess.Process)
+
+        mock_proc_func = asynctest.CoroutineMock()
+        mock_proc_func.return_value = mock_proc
+        mock_proc_func.returncode   = 1
+
+        mock_server = asynctest.Mock(spec = Server)
+        mock_server.server_id = 'test'
+        mock_server.start.return_value = mock_proc_func()
+
+        manager = Manager(
+            self.host,
+            self.port,
+            self.root,
+            event_loop = mock_event_loop,
+        )
+
+        await manager.start_server_proc(mock_server)
+
+        mock_error.assert_called_with(
+            'Server %s ran into an error',
+            'test',
+        )
+
     @utils.run_async
     async def test_rpc_method_handlers(self):
         """

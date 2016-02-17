@@ -290,6 +290,9 @@ class Manager(object):
 
         await proc.wait()
 
+        if proc.returncode != 0:
+            logging.error('Server %s ran into an error', srv.server_id)
+
         del self.instances[srv.server_id]
 
     def _get_all_server_paths(self):
