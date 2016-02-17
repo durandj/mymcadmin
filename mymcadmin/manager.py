@@ -251,7 +251,7 @@ class Manager(object):
         Handle network connections
         """
 
-        data    = await reader.readline()
+        data    = await reader.read()
         message = data.decode()
 
         address = writer.get_extra_info('peername')
@@ -266,12 +266,15 @@ class Manager(object):
             self.rpc_dispatcher,
         )
 
+        response_data = json_response.json
+
         logging.info(
             'Sending response back to %s:\n%s',
             address,
-            json_response.json,
+            response_data,
         )
-        writer.write(json_response.json.encode())
+        writer.write(response_data.encode())
+        writer.write_eof()
         await writer.drain()
 
         writer.close()

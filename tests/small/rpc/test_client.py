@@ -44,7 +44,7 @@ class TestRpcClient(unittest.TestCase):
         mock_writer.write.side_effect = _writer_func
 
         mock_reader = asynctest.Mock(spec = asyncio.StreamReader)
-        mock_reader.read.return_value = json.dumps(
+        mock_reader.readline.return_value = json.dumps(
             {
                 'jsonrpc': '2.0',
                 'id': 1,
@@ -69,6 +69,11 @@ class TestRpcClient(unittest.TestCase):
 
         client.stop()
 
+        self.assertTrue(
+            writer_future.done(),
+            'Writer did not finish',
+        )
+
         self.assertDictEqual(
             {
                 'jsonrpc': '2.0',
@@ -91,6 +96,9 @@ class TestRpcClient(unittest.TestCase):
             'Client did not return the right response',
         )
 
+        mock_writer.write_eof.assert_called_with()
+        mock_writer.drain.assert_called_with()
+
     @nose.tools.raises(JsonRpcError)
     @asynctest.patch('asyncio.open_connection')
     def test_execute_rpc_method_error(self, open_connection):
@@ -111,7 +119,7 @@ class TestRpcClient(unittest.TestCase):
         mock_writer.write.side_effect = _writer_func
 
         mock_reader = asynctest.Mock(spec = asyncio.StreamReader)
-        mock_reader.read.return_value = json.dumps(
+        mock_reader.readline.return_value = json.dumps(
             {
                 'jsonrpc': '2.0',
                 'id': 1,
@@ -215,6 +223,7 @@ class TestRpcClient(unittest.TestCase):
 
         self._test_method(
             'shutdown',
+            result = ['test0', 'test1', 'test2'],
         )
 
     def test_context_manager(self):
@@ -253,7 +262,7 @@ class TestRpcClient(unittest.TestCase):
         """
 
         mock_reader = asynctest.Mock(spec = asyncio.StreamReader)
-        mock_reader.read.return_value = json.dumps(
+        mock_reader.readline.return_value = json.dumps(
             {
                 'jsonrpc': '2.0',
                 'id':      1,

@@ -53,7 +53,7 @@ class RpcClient(object):
         Ask the management process to stop
         """
 
-        self.execute_rpc_method('shutdown')
+        return self.execute_rpc_method('shutdown')
 
     def server_start(self, server_id):
         """
@@ -130,9 +130,11 @@ class RpcClient(object):
 
         logging.info('Sending "%s" to server', data)
         self.writer.write(data.encode())
+        self.writer.write_eof()
+        await self.writer.drain()
 
         logging.info('Waiting for server response')
-        response = await self.reader.read()
+        response = await self.reader.readline()
         response = response.decode()
         logging.info('Received "%s" from the server', response)
         response = json.loads(response)

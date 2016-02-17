@@ -150,15 +150,15 @@ class TestManager(unittest.TestCase):
         response_future = asyncio.Future()
         mock_writer.write.side_effect = response_future.set_result
 
-        req = (json.dumps(
+        req = json.dumps(
             {
                 'jsonrpc': '2.0',
                 'method':  'test',
                 'params':  {'im': 'a test'},
                 'id':      1,
             }
-        ) + '\n').encode()
-        mock_reader.readline.return_value = req
+        ).encode()
+        mock_reader.read.return_value = req
 
         manager = Manager(
             self.host,
@@ -185,6 +185,9 @@ class TestManager(unittest.TestCase):
             },
             resp,
         )
+
+        mock_writer.write_eof.assert_called_with()
+        mock_writer.drain.assert_called_with()
 
     @utils.run_async
     async def test_start_server_proc(self):
