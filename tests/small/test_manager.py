@@ -52,26 +52,70 @@ class TestManager(unittest.TestCase):
             'Dispatcher was not initialized with handlers',
         )
 
+    @asynctest.patch('mymcadmin.server.Server')
+    @asynctest.patch('os.path.isdir')
+    @asynctest.patch('os.listdir')
     @asynctest.patch('mymcadmin.manager.Manager.handle_network_connection')
     @asynctest.patch('asyncio.start_server')
-    def test_run(self, start_server, handle_network_connection):
+    def test_run(self, start_server, handle_network, listdir, isdir, server):
         """
         Check that the run function starts and stops the event loop
         """
 
-        mock_event_loop = asynctest.Mock(asyncio.BaseEventLoop)
-        asyncio.set_event_loop(mock_event_loop)
+        server_ids = [
+            'server0',
+            'autoserver1',
+            'autoserver2',
+            'server3',
+        ]
 
-        manager = Manager(self.host, self.port, self.root)
+        mock_event_loop = asynctest.Mock(asyncio.BaseEventLoop)
+
+        listdir.return_value = server_ids
+
+        isdir.return_value = True
+
+        mock_servers = [
+            unittest.mock.Mock(
+                spec      = Server,
+                server_id = server_id,
+                settings  = {
+                    'autostart': server_id.startswith('auto'),
+                },
+            )
+            for server_id in server_ids
+        ]
+
+        server.side_effect = mock_servers
+
+        mock_start_server_proc = asynctest.CoroutineMock()
+        mock_start_server_proc.return_value = mock_start_server_proc
+
+        manager = Manager(
+            self.host,
+            self.port,
+            self.root,
+            event_loop = mock_event_loop,
+        )
+        manager.start_server_proc = mock_start_server_proc
+
         manager.run()
 
         asyncio.set_event_loop(self.event_loop)
 
         start_server.assert_called_with(
-            handle_network_connection,
+            handle_network,
             self.host,
             self.port,
             loop = mock_event_loop,
+        )
+
+        manager.start_server_proc.assert_has_calls(
+            [
+                unittest.mock.call(mock_server)
+                for mock_server in mock_servers
+                if mock_server.server_id.startswith('auto')
+            ]
         )
 
         mock_event_loop.run_forever.assert_called_with()

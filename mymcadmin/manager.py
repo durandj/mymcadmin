@@ -46,7 +46,18 @@ class Manager(object):
             )
         )
 
-        # TODO(durandj): check for servers to auto start
+        logging.info('Auto starting servers')
+        for server_path in self._get_all_server_paths():
+            server_instance = server.Server(server_path)
+            autostart = server_instance.settings.get('autostart', False)
+
+            if not autostart:
+                continue
+
+            logging.info('Starting server %s', server_instance.server_id)
+            self.event_loop.create_task(
+                self.start_server_proc(server_instance)
+            )
 
         logging.info('Management process running')
         try:
@@ -77,13 +88,10 @@ class Manager(object):
         Handle RPC command: listServers
         """
 
-        files = [
-            f
-            for f in os.listdir(self.root)
-            if os.path.isdir(os.path.join(self.root, f))
+        return [
+            os.path.basename(server_path)
+            for server_path in self._get_all_server_paths()
         ]
-
-        return files
 
     @rpc.required_param('server_id')
     async def rpc_command_server_restart(self, server_id):
