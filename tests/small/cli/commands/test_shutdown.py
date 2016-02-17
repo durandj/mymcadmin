@@ -83,9 +83,17 @@ class TestShutdown(utils.CliRunnerMixin, unittest.TestCase):
         if params is None:
             params = []
 
-        with unittest.mock.patch('mymcadmin.rpc.RpcClient') as rpc_client:
+        server_ids = [
+            'server0',
+            'server1',
+            'server2',
+        ]
+
+        with unittest.mock.patch('mymcadmin.rpc.RpcClient') as rpc_client, \
+             unittest.mock.patch('mymcadmin.cli.commands.shutdown.success') as success:
             rpc_client.return_value = rpc_client
             rpc_client.__enter__.return_value = rpc_client
+            rpc_client.shutdown.return_value = server_ids
 
             result = self.cli_runner.invoke(
                 mma_command,
@@ -103,6 +111,15 @@ class TestShutdown(utils.CliRunnerMixin, unittest.TestCase):
 
             rpc_client.assert_called_with(expected_host, expected_port)
             rpc_client.shutdown.assert_called_with()
+
+            success.assert_has_calls(
+                [
+                    unittest.mock.call('Success'),
+                ] + [
+                    unittest.mock.call('{} successfully stopped'.format(server_id))
+                    for server_id in server_ids
+                ]
+            )
 
 if __name__ == '__main__':
     unittest.main()

@@ -35,10 +35,12 @@ def shutdown(ctx, host, port):
 
     try:
         with rpc.RpcClient(host, port) as rpc_client:
-            rpc_client.shutdown()
+            server_ids = rpc_client.shutdown()
     except Exception as ex:
         error('Failure')
         raise click.ClickException(ex)
     else:
         success('Success')
+        for server_id in server_ids:
+            success('{} successfully stopped'.format(server_id))
 
