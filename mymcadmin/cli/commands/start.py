@@ -143,7 +143,10 @@ def start_daemon(ctx, **kwargs):
     pid = _get_option('pid', os.path.join(root, 'daemon.pid'))
     log = _get_option('log', os.path.join(root, 'mymcadmin.log'))
 
-    click.echo('Starting daemon...', nl = False)
+    click.echo(
+        'Starting daemon as {} {}...'.format(user, group),
+        nl = False,
+    )
 
     try:
         if os.path.exists(pid):
