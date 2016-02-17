@@ -126,48 +126,41 @@ def start_daemon(ctx, **kwargs):
     config        = ctx.obj['config']
     daemon_config = config.daemon or {}
 
-    def _get_option(name, default, validate = None):
+    def _get_option(name, default, convert = None):
         if kwargs[name] is not None:
             return kwargs[name]
 
         value = daemon_config.get(name, default)
-        if validate and not validate(value):
-            raise click.ClickException(
-                'Configuration value is not valid. {}: {}'.format(name, value)
-            )
+        if convert:
+            try:
+                return convert(value)
+            except Exception:
+                raise click.ClickException(
+                    'Configuration value is not valid. {}: {}'.format(name, value)
+                )
 
         return value
 
-    def _validate_user(user):
-        try:
-            if isinstance(user, int):
-                pwd.getpwuid(user)
+    def _convert_user(user):
+        if isinstance(user, int):
+            pwd.getpwuid(user)
 
-                return True
-            else:
-                pwd.getpwnam(user)
+            return user
+        else:
+            return pwd.getpwnam(user).pw_uid
 
-                return True
-        except KeyError:
-            return False
+    def _convert_group(group):
+        if isinstance(group, int):
+            grp.getgrgid(group)
 
-    def _validate_group(group):
-        try:
-            if isinstance(group, int):
-                grp.getgrgid(group)
-
-                return True
-            else:
-                grp.getgrnam(group)
-
-                return True
-        except KeyError:
-            return False
+            return group
+        else:
+            return grp.getgrnam(group).gr_gid
 
     host  = _get_option('host', 'localhost')
     port  = _get_option('port', 2323)
-    user  = _get_option('user', os.getuid(), validate = _validate_user)
-    group = _get_option('group', os.getgid(), validate = _validate_group)
+    user  = _get_option('user', os.getuid(), convert = _convert_user)
+    group = _get_option('group', os.getgid(), convert = _convert_group)
 
     root = _get_option(
         'root',
@@ -178,7 +171,12 @@ def start_daemon(ctx, **kwargs):
     log = _get_option('log', os.path.join(root, 'mymcadmin.log'))
 
     click.echo(
-        'Starting daemon as {} {}...'.format(user, group),
+        'Starting daemon as {} {} on {}:{}...'.format(
+            user,
+            group,
+            host,
+            port,
+        ),
         nl = False,
     )
 

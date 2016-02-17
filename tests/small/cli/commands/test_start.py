@@ -292,6 +292,29 @@ class TestStartDaemon(utils.CliRunnerMixin, unittest.TestCase):
             },
         )
 
+    def test_command_config_convert(self):
+        """
+        Tests that usernames and group names are converted to UIDs and GIDs
+        """
+
+        root = os.path.join('home', 'mymcadmin')
+        pid  = os.path.join(root, 'daemon.pid')
+        log  = os.path.join(root, 'mymcadmin.log')
+
+        self._run_test(
+            host   = 'localhost',
+            port   = 2323,
+            user   = 9999,
+            group  = 5555,
+            root   = root,
+            pid    = pid,
+            log    = log,
+            daemon = {
+                'user':  'im_a_user',
+                'group': 'im_a_group',
+            },
+        )
+
     def test_command_options(self):
         """
         Tests that the command uses the given options
@@ -316,25 +339,29 @@ class TestStartDaemon(utils.CliRunnerMixin, unittest.TestCase):
             ],
         )
 
-    @unittest.mock.patch('os.path.exists')
-    @utils.apply_mock('mymcadmin.config.Config')
-    def test_command_port_invalid(self, exists):
+    @unittest.mock.patch('mymcadmin.config.Config')
+    @utils.apply_mock('multiprocessing.Process')
+    def test_command_port_invalid(self, config):
         """
         Test that the command returns an exit code for an invalid port
         """
 
-        exists.return_value = True
+        config.return_value = config
+        config.daemon       = None
 
         result = self.cli_runner.invoke(
             mma_command,
             [
                 'start_daemon',
-                '--port', '8000',
+                '--port', '"8000"',
             ]
         )
 
+        if result.exit_code != -1:
+            print(result.output)
+
         self.assertEqual(
-            -1,
+            2,
             result.exit_code,
             'Command did not terminate properly',
         )
@@ -364,7 +391,30 @@ class TestStartDaemon(utils.CliRunnerMixin, unittest.TestCase):
 
     @unittest.mock.patch('mymcadmin.config.Config')
     @utils.apply_mock('multiprocessing.Process')
-    def test_command_group_invalid(self, config):
+    def test_command_user_invalid_int(self, config):
+        """
+        Tests that the command returns an exit code for a non-existant UID
+        """
+
+        config.return_value = config
+        config.daemon       = {
+            'user': 0x100000000,
+        }
+
+        result = self.cli_runner.invoke(mma_command, ['start_daemon'])
+
+        if result.exit_code != 1:
+            print(result.output)
+
+        self.assertEqual(
+            1,
+            result.exit_code,
+            'Command did not terminate properly',
+        )
+
+    @unittest.mock.patch('mymcadmin.config.Config')
+    @utils.apply_mock('multiprocessing.Process')
+    def test_command_group_invalid_str(self, config):
         """
         Tests that the command returns an exit code for a non-existant group
         """
@@ -372,6 +422,29 @@ class TestStartDaemon(utils.CliRunnerMixin, unittest.TestCase):
         config.return_value = config
         config.daemon       = {
             'group': 'i_hopefully_dont_exist',
+        }
+
+        result = self.cli_runner.invoke(mma_command, ['start_daemon'])
+
+        if result.exit_code != 1:
+            print(result.output)
+
+        self.assertEqual(
+            1,
+            result.exit_code,
+            'Command did not terminate properly',
+        )
+
+    @unittest.mock.patch('mymcadmin.config.Config')
+    @utils.apply_mock('multiprocessing.Process')
+    def test_command_group_invalid_int(self, config):
+        """
+        Tests that the command returns an exit code for a non-existant group
+        """
+
+        config.return_value = config
+        config.daemon       = {
+            'group': 0x1000000000,
         }
 
         result = self.cli_runner.invoke(mma_command, ['start_daemon'])
@@ -445,7 +518,9 @@ class TestStartDaemon(utils.CliRunnerMixin, unittest.TestCase):
         with unittest.mock.patch('os.path.exists') as exists, \
              unittest.mock.patch('mymcadmin.config.Config') as config, \
              unittest.mock.patch('pwd.getpwuid') as getpwuid, \
+             unittest.mock.patch('pwd.getpwnam') as getpwnam, \
              unittest.mock.patch('grp.getgrgid') as getgrgid, \
+             unittest.mock.patch('grp.getgrnam') as getgrnam, \
              unittest.mock.patch('mymcadmin.utils.get_user_home') as get_user_home, \
              unittest.mock.patch('multiprocessing.Process') as process:
             exists.side_effect = lambda p: p != pid
@@ -458,8 +533,14 @@ class TestStartDaemon(utils.CliRunnerMixin, unittest.TestCase):
             if user is not None:
                 getpwuid.return_value = user
 
+                getpwnam.return_value = getpwnam
+                getpwnam.pw_uid = user
+
             if group is not None:
                 getgrgid.return_value = group
+
+                getgrnam.return_value = getgrnam
+                getgrnam.gr_gid = group
 
             process.return_value = process
 
