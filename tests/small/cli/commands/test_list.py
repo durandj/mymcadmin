@@ -18,11 +18,11 @@ class TestListServers(utils.CliRunnerMixin, unittest.TestCase):
     def setUp(self):
         super(TestListServers, self).setUp()
 
-        self.root         = 'root'
-        self.server_names = ['server1', 'server2', 'server3']
-        self.servers      = [
+        self.root       = 'root'
+        self.server_ids = ['server1', 'server2', 'server3']
+        self.servers    = [
             os.path.join(self.root, s)
-            for s in self.server_names
+            for s in self.server_ids
         ]
 
     @unittest.mock.patch('mymcadmin.config.Config')
@@ -73,7 +73,7 @@ class TestListServers(utils.CliRunnerMixin, unittest.TestCase):
             unittest.mock.patch('click.echo') as echo:
             rpc_client.return_value = rpc_client
             rpc_client.__enter__.return_value = rpc_client
-            rpc_client.list_servers.return_value = self.server_names
+            rpc_client.list_servers.return_value = self.server_ids
 
             result = self.cli_runner.invoke(mma_command, ['list_servers'] + params)
 
@@ -84,15 +84,15 @@ class TestListServers(utils.CliRunnerMixin, unittest.TestCase):
             )
 
             self.assertEqual(
-                len(self.server_names),
+                len(self.server_ids),
                 echo.call_count,
                 'Servers were not all printed out',
             )
 
             echo.assert_has_calls(
                 [
-                    unittest.mock.call(name)
-                    for name in self.server_names
+                    unittest.mock.call(server_id)
+                    for server_id in self.server_ids
                 ]
             )
 

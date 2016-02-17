@@ -158,8 +158,8 @@ class TestManager(unittest.TestCase):
         mock_proc_func.return_value = mock_proc
 
         mock_server = asynctest.Mock(spec = Server)
-        mock_server.name = 'test'
-        mock_server.start = asynctest.CoroutineMock()
+        mock_server.server_id = 'test'
+        mock_server.start     = asynctest.CoroutineMock()
         mock_server.start.return_value = mock_proc_func()
 
         mock_instances = unittest.mock.MagicMock()
@@ -703,34 +703,30 @@ class TestRPCCommands(unittest.TestCase):
         Check that the shutdown command stops any running server instances
         """
 
-        instance_names = ['test0', 'test1', 'test2', 'test3']
-        instances      = {}
-        for name in instance_names:
-            mock      = asynctest.Mock(spec = asyncio.subprocess.Process)
-            mock.name = name
+        instance_ids = ['test0', 'test1', 'test2', 'test3']
+        instances    = {}
+        for server_id in instance_ids:
+            mock = asynctest.Mock(spec = asyncio.subprocess.Process)
 
-            instances[name] = mock
+            instances[server_id] = mock
 
         mock_server_stop = asynctest.CoroutineMock()
-        self.manager.instances = {
-            name: asynctest.Mock(spec = asyncio.subprocess.Process)
-            for name in instance_names
-        }
+        self.manager.instances = instances
         self.manager.rpc_command_server_stop = mock_server_stop
-        self.manager.rpc_command_server_stop.side_effect = instance_names
+        self.manager.rpc_command_server_stop.side_effect = instance_ids
 
         result = await self.manager.rpc_command_shutdown()
 
         self.assertEqual(
-            instance_names,
+            instance_ids,
             result,
             'Return message did not match',
         )
 
         mock_server_stop.assert_has_calls(
             [
-                unittest.mock.call(name)
-                for name in instances.keys()
+                unittest.mock.call(server_id)
+                for server_id in instances.keys()
             ]
         )
 # pylint: enable=too-many-public-methods

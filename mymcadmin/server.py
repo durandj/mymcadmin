@@ -51,9 +51,9 @@ class Server(object):
         return self._path
 
     @property
-    def name(self):
+    def server_id(self):
         """
-        Get the server name
+        Get the server server ID
         """
 
         return os.path.basename(self._path)

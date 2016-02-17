@@ -128,7 +128,7 @@ class Manager(object):
         Handle RPC command: serverStart
         """
 
-        srv = self._get_server_by_name(server_id)
+        srv = self._get_server_by_id(server_id)
 
         logging.info('Starting Minecraft server %s', server_id)
 
@@ -172,7 +172,7 @@ class Manager(object):
         Handle RPC command: serverStop
         """
 
-        proc = self._get_proc_by_name(server_id)
+        proc = self._get_proc_by_id(server_id)
         if proc is None:
             raise rpc_errors.JsonRpcInvalidRequestError(
                 'Server {} was not running',
@@ -269,25 +269,34 @@ class Manager(object):
 
         proc = await srv.start()
 
-        self.instances[srv.name] = proc
+        self.instances[srv.server_id] = proc
 
         await proc.wait()
 
-        del self.instances[srv.name]
+        del self.instances[srv.server_id]
 
-    def _get_server_by_name(self, name):
-        server_path = os.path.join(self.root, name)
+    def _get_all_server_paths(self):
+        server_paths = [
+            os.path.join(self.root, server_path)
+            for server_path in os.listdir(self.root)
+            if os.path.isdir(os.path.join(self.root, server_path))
+        ]
+
+        return server_paths
+
+    def _get_server_by_id(self, server_id):
+        server_path = os.path.join(self.root, server_id)
         if not os.path.exists(server_path):
-            raise errors.ServerDoesNotExistError(name)
+            raise errors.ServerDoesNotExistError(server_id)
 
         return server.Server(server_path)
 
-    def _get_proc_by_name(self, name):
-        server_path = os.path.join(self.root, name)
+    def _get_proc_by_id(self, server_id):
+        server_path = os.path.join(self.root, server_id)
         if not os.path.exists(server_path):
-            raise errors.ServerDoesNotExistError(name)
+            raise errors.ServerDoesNotExistError(server_id)
 
-        return self.instances.get(name, None)
+        return self.instances.get(server_id, None)
 
     @staticmethod
     async def _send_to_server(proc, message):

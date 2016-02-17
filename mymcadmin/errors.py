@@ -27,10 +27,10 @@ class ServerDoesNotExistError(ManagerError):
     Raised when a requested server does not exist
     """
 
-    def __init__(self, server_name):
+    def __init__(self, server_id):
         super(ServerDoesNotExistError, self).__init__(
             'Server {} does not exist',
-            server_name,
+            server_id,
         )
 
 class ServerError(MyMCAdminError):

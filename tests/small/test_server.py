@@ -135,24 +135,24 @@ class TestServer(unittest.TestCase):
 
         self.server.path = 'Bad!'
 
-    def test_get_name(self):
+    def test_get_server_id(self):
         """
-        Test the name property works correctly
+        Test the server_id property works correctly
         """
 
         self.assertEqual(
             'test',
-            self.server.name,
-            'Server name did not match',
+            self.server.server_id,
+            'Server ID did not match',
         )
 
     @nose.tools.raises(AttributeError)
-    def test_set_name(self):
+    def test_set_server_id(self):
         """
-        Check that we can't assign the name property
+        Check that we can't assign the server_id property
         """
 
-        self.server.name = 'Bad!'
+        self.server.server_id = 'Bad!'
 
     def test_get_java_config(self):
         """
