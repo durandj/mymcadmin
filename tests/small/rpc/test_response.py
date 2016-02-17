@@ -1,19 +1,44 @@
+"""
+Tests for the JSON RPC response class
+"""
+
 import json
-import nose
 import unittest
+
+import nose
 
 from mymcadmin.rpc import response
 
 class TestJsonRpcResponse(unittest.TestCase):
+    """
+    Tests for the JSON RPC response class
+    """
+
+    # pylint: disable=no-self-use
     @nose.tools.raises(ValueError)
     def test_constructor_missing(self):
-        resp = response.JsonRpcResponse()
+        """
+        Tests that we require certain fields
+        """
 
+        response.JsonRpcResponse()
+    # pylint: enable=no-self-use
+
+    # pylint: disable=no-self-use
     @nose.tools.raises(ValueError)
     def test_constructor_invalid(self):
-        resp = response.JsonRpcResponse(error = {}, result = {})
+        """
+        Tests that we don't allow error and result to be set
+        """
+
+        response.JsonRpcResponse(error = {}, result = {})
+    # pylint: enable=no-self-use
 
     def test_get_result(self):
+        """
+        Tests that we can get the result property
+        """
+
         resp = response.JsonRpcResponse(result = {'test': 'value'})
 
         self.assertDictEqual(
@@ -23,6 +48,10 @@ class TestJsonRpcResponse(unittest.TestCase):
         )
 
     def test_set_result(self):
+        """
+        Tests that we can set the result property
+        """
+
         resp = response.JsonRpcResponse(result = {'test': 'value'})
 
         resp.result = {'new': 'value'}
@@ -33,13 +62,23 @@ class TestJsonRpcResponse(unittest.TestCase):
             'Result was not updated',
         )
 
+    # pylint: disable=no-self-use
     @nose.tools.raises(ValueError)
     def test_set_result_error(self):
+        """
+        Tests that we can't set the result and error properties
+        """
+
         resp = response.JsonRpcResponse(error = {'test': 'value'})
 
         resp.result = {'new': 'value'}
+    # pylint: enable=no-self-use
 
     def test_get_error(self):
+        """
+        Tests that we can get the error property
+        """
+
         resp = response.JsonRpcResponse(error = {'test': 'value'})
 
         self.assertEqual(
@@ -49,6 +88,10 @@ class TestJsonRpcResponse(unittest.TestCase):
         )
 
     def test_set_error(self):
+        """
+        Tests that we can set the error property
+        """
+
         resp = response.JsonRpcResponse(error = {'test': 'value'})
 
         resp.error = {'new': 'value'}
@@ -59,13 +102,23 @@ class TestJsonRpcResponse(unittest.TestCase):
             'Response error did not match',
         )
 
+    # pylint: disable=no-self-use
     @nose.tools.raises(ValueError)
     def test_set_error_error(self):
+        """
+        Tests that we can't set the error and result properties
+        """
+
         resp = response.JsonRpcResponse(result = {'test': 'value'})
 
         resp.error = {'new': 'value'}
+    # pylint: enable=no-self-use
 
     def test_get_response_id(self):
+        """
+        Tests that we can get the response_id property
+        """
+
         resp = response.JsonRpcResponse(
             response_id = 1,
             result      = {'test': 'value'},
@@ -78,6 +131,10 @@ class TestJsonRpcResponse(unittest.TestCase):
         )
 
     def test_set_response_id(self):
+        """
+        Tests that we can set the response_id property
+        """
+
         resp = response.JsonRpcResponse(result = {'test': 'value'})
 
         resp.response_id = 2
@@ -89,6 +146,10 @@ class TestJsonRpcResponse(unittest.TestCase):
         )
 
     def test_get_data_result(self):
+        """
+        Tests that we can get the data property
+        """
+
         resp = response.JsonRpcResponse(
             result      = {'test': 'value'},
             response_id = 9000,
@@ -104,7 +165,41 @@ class TestJsonRpcResponse(unittest.TestCase):
             'Response data did not match',
         )
 
+        resp = response.JsonRpcResponse(
+            result      = {},
+            response_id = 9001,
+        )
+
+        self.assertDictEqual(
+            {
+                'jsonrpc': '2.0',
+                'result':  {},
+                'id':      9001,
+            },
+            resp.data,
+            'Response data did not match',
+        )
+
+        resp = response.JsonRpcResponse(
+            result      = [],
+            response_id = 9002,
+        )
+
+        self.assertDictEqual(
+            {
+                'jsonrpc': '2.0',
+                'result':  [],
+                'id':      9002,
+            },
+            resp.data,
+            'Response data did not match',
+        )
+
     def test_get_data_result_no_id(self):
+        """
+        Tests that we can get data with no response ID
+        """
+
         resp = response.JsonRpcResponse(
             result = {'test': 'value'},
         )
@@ -119,6 +214,10 @@ class TestJsonRpcResponse(unittest.TestCase):
         )
 
     def test_get_data_error(self):
+        """
+        Tests that we get the data property with an error
+        """
+
         resp = response.JsonRpcResponse(
             error       = {'test': 'value'},
             response_id = 9001,
@@ -135,6 +234,10 @@ class TestJsonRpcResponse(unittest.TestCase):
         )
 
     def test_get_data_error_no_id(self):
+        """
+        Tests that we get the error response with no response ID
+        """
+
         resp = response.JsonRpcResponse(
             error       = {'test': 'value'},
         )
@@ -148,37 +251,25 @@ class TestJsonRpcResponse(unittest.TestCase):
             'Response data did not match',
         )
 
+    # pylint: disable=no-self-use
     @nose.tools.raises(AttributeError)
     def test_set_data(self):
+        """
+        Tests that we can't set the data property
+        """
+
         resp = response.JsonRpcResponse(
             result = {'test': 'value'},
         )
 
         resp.data = {'new': 'value'}
-
-    def test_get_json(self):
-        resp = response.JsonRpcResponse(
-            result = {'test': 'value'},
-        )
-
-        self.assertDictEqual(
-            {
-                'jsonrpc': '2.0',
-                'result':  {'test': 'value'},
-            },
-            json.loads(resp.json),
-            'Serialized JSON string did not match',
-        )
-
-    @nose.tools.raises(AttributeError)
-    def test_set_json(self):
-        resp = response.JsonRpcResponse(
-            result = {'test': 'value'},
-        )
-
-        resp.json = {'new': 'value'}
+    # pylint: enable=no-self-use
 
     def test_from_json(self):
+        """
+        Tests that we can get a request from a JSON string
+        """
+
         original_resp = {
             'jsonrpc': '2.0',
             'result':  {'test': 'value'},
@@ -193,29 +284,52 @@ class TestJsonRpcResponse(unittest.TestCase):
             'Deserialized JSON RPC response did not match',
         )
 
+    # pylint: disable=no-self-use
     @nose.tools.raises(ValueError)
     def test_from_json_missing_version(self):
+        """
+        Tests that we raise the correct error when the version is missing
+        """
+
         original_resp = {
             'result': '-1.0',
         }
 
         response.JsonRpcResponse.from_json(json.dumps(original_resp))
+    # pylint: enable=no-self-use
 
+    # pylint: disable=no-self-use
     @nose.tools.raises(ValueError)
     def test_from_json_invalid_version(self):
+        """
+        Tests that we raise the correct error when the version isn't correct
+        """
+
         original_resp = {
             'jsonrpc': '-1.0',
             'result':  {'test': 'value'},
         }
 
         response.JsonRpcResponse.from_json(json.dumps(original_resp))
+    # pylint: enable=no-self-use
 
+    # pylint: disable=no-self-use
     @nose.tools.raises(ValueError)
     def test_from_json_list(self):
-        response.JsonRpcResponse.from_json('[]')
+        """
+        Tests that we raise the correct error for an empty array
+        """
 
+        response.JsonRpcResponse.from_json('[]')
+    # pylint: enable=no-self-use
+
+    # pylint: disable=no-self-use
     @nose.tools.raises(ValueError)
     def test_from_json_extra_field(self):
+        """
+        Tests that we raise an error when there's extra fields in the object
+        """
+
         original_resp = {
             'jsonrpc': '2.0',
             'result':  {'test': 'value'},
@@ -223,9 +337,18 @@ class TestJsonRpcResponse(unittest.TestCase):
         }
 
         response.JsonRpcResponse.from_json(json.dumps(original_resp))
+    # pylint: enable=no-self-use
 
 class TestJsonRpcBatchResponse(unittest.TestCase):
+    """
+    Tests for the JsonRpcBatchResponse class
+    """
+
     def test_get_data(self):
+        """
+        Tests that we can get the data property
+        """
+
         original_resp = [
             response.JsonRpcResponse(
                 response_id = 9001, result = {'test': 'value'}
@@ -248,8 +371,13 @@ class TestJsonRpcBatchResponse(unittest.TestCase):
             'Batch response data did not match',
         )
 
+    # pylint: disable=no-self-use
     @nose.tools.raises(AttributeError)
     def test_set_data(self):
+        """
+        Tests that we can't set the data property
+        """
+
         original_resp = [
             response.JsonRpcResponse(
                 response_id = 9001, result = {'test': 'value'}
@@ -264,8 +392,13 @@ class TestJsonRpcBatchResponse(unittest.TestCase):
 
         resp = response.JsonRpcBatchResponse(original_resp)
         resp.data = []
+    # pylint: enable=no-self-use
 
     def test_get_json(self):
+        """
+        Test that we can get the JSON object
+        """
+
         original_resp = [
             response.JsonRpcResponse(
                 response_id = 9001, result = {'test': 'value'}
@@ -288,8 +421,13 @@ class TestJsonRpcBatchResponse(unittest.TestCase):
             'Serialized JSON string did not match',
         )
 
+    # pylint: disable=no-self-use
     @nose.tools.raises(AttributeError)
     def test_set_json(self):
+        """
+        Tests that we can't set the JSON property
+        """
+
         original_resp = [
             response.JsonRpcResponse(
                 response_id = 9001, result = {'test': 'value'}
@@ -304,8 +442,13 @@ class TestJsonRpcBatchResponse(unittest.TestCase):
 
         resp = response.JsonRpcBatchResponse(original_resp)
         resp.json = 'bad!'
+    # pylint: enable=no-self-use
 
     def test_iter(self):
+        """
+        Tests that we can iterate over the requests
+        """
+
         original_resp = [
             response.JsonRpcResponse(
                 response_id = 9001, result = {'test': 'value'}

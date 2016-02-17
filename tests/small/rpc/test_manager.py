@@ -1,7 +1,10 @@
+"""
+Tests for the JSON RPC response manager
+"""
+
 import asyncio
 import json
 import logging
-import nose
 import unittest
 import unittest.mock
 
@@ -21,8 +24,16 @@ from mymcadmin.rpc.response import (
 )
 
 class TestJsonRpcResponseManager(unittest.TestCase):
+    """
+    Tests for the JsonRpcResponseManager class
+    """
+
     @utils.run_async
     async def test_handle_single_string(self):
+        """
+        Tests that the handle method accepts a single request a string
+        """
+
         req = json.dumps(
             {
                 'jsonrpc': '2.0',
@@ -36,6 +47,10 @@ class TestJsonRpcResponseManager(unittest.TestCase):
 
     @utils.run_async
     async def test_handle_single_bytes(self):
+        """
+        Tests that the handle method accepts a single request as a byte string
+        """
+
         req = json.dumps(
             {
                 'jsonrpc': '2.0',
@@ -49,6 +64,10 @@ class TestJsonRpcResponseManager(unittest.TestCase):
 
     @utils.run_async
     async def test_handle_batch(self):
+        """
+        Tests that the handle method accepts a batch of requests
+        """
+
         req = json.dumps(
             [
                 {
@@ -103,6 +122,10 @@ class TestJsonRpcResponseManager(unittest.TestCase):
 
     @utils.run_async
     async def test_handle_notifications(self):
+        """
+        Tests that we accept a notification request
+        """
+
         req = json.dumps(
             {
                 'jsonrpc': '2.0',
@@ -126,6 +149,10 @@ class TestJsonRpcResponseManager(unittest.TestCase):
 
     @utils.run_async
     async def test_handle_invalid_json(self):
+        """
+        Tests that the handle method returns an error for invalid JSON
+        """
+
         dispatcher = Dispatcher()
 
         resp = await JsonRpcResponseManager.handle('[', dispatcher)
@@ -140,6 +167,10 @@ class TestJsonRpcResponseManager(unittest.TestCase):
 
     @utils.run_async
     async def test_handle_missing_method(self):
+        """
+        Tests that the handle method returns an error for a missing method
+        """
+
         req = json.dumps(
             {
                 'jsonrpc': '2.0',
@@ -160,6 +191,10 @@ class TestJsonRpcResponseManager(unittest.TestCase):
 
     @utils.run_async
     async def test_handle_server_error(self):
+        """
+        Tests that the handle method returns an error for a server error
+        """
+
         req = json.dumps(
             {
                 'jsonrpc': '2.0',
@@ -168,11 +203,11 @@ class TestJsonRpcResponseManager(unittest.TestCase):
             }
         )
 
-        async def boom():
+        async def _boom():
             raise RuntimeError('Boom!')
 
         dispatcher = Dispatcher(
-            methods = {'boom': boom},
+            methods = {'boom': _boom},
         )
 
         resp = await JsonRpcResponseManager.handle(req, dispatcher)

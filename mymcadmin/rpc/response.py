@@ -70,13 +70,13 @@ class JsonRpcResponse(base.JsonSerializable):
     def data(self):
         data = super(JsonRpcResponse, self).data
 
-        if self.result:
+        if self.result is not None:
             data['result'] = self.result
 
-        if self.error:
+        if self.error is not None:
             data['error'] = self.error
 
-        if self.response_id:
+        if self.response_id is not None:
             data['id'] = self.response_id
 
         return data

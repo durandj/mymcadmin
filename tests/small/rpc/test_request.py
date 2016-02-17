@@ -1,10 +1,20 @@
+"""
+Tests for the JSON RPC request classes
+"""
+
 import json
-import nose
 import unittest
+
+import nose
 
 from mymcadmin.rpc import errors, request
 
+# pylint: disable=too-many-public-methods
 class TestJsonRpcRequest(unittest.TestCase):
+    """
+    Tests for the JsonRpcRequest class
+    """
+
     def setUp(self):
         self.req = request.JsonRpcRequest(
             method     = 'test',
@@ -16,6 +26,10 @@ class TestJsonRpcRequest(unittest.TestCase):
 
 
     def test_get_method(self):
+        """
+        Tests that we can get the method property
+        """
+
         self.assertEqual(
             'test',
             self.req.method,
@@ -23,6 +37,10 @@ class TestJsonRpcRequest(unittest.TestCase):
         )
 
     def test_set_method(self):
+        """
+        Tests that we can set the method property
+        """
+
         self.req.method = 'new_method'
 
         self.assertEqual(
@@ -33,9 +51,17 @@ class TestJsonRpcRequest(unittest.TestCase):
 
     @nose.tools.raises(ValueError)
     def test_set_method_invalid(self):
+        """
+        Tests that we don't allow methods that start with "rpc."
+        """
+
         self.req.method = 'rpc.my_method'
 
     def test_get_params(self):
+        """
+        Tests that we can get the params property
+        """
+
         self.assertEqual(
             {
                 'param1': 'this is a test',
@@ -45,6 +71,10 @@ class TestJsonRpcRequest(unittest.TestCase):
         )
 
     def test_set_params(self):
+        """
+        Tests that we can set the params property
+        """
+
         self.req.params = {
             'param1': 'this',
             'param2': 'is',
@@ -65,9 +95,17 @@ class TestJsonRpcRequest(unittest.TestCase):
 
     @nose.tools.raises(ValueError)
     def test_set_params_invalid(self):
+        """
+        Tests that we don't allow strings as parameters
+        """
+
         self.req.params = 'Bad!'
 
     def test_get_request_id(self):
+        """
+        Tests that we can get the request_id property
+        """
+
         self.assertEqual(
             1,
             self.req.request_id,
@@ -75,6 +113,10 @@ class TestJsonRpcRequest(unittest.TestCase):
         )
 
     def test_set_request_id(self):
+        """
+        Tests that we can set the request_id property
+        """
+
         self.req.request_id = 9001
 
         self.assertEqual(
@@ -84,6 +126,10 @@ class TestJsonRpcRequest(unittest.TestCase):
         )
 
     def test_get_data(self):
+        """
+        Tests that we can get the data property
+        """
+
         self.assertEqual(
             {
                 'jsonrpc': '2.0',
@@ -99,9 +145,17 @@ class TestJsonRpcRequest(unittest.TestCase):
 
     @nose.tools.raises(AttributeError)
     def test_set_data(self):
+        """
+        Tests that we can't set the data property
+        """
+
         self.req.data = 'bad!'
 
     def test_get_args(self):
+        """
+        Tests that we can get the parameters as a tuple
+        """
+
         self.req.params = ['this', 'is', 'a', 'test']
 
         self.assertEqual(
@@ -111,6 +165,10 @@ class TestJsonRpcRequest(unittest.TestCase):
         )
 
     def test_get_args_wrong_type(self):
+        """
+        Tests that we default to an empty tuple if params were an object
+        """
+
         self.assertEqual(
             (),
             self.req.args,
@@ -119,9 +177,17 @@ class TestJsonRpcRequest(unittest.TestCase):
 
     @nose.tools.raises(AttributeError)
     def test_set_args(self):
+        """
+        Tests that we cant set the args property
+        """
+
         self.req.args = 'bad!'
 
     def test_get_kwargs(self):
+        """
+        Tests that we can get the params as kwargs
+        """
+
         self.assertEqual(
             {
                 'param1': 'this is a test',
@@ -131,6 +197,10 @@ class TestJsonRpcRequest(unittest.TestCase):
         )
 
     def test_get_kwargs_wrong_type(self):
+        """
+        Tests that we can default to an empty dictionary
+        """
+
         self.req.params = ['this', 'is', 'a', 'test']
 
         self.assertEqual(
@@ -141,20 +211,17 @@ class TestJsonRpcRequest(unittest.TestCase):
 
     @nose.tools.raises(AttributeError)
     def test_set_kwargs(self):
+        """
+        Tests that we can't set the kwargs property
+        """
+
         self.req.kwargs = {}
 
-    def test_get_json(self):
-        self.assertEqual(
-            json.dumps(self.req.data),
-            self.req.json,
-            'JSON string was not formatted correctly',
-        )
-
-    @nose.tools.raises(AttributeError)
-    def test_set_json(self):
-        self.req.json = 'Bad!'
-
     def test_from_json_single(self):
+        """
+        Tests that we can get a single request from a JSON string
+        """
+
         json_str = self.req.json
 
         req = request.JsonRpcRequest.from_json(json_str)
@@ -171,28 +238,57 @@ class TestJsonRpcRequest(unittest.TestCase):
             'Request data did not match',
         )
 
+    # pylint: disable=no-self-use
     @nose.tools.raises(errors.JsonRpcParseRequestError)
-    def test_from_json_single_invalid_json(self):
-        request.JsonRpcRequest.from_json('[')
+    def test_from_json_invalid_json(self):
+        """
+        Tests that we raise the correct error for invalid JSON
+        """
 
+        request.JsonRpcRequest.from_json('[')
+    # pylint: enable=no-self-use
+
+    # pylint: disable=no-self-use
     @nose.tools.raises(errors.JsonRpcInvalidRequestError)
     def test_from_json_single_no_data(self):
+        """
+        Tests that we raise the correct error for an empty request
+        """
+
         request.JsonRpcRequest.from_json('[]')
+    # pylint: enable=no-self-use
 
+    # pylint: disable=no-self-use
     @nose.tools.raises(errors.JsonRpcInvalidRequestError)
-    def test_from_json_single_non_objects(self):
+    def test_from_json_single_lists(self):
+        """
+        Tests that we raise the correct error when receiving lists as requests
+        """
+
         request.JsonRpcRequest.from_json('[[]]')
+    # pylint: enable=no-self-use
 
+    # pylint: disable=no-self-use
     @nose.tools.raises(errors.JsonRpcInvalidRequestError)
-    def test_from_json_single_missing_field(self):
+    def test_from_json_missing_field(self):
+        """
+        Tests that we raise the correct error when missing a required field
+        """
+
         request.JsonRpcRequest.from_json(
             json.dumps(
                 {'jsonrpc': '2.0'}
             )
         )
+    # pylint: enable=no-self-use
 
+    # pylint: disable=no-self-use
     @nose.tools.raises(errors.JsonRpcInvalidRequestError)
-    def test_from_json_single_extra_field(self):
+    def test_from_json_extra_field(self):
+        """
+        Tests that we raise the correct error when given extra fields
+        """
+
         request.JsonRpcRequest.from_json(
             json.dumps(
                 {
@@ -202,9 +298,15 @@ class TestJsonRpcRequest(unittest.TestCase):
                 }
             )
         )
+    # pylint: enable=no-self-use
 
+    # pylint: disable=no-self-use
     @nose.tools.raises(errors.JsonRpcInvalidRequestError)
-    def test_from_json_single_invalid_version(self):
+    def test_from_json_invalid_version(self):
+        """
+        Tests that we raise the correct error when given an invalid version
+        """
+
         request.JsonRpcRequest.from_json(
             json.dumps(
                 {
@@ -213,8 +315,13 @@ class TestJsonRpcRequest(unittest.TestCase):
                 }
             )
         )
+    # pylint: enable=no-self-use
 
     def test_from_json_batch(self):
+        """
+        Tests that we create a batch request from a JSON string
+        """
+
         original_reqs = [
             {
                 'jsonrpc': '2.0',
@@ -259,38 +366,18 @@ class TestJsonRpcRequest(unittest.TestCase):
             )
 
             count += 1
+# pylint: enable=too-many-public-methods
 
 class TestJsonRpcBatchRequest(unittest.TestCase):
-    def test_get_json(self):
-        original_req = [
-            {
-                'jsonrpc': '2.0',
-                'method':  'test',
-                'id':      90,
-                'params':  [1, 2, 3, 4],
-            },
-            {
-                'jsonrpc': '2.0',
-                'method':  'boom',
-            }
-        ]
-
-        req = request.JsonRpcBatchRequest(
-            [
-                request.JsonRpcRequest.from_json(
-                    json.dumps(r)
-                )
-                for r in original_req
-            ]
-        )
-
-        self.assertEqual(
-            original_req,
-            json.loads(req.json),
-            'JSON string did not match',
-        )
+    """
+    Tests for the JsonRpcBatchRequest class
+    """
 
     def test_iterator(self):
+        """
+        Tests that we can iterate over every request
+        """
+
         original_req = [
             {
                 'jsonrpc': '2.0',
@@ -311,19 +398,23 @@ class TestJsonRpcBatchRequest(unittest.TestCase):
             for r in original_req
         ]
 
-        req = request.JsonRpcBatchRequest(original_req)
+        batch_req = request.JsonRpcBatchRequest(original_req)
 
         count = 0
-        for r in req:
+        for req in batch_req:
             self.assertEqual(
                 original_req[count].json,
-                r.json,
+                req.json,
                 'JSON data did not match',
             )
 
             count += 1
 
     def test_from_json(self):
+        """
+        Tests that we can get a batch request from a JSON string
+        """
+
         original_req = [
             {
                 'jsonrpc': '2.0',
@@ -346,19 +437,19 @@ class TestJsonRpcBatchRequest(unittest.TestCase):
             for r in original_req
         ]
 
-        req = request.JsonRpcBatchRequest.from_json(json_str)
+        batch_req = request.JsonRpcBatchRequest.from_json(json_str)
 
         self.assertIsInstance(
-            req,
+            batch_req,
             request.JsonRpcBatchRequest,
             'Request type did not match',
         )
 
         count = 0
-        for r in req:
+        for req in batch_req:
             self.assertEqual(
                 original_req[count].json,
-                r.json,
+                req.json,
                 'JSON data did not match',
             )
 
