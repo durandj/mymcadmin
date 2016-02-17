@@ -69,13 +69,19 @@ def start_all(ctx, host, port):
 
     try:
         with rpc.RpcClient(host, port) as rpc_client:
-            server_ids = rpc_client.server_start_all()
+            result = rpc_client.server_start_all()
+
+            successful = result['success']
+            failure    = result['failure']
     except Exception as ex:
         error('Failure')
         raise click.ClickException(ex)
     else:
-        for server_id in server_ids:
+        for server_id in successful:
             success('{} successfully started'.format(server_id))
+
+        for server_id in failure:
+            error('{} did not start properly'.format(server_id))
 
 @mymcadmin.command()
 @click.option('--host', default = None, help = 'The host to listen on')

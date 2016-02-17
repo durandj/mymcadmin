@@ -65,12 +65,17 @@ def restart_all(ctx, host, port):
 
     try:
         with rpc.RpcClient(host, port) as rpc_client:
-            server_ids = rpc_client.server_restart_all()
+            result = rpc_client.server_restart_all()
+
+            successful = result['success']
+            failure    = result['failure']
     except Exception as ex:
         error('Failure')
         raise click.ClickException(ex)
     else:
-        # TODO(durandj): could be helpful to get a list of failures
-        for server_id in server_ids:
+        for server_id in successful:
             success('{} successfully restarted'.format(server_id))
+
+        for server_id in failure:
+            error('{} could not restart properly'.format(server_id))
 

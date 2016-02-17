@@ -6,9 +6,6 @@ import os
 import unittest
 import unittest.mock
 
-import click
-import nose
-
 from .... import utils
 
 from mymcadmin.cli import mymcadmin as mma_command
@@ -187,7 +184,7 @@ class TestStartAll(utils.CliRunnerMixin, unittest.TestCase):
         if params is None:
             params = []
 
-        server_ids = [
+        success_ids = [
             'server0',
             'server1',
             'server2',
@@ -195,11 +192,21 @@ class TestStartAll(utils.CliRunnerMixin, unittest.TestCase):
             'server4',
         ]
 
+        error_ids = [
+            'error0',
+            'error1',
+            'error2',
+        ]
+
         with unittest.mock.patch('mymcadmin.rpc.RpcClient') as rpc_client, \
-                unittest.mock.patch('mymcadmin.cli.commands.start.success') as success:
+             unittest.mock.patch('mymcadmin.cli.commands.start.success') as success, \
+             unittest.mock.patch('mymcadmin.cli.commands.start.error') as error:
             rpc_client.return_value = rpc_client
             rpc_client.__enter__.return_value = rpc_client
-            rpc_client.server_start_all.return_value = server_ids
+            rpc_client.server_start_all.return_value = {
+                'success': success_ids,
+                'failure': error_ids,
+            }
 
             result = self.cli_runner.invoke(
                 mma_command,
@@ -222,7 +229,14 @@ class TestStartAll(utils.CliRunnerMixin, unittest.TestCase):
             success.assert_has_calls(
                 [
                     unittest.mock.call('{} successfully started'.format(server_id))
-                    for server_id in server_ids
+                    for server_id in success_ids
+                ]
+            )
+
+            error.assert_has_calls(
+                [
+                    unittest.mock.call('{} did not start properly'.format(server_id))
+                    for server_id in error_ids
                 ]
             )
 

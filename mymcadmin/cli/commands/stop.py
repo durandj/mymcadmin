@@ -63,14 +63,19 @@ def stop_all(ctx, host, port):
 
     try:
         with rpc.RpcClient(host, port) as rpc_client:
-            server_ids = rpc_client.server_stop_all()
+            result = rpc_client.server_stop_all()
+
+            successful = result['success']
+            failure    = result['failure']
     except Exception as ex:
         error('Failed')
         raise click.ClickException(ex)
     else:
         click.echo('Stopping all servers...')
 
-        # TODO(durandj): a list of failures would be helpful too
-        for server_id in server_ids:
+        for server_id in successful:
             success('{} successfully stopped'.format(server_id))
+
+        for server_id in failure:
+            error('{} did not stop properly'.format(server_id))
 

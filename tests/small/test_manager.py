@@ -253,7 +253,7 @@ class TestManager(unittest.TestCase):
         _test_method('shutdown',           manager.rpc_command_shutdown)
 
 # pylint: disable=too-many-public-methods
-class TestRPCCommands(unittest.TestCase):
+class TestRpcCommands(unittest.TestCase):
     """
     Tests for the JSON RPC commands
     """
@@ -397,8 +397,14 @@ class TestRPCCommands(unittest.TestCase):
 
         self.assertListEqual(
             server_ids,
-            result,
-            'Did not return a list of server IDs',
+            result.get('success'),
+            'Did not return the correct list of server IDs',
+        )
+
+        self.assertListEqual(
+            [],
+            result.get('failure'),
+            'Did not return the correct list of server IDs',
         )
 
     @utils.run_async
@@ -440,8 +446,18 @@ class TestRPCCommands(unittest.TestCase):
                 for server_id in self.manager.instances.keys()
                 if server_id.startswith('success')
             ],
-            result,
+            result.get('success'),
             'The list of restarted server\'s did not match',
+        )
+
+        self.assertListEqual(
+            [
+                server_id
+                for server_id in self.manager.instances.keys()
+                if not server_id.startswith('success')
+            ],
+            result.get('failure'),
+            'The list of failures did not match',
         )
 
     @asynctest.patch('mymcadmin.server.Server')
@@ -521,8 +537,14 @@ class TestRPCCommands(unittest.TestCase):
 
         self.assertListEqual(
             server_ids,
-            result,
-            'Did not return all of the started servers',
+            result.get('success'),
+            'The list of successful servers did not match',
+        )
+
+        self.assertListEqual(
+            [],
+            result.get('failure'),
+            'The list of failed servers did not match',
         )
 
     @utils.run_async
@@ -559,8 +581,14 @@ class TestRPCCommands(unittest.TestCase):
 
         self.assertListEqual(
             server_ids,
-            result,
-            'Did not return all of the started server IDs',
+            result.get('success'),
+            'The list of successful servers did not match',
+        )
+
+        self.assertListEqual(
+            [],
+            result.get('failure'),
+            'The list of failed servers did not match',
         )
 
     @utils.run_async
@@ -598,8 +626,14 @@ class TestRPCCommands(unittest.TestCase):
 
         self.assertListEqual(
             server_ids,
-            result,
-            'Not all server IDs were returned',
+            result.get('success'),
+            'The list of successful servers did not match',
+        )
+
+        self.assertListEqual(
+            error_ids,
+            result.get('failure'),
+            'The list of failed servers did not match',
         )
 
     @asynctest.patch('mymcadmin.server.Server')
@@ -692,8 +726,14 @@ class TestRPCCommands(unittest.TestCase):
 
         self.assertListEqual(
             list(server_procs.keys()),
-            result,
-            'Not all server IDs were returned',
+            result.get('success'),
+            'The list of successful servers did not match',
+        )
+
+        self.assertListEqual(
+            [],
+            result.get('failure'),
+            'The list of failed servers did not match',
         )
 
     @utils.run_async
@@ -737,8 +777,18 @@ class TestRPCCommands(unittest.TestCase):
                 for server_id in mock_procs.keys()
                 if server_id.startswith('success')
             ],
-            result,
-            'Did not return the right server IDs',
+            result.get('success'),
+            'The list of successful servers did not match',
+        )
+
+        self.assertListEqual(
+            [
+                server_id
+                for server_id in mock_procs.keys()
+                if not server_id.startswith('success')
+            ],
+            result.get('failure'),
+            'The list of failed servers did not match',
         )
 
     @utils.run_async

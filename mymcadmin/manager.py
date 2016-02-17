@@ -113,22 +113,24 @@ class Manager(object):
 
         logging.info('Restarting all servers...')
 
-        restarted_servers = []
+        success = []
+        failure = []
         for server_id in self.instances.keys():
             # pylint: disable=broad-except
             try:
                 result = await self.rpc_command_server_restart(server_id)
 
-                restarted_servers.append(result)
+                success.append(result)
             except Exception as ex:
                 logging.exception(
                     'There was an error when restarting server %s: %s',
                     server_id,
                     str(ex),
                 )
+                failure.append(server_id)
             # pylint: enable=broad-except
 
-        return restarted_servers
+        return {'success': success, 'failure': failure}
 
     @rpc.required_param('server_id')
     async def rpc_command_server_start(self, server_id):
@@ -157,22 +159,24 @@ class Manager(object):
             if server_id not in running_ids
         ]
 
-        started_servers = []
+        success = []
+        failure = []
         for server_id in server_ids:
             # pylint: disable=broad-except
             try:
                 server_id = await self.rpc_command_server_start(server_id)
 
-                started_servers.append(server_id)
+                success.append(server_id)
             except Exception as ex:
                 logging.exception(
                     'There was an error when starting server %s: %s',
                     server_id,
                     str(ex),
                 )
+                failure.append(server_id)
             # pylint: enable=broad-except
 
-        return started_servers
+        return {'success': success, 'failure': failure}
 
     @rpc.required_param('server_id')
     async def rpc_command_server_stop(self, server_id):
@@ -200,29 +204,31 @@ class Manager(object):
 
         server_ids = self.instances.keys()
 
-        stopped_servers = []
+        success = []
+        failure = []
         for server_id in server_ids:
             # pylint: disable=broad-except
             try:
                 result = await self.rpc_command_server_stop(server_id)
 
-                stopped_servers.append(result)
+                success.append(result)
             except Exception as ex:
                 logging.exception(
                     'There was an error stopping server %s: %s',
                     server_id,
                     str(ex),
                 )
+                failure.append(server_id)
             # pylint: enable=broad-except
 
-        return stopped_servers
+        return {'success': success, 'failure': failure}
 
     async def rpc_command_shutdown(self):
         """
-        Handle RPC command: terminate
+        Handle RPC command: shutdown
         """
 
-        logging.info('Sending terminate command to management server')
+        logging.info('Shutting down...')
 
         stopped_instances = []
         if self.instances:

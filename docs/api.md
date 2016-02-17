@@ -40,7 +40,9 @@ None
 
 #### Return
 
-A list of servers that were restarted
+A JSON object with two properties, `success` and `failure`. The `success` property
+contains a list of all the servers that were successfully restarted and `failure`
+contains a list of servers that errored out.
 
 ### server_start
 
@@ -64,7 +66,9 @@ None
 
 #### Return
 
-A list of servers that were started
+A JSON object with two properties, `success` and `failure`. The `success` property
+contains a list of all the servers that were successfully started and `failure`
+contains a list of servers that errored out.
 
 ### server_stop
 
@@ -80,7 +84,9 @@ TODO(durandj): document the return value
 
 ### server_stop_all
 
-Stops all of the running servers
+A JSON object with two properties, `success` and `failure`. The `success` property
+contains a list of all the servers that were successfully stopped and `failure`
+contains a list of servers that errored out.
 
 #### Parameters
 
