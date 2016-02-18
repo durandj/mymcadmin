@@ -52,12 +52,14 @@ class TestManager(unittest.TestCase):
             'Dispatcher was not initialized with handlers',
         )
 
+    @asynctest.patch('asyncio.gather')
+    @asynctest.patch('asyncio.Task.all_tasks')
     @asynctest.patch('mymcadmin.server.Server')
     @asynctest.patch('os.path.isdir')
     @asynctest.patch('os.listdir')
     @asynctest.patch('mymcadmin.manager.Manager.handle_network_connection')
     @asynctest.patch('asyncio.start_server')
-    def test_run(self, start_server, handle_network, listdir, isdir, server):
+    def test_run(self, start_server, handle_network, listdir, isdir, server, all_tasks, gather):
         """
         Check that the run function starts and stops the event loop
         """
@@ -87,6 +89,10 @@ class TestManager(unittest.TestCase):
         ]
 
         server.side_effect = mock_servers
+
+        all_tasks.return_value = server_ids
+
+        gather.return_value = gather
 
         mock_start_server_proc = asynctest.CoroutineMock()
         mock_start_server_proc.return_value = mock_start_server_proc
@@ -119,6 +125,11 @@ class TestManager(unittest.TestCase):
         )
 
         mock_event_loop.run_forever.assert_called_with()
+
+        all_tasks.assert_called_with()
+        gather.assert_called_with(*server_ids)
+        mock_event_loop.run_until_complete.assert_called_with(gather)
+
         mock_event_loop.close.assert_called_with()
 
     @asynctest.patch('mymcadmin.rpc.JsonRpcResponseManager')

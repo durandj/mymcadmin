@@ -63,6 +63,9 @@ class Manager(object):
         try:
             self.event_loop.run_forever()
         finally:
+            logging.info('Waiting for remaining processes to finish')
+            remaining_tasks = asyncio.Task.all_tasks()
+            self.event_loop.run_until_complete(asyncio.gather(*remaining_tasks))
             logging.info('Shutting down management process')
             self.event_loop.close()
             logging.info('Management process terminated')
