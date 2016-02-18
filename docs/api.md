@@ -18,6 +18,17 @@ None
 
 A list of server ID's
 
+### server_create
+
+#### Parameters
+
+`server_id` - the server ID
+`version`   - the server version
+
+#### Return
+
+TODO(durandj): document the return value
+
 ### server_restart
 
 Restarts a server
