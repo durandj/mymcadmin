@@ -224,7 +224,7 @@ class TestServer(unittest.TestCase):
         )
 
         self.assertEqual(
-            os.path.join(self.server_path, 'minecraft_server.jar'),
+            'minecraft_server.jar',
             self.server.jar,
             'Server Jar did not match',
         )
