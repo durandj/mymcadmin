@@ -76,7 +76,7 @@ class Server(object):
         """
 
         if 'jar' not in self._cache and 'jar' in self.settings:
-            self._cache['jar'] = self.settings['jar']
+            self._cache['jar'] = os.path.join(self.path, self.settings['jar'])
 
         if 'jar' not in self._cache:
             jars = glob.glob(os.path.join(self._path, '*.jar'))
