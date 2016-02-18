@@ -1,66 +1,91 @@
+"""
+Method dispatcher for JSON RPC requests
+"""
+
 import asyncio
 import collections
 
 from .. import errors
 
 class Dispatcher(collections.MutableMapping):
-	def __init__(self, methods = None):
-		self.method_handlers = {}
+    """
+    Method dispatcher for JSON RPC requests
+    """
 
-		if methods is not None:
-			self
+    def __init__(self, methods = None):
+        self.method_handlers = {}
 
-	def add_class(self, cls):
-		prefix = cls.__name__.lower() + '.'
+        if methods is not None:
+            self.construct_method_map(methods)
 
-		self.construct_method_map(cls(), prefix)
+    def add_class(self, cls):
+        """
+        Add the methods from a class as handlers
+        """
 
-	def add_object(self, obj):
-		prefix = obj.__class__.__name__.lower() + '.'
+        prefix = cls.__name__.lower() + '.'
 
-		self.construct_method_map(obj, prefix)
+        self.construct_method_map(cls(), prefix)
 
-	def add_dict(self, prototype, prefix = ''):
-		if prefix:
-			prefix += '.'
+    def add_object(self, obj):
+        """
+        Add the methods from an object as handlers
+        """
 
-		self.construct_method_map(prototype, prefix)
+        prefix = obj.__class__.__name__.lower() + '.'
 
-	def add_method(self, func, name = None):
-		if not asyncio.iscoroutinefunction(func):
-			raise errors.MyMCAdminError(
-				'RPC handler functions must be coroutines'
-			)
+        self.construct_method_map(obj, prefix)
 
-		self.method_handlers[name or func.__name__] = func
+    def add_dict(self, prototype, prefix = ''):
+        """
+        Add keys and values from a dictionary as handlers
+        """
 
-	def __getitem__(self, key):
-		return self.method_handlers[key]
+        if prefix:
+            prefix += '.'
 
-	def __setitem__(self, key, value):
-		self.method_handlers[key] = value
+        self.construct_method_map(prototype, prefix)
 
-	def __delitem__(self, key):
-		del self.method_handlers[key]
+    def add_method(self, func, name = None):
+        """
+        Add a function as a handler
+        """
 
-	def __len__(self):
-		return len(self.method_handlers)
+        if not asyncio.iscoroutinefunction(func):
+            raise errors.MyMCAdminError(
+                'RPC handler functions must be coroutines'
+            )
 
-	def __iter__(self):
-		return iter(self.method_handlers)
+        self.method_handlers[name or func.__name__] = func
 
-	def __repr__(self):
-		return repr(self.method_handlers)
+    def __getitem__(self, key):
+        return self.method_handlers[key]
 
-	def construct_method_map(self, method_map, prefix = ''):
-		if not isinstance(method_map, dict):
-			method_map = {
-				m: getattr(method_map, m)
-				for m in dir(method_map)
-				if not m.startswith('_')
-			}
+    def __setitem__(self, key, value):
+        self.method_handlers[key] = value
 
-		for name, method in method_map.items():
-			if callable(method):
-				self.add_method(method, name = prefix + name)
+    def __delitem__(self, key):
+        del self.method_handlers[key]
+
+    def __len__(self):
+        return len(self.method_handlers)
+
+    def __iter__(self):
+        return iter(self.method_handlers)
+
+    def construct_method_map(self, method_map, prefix = ''):
+        """
+        Update all the methods based off the method_map
+        """
+
+        if not isinstance(method_map, dict):
+            method_map = {
+                m: getattr(method_map, m)
+                for m in dir(method_map)
+                if not m.startswith('_')
+            }
+
+        for name, method in method_map.items():
+            if callable(method):
+                self.add_method(method, name = prefix + name)
 

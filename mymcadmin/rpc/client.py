@@ -1,81 +1,149 @@
+"""
+JSON RPC client
+"""
+
 import asyncio
 import json
 import logging
 
-from . import errors
+from . import errors, request
 from .. import utils
 
 class RpcClient(object):
-	JSONRPC_VERSION = '2.0'
+    """
+    JSON RPC client
+    """
 
-	def __init__(self, host, port):
-		self.event_loop = asyncio.get_event_loop()
-		self.host       = host
-		self.port       = port
-		self.reader     = None
-		self.writer     = None
+    def __init__(self, host, port, event_loop = None):
+        if event_loop is None:
+            event_loop = asyncio.get_event_loop()
 
-	def run(self):
-		utils.setup_logging()
+        self.event_loop = event_loop
+        self.host       = host
+        self.port       = port
+        self.reader     = None
+        self.writer     = None
 
-		logging.info('Setting up network connection')
-		self.event_loop.run_until_complete(self._setup())
+    def start(self):
+        """
+        Start the JSON RPC client
+        """
 
-	def stop(self):
-		self.event_loop.close()
+        utils.setup_logging()
 
-	def terminate(self):
-		self.send_rpc_command('terminate')
+        logging.info('Setting up network connection')
+        self.event_loop.run_until_complete(self._connect())
 
-	def server_start(self):
-		self.send_rpc_command('serverStart')
+    def stop(self):
+        """
+        Stop the JSON RPC client
+        """
 
-	def server_stop(self):
-		self.send_rpc_command('serverStop')
+        self.event_loop.close()
 
-	def server_restart(self):
-		self.send_rpc_command('serverRestart')
+    def list_servers(self):
+        """
+        Get the list of available servers
+        """
 
-	def send_rpc_command(self, command, params = {}):
-		self.event_loop.run_until_complete(self._send(command, params))
+        return self.execute_rpc_method('list_servers')
 
-	def __enter__(self):
-		self.run()
+    def shutdown(self):
+        """
+        Ask the management process to stop
+        """
 
-		return self
+        return self.execute_rpc_method('shutdown')
 
-	def __exit__(self, exception_type, exception_value, traceback):
-		self.stop()
+    def server_start(self, server_id):
+        """
+        Ask the management process to start a Minecraft server
+        """
 
-	async def _setup(self):
-		self.reader, self.writer = await asyncio.open_connection(
-			self.host,
-			self.port,
-			loop = self.event_loop,
-		)
+        return self.execute_rpc_method('server_start', {'server_id': server_id})
 
-	async def _send(self, method, params, request_id = 1):
-		data = json.dumps(
-			{
-				'jsonrpc': RpcClient.JSONRPC_VERSION,
-				'id':      request_id,
-				'method':  method,
-				'params':  params,
-			}
-		) + '\n'
+    def server_start_all(self):
+        """
+        Ask the management process to start all the Minecraft servers
+        """
 
-		logging.info('Sending "{}" to server'.format(data))
-		self.writer.write(data.encode())
+        return self.execute_rpc_method('server_start_all')
 
-		logging.info('Waiting for server response')
-		response = await self.reader.read()
-		response = response.decode()
-		logging.info('Received "{}" from the server'.format(response))
-		response = json.loads(response)
+    def server_stop(self, server_id):
+        """
+        Ask the management process to stop a Minecraft server
+        """
 
-		if 'error' in response:
-			raise errors.JsonRpcError(
-				'RPC error: {}',
-				response['error']['message'],
-			)
+        return self.execute_rpc_method('server_stop', {'server_id': server_id})
+
+    def server_stop_all(self):
+        """
+        Ask the management process to stop all the Minecraft servers
+        """
+
+        return self.execute_rpc_method('server_stop_all')
+
+    def server_restart(self, server_id):
+        """
+        Ask the management process to restart a Minecraft server
+        """
+
+        return self.execute_rpc_method('server_restart', {'server_id': server_id})
+
+    def server_restart_all(self):
+        """
+        Ask the management process to restart all the Minecraft servers
+        """
+
+        return self.execute_rpc_method('server_restart_all')
+
+    def execute_rpc_method(self, method, params = None):
+        """
+        Execute a JSON RPC command on the management server
+        """
+
+        return self.event_loop.run_until_complete(
+            self._send(method, params)
+        )
+
+    def __enter__(self):
+        self.start()
+
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        self.stop()
+
+    async def _connect(self):
+        self.reader, self.writer = await asyncio.open_connection(
+            self.host,
+            self.port,
+            loop = self.event_loop,
+        )
+
+    async def _send(self, method, params, request_id = 1):
+        data = request.JsonRpcRequest(
+            method     = method,
+            params     = params,
+            request_id = request_id,
+        ).json
+
+        logging.info('Sending "%s" to server', data)
+        self.writer.write(data.encode())
+        self.writer.write_eof()
+        await self.writer.drain()
+
+        logging.info('Waiting for server response')
+        response = await self.reader.readline()
+        response = response.decode()
+        logging.info('Received "%s" from the server', response)
+        response = json.loads(response)
+
+        if 'error' in response:
+            raise errors.JsonRpcError(
+                'RPC error: {}',
+                response['error']['message'],
+            )
+
+        return response['result']
 

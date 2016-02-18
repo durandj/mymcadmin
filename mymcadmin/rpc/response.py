@@ -1,131 +1,188 @@
+"""
+JSON RPC responses
+"""
+
 import json
 
-from . import errors
+from . import base
 
-class JsonRpcResponse(object):
-	JSONRPC_VERSION = '2.0'
+class JsonRpcResponse(base.JsonSerializable):
+    """
+    A JSON RPC response to a request
+    """
 
-	def __init__(self, result = None, error = None, response_id = None):
-		self._result      = result
-		self._error       = error
-		self._response_id = response_id
+    POSSIBLE_FIELDS = set(['jsonrpc', 'id', 'result', 'error'])
 
-		if not result and not error:
-			raise ValueError('Either result or error must be set')
+    def __init__(self, result = None, error = None, response_id = None):
+        self._result      = result
+        self._error       = error
+        self._response_id = response_id
 
-	@property
-	def result(self):
-		return self._result
+        if result is None and error is None:
+            raise ValueError('Either result or error must be set')
 
-	@result.setter
-	def result(self, value):
-		if self.error and value is not None:
-			raise ValueError('Can\'t set result and error')
+        if result is not None and error is not None:
+            raise ValueError('Can\'t set result and error')
 
-		self._result = value
+    @property
+    def result(self):
+        """
+        The result of a response
+        """
 
-	@property
-	def error(self):
-		return self._error
+        return self._result
 
-	@error.setter
-	def error(self, value):
-		if self.value and value is not None:
-			raise ValueError('Can\'t set result and error')
+    @result.setter
+    def result(self, value):
+        if self.error and value is not None:
+            raise ValueError('Can\'t set result and error')
 
-		self._error = value
+        self._result = value
 
-	@property
-	def response_id(self):
-		return self._response_id
+    @property
+    def error(self):
+        """
+        The error for a response
+        """
 
-	@response_id.setter
-	def response_id(self, value):
-		self._response_id = value
+        return self._error
 
-	@property
-	def data(self):
-		data = {
-			'jsonrpc': self.JSONRPC_VERSION,
-		}
+    @error.setter
+    def error(self, value):
+        if self.result and value is not None:
+            raise ValueError('Can\'t set result and error')
 
-		if self.result:
-			data['result'] = self.result
+        self._error = value
 
-		if self.error:
-			data['error'] = self.error
+    @property
+    def response_id(self):
+        """
+        The ID of the response
+        """
 
-		if self.response_id:
-			data['id'] = self.response_id
+        return self._response_id
 
-		return data
+    @response_id.setter
+    def response_id(self, value):
+        self._response_id = value
 
-	@property
-	def json(self):
-		return json.dumps(self.data)
+    @property
+    def data(self):
+        data = super(JsonRpcResponse, self).data
 
-	@classmethod
-	def from_json(self, json_str):
-		data = json.loads(json_str)
+        if self.result is not None:
+            data['result'] = self.result
 
-		if not isinstance(data, dict):
-			raise ValueError('data should be a dict')
+        if self.error is not None:
+            data['error'] = self.error
 
-		return cls(**data)
+        if self.response_id is not None:
+            data['id'] = self.response_id
 
-class JsonRpcBatchResponse(object):
-	def __init__(self, responses):
-		self.responses = responses
+        return data
 
-	@property
-	def data(self):
-		return [r.data for r in self.responses]
+    @classmethod
+    def from_json(cls, json_str):
+        data = json.loads(json_str)
 
-	@property
-	def json(self):
-		return json.dumps(self.data)
+        if not isinstance(data, dict):
+            raise ValueError('Data should be a dict')
 
-	def __iter__(self):
-		return iter(self.responses)
+        if 'jsonrpc' not in data:
+            raise ValueError('Missing JSON RPC version')
+
+        if data['jsonrpc'] != '2.0':
+            raise ValueError(
+                'Unsupported JSON RPC version {}'.format(data['jsonrpc'])
+            )
+
+        fields = set(data.keys())
+        if fields.difference(cls.POSSIBLE_FIELDS):
+            raise ValueError(
+                'Extra field: {}'.format(
+                    fields.difference(cls.POSSIBLE_FIELDS)
+                )
+            )
+
+        return cls(
+            result      = data.get('result'),
+            error       = data.get('error'),
+            response_id = data.get('id'),
+        )
+
+class JsonRpcBatchResponse(base.JsonSerializable):
+    """
+    A batch of JSON RPC responses
+    """
+
+    def __init__(self, responses):
+        self.responses = responses
+
+    @property
+    def data(self):
+        return [r.data for r in self.responses]
+
+    def __iter__(self):
+        return iter(self.responses)
 
 class JsonRpcErrorResponse(JsonRpcResponse):
-	def __init__(self, code, message, request_id = None):
-		super(JsonRpcErrorResponse, self).__init__(
-			response_id = request_id,
-			error      = {
-				'code':    code,
-				'message': message,
-			}
-		)
+    """
+    A general JSON RPC error response
+    """
+
+    def __init__(self, code, message, request_id = None):
+        super(JsonRpcErrorResponse, self).__init__(
+            response_id = request_id,
+            error      = {
+                'code':    code,
+                'message': message,
+            }
+        )
 
 class JsonRpcParseErrorResponse(JsonRpcErrorResponse):
-	def __init__(self):
-		super(JsonRpcParseErrorResponse, self).__init__(
-			-32700,
-			'Parse error',
-		)
+    """
+    A JSON RPC error response for invalid JSON formatting
+    """
+
+    def __init__(self):
+        super(JsonRpcParseErrorResponse, self).__init__(
+            -32700,
+            'Parse error',
+        )
 
 class JsonRpcInvalidRequestResponse(JsonRpcErrorResponse):
-	def __init__(self, request_id = None):
-		super(JsonRpcInvalidRequestResponse, self).__init__(
-			-32600,
-			'Invalid Request',
-			request_id = request_id,
-		)
+    """
+    A JSON RPC error response for an invalid request
+    """
+
+    def __init__(self, request_id = None):
+        super(JsonRpcInvalidRequestResponse, self).__init__(
+            -32600,
+            'Invalid Request',
+            request_id = request_id,
+        )
 
 class JsonRpcMethodNotFoundResponse(JsonRpcErrorResponse):
-	def __init__(self, request_id):
-		super(JsonRpcMethodNotFoundResponse, self).__init__(
-			-32601,
-			'Method not found',
-			request_id = request_id,
-		)
+    """
+    A JSON RPC error response for a request for a non-existant method
+    """
+
+    def __init__(self, request_id):
+        super(JsonRpcMethodNotFoundResponse, self).__init__(
+            -32601,
+            'Method not found',
+            request_id = request_id,
+        )
 
 class JsonRpcServerErrorResponse(JsonRpcErrorResponse):
-	def __init__(self, request_id):
-		super(JsonRpcServerErrorResponse, self).__init__(
-			-32000,
-			'Server error',
-			request_id = request_id,
-		)
+    """
+    A JSON RPC error response for a general server error
+    """
+
+    def __init__(self, request_id):
+        super(JsonRpcServerErrorResponse, self).__init__(
+            -32000,
+            'Server error',
+            request_id = request_id,
+        )
 

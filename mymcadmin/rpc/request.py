@@ -1,143 +1,168 @@
+"""
+JSON RPC requests
+"""
+
 import json
 
-from . import errors
+from . import base, errors
 
-class JsonRpcRequest(object):
-	JSONRPC_VERSION = '2.0'
+class JsonRpcRequest(base.JsonSerializable):
+    """
+    A request via JSON RPC
+    """
 
-	REQUIRED_FIELDS = set(['jsonrpc', 'method'])
-	POSSIBLE_FIELDS = set(['jsonrpc', 'method', 'params', 'id'])
+    REQUIRED_FIELDS = set(['jsonrpc', 'method'])
+    POSSIBLE_FIELDS = set(['jsonrpc', 'method', 'params', 'id'])
 
-	def __init__(self, method = None, params = None,
-		request_id = None, is_notification = None):
-		self._method         = method
-		self._params         = params
-		self._request_id     = request_id
-		self.is_notification = is_notification
+    def __init__(self, method = None, params = None,
+                 request_id = None, is_notification = None):
+        self._method         = method
+        self._params         = params
+        self._request_id     = request_id
+        self.is_notification = is_notification
 
-	@property
-	def method(self):
-		return self._method
+    @property
+    def method(self):
+        """
+        The requested method
+        """
 
-	@method.setter
-	def method(self, value):
-		if value.startswith('rpc.'):
-			raise ValueError('Method names cannot begin with "rpc."')
+        return self._method
 
-		self._method = value
+    @method.setter
+    def method(self, value):
+        if value.startswith('rpc.'):
+            raise ValueError('Method names cannot begin with "rpc."')
 
-	@property
-	def params(self):
-		return self._params
+        self._method = value
 
-	@params.setter
-	def params(self, value):
-		if value is not None and not isinstance(value, (list, tuple, dict)):
-			raise ValueError('Invalid parameter collection type')
+    @property
+    def params(self):
+        """
+        The parameters for the request
+        """
 
-		value = list(value) if isinstance(value, tuple) else value
+        return self._params
 
-		if value is not None:
-			self._params = value
+    @params.setter
+    def params(self, value):
+        if value is not None and not isinstance(value, (list, tuple, dict)):
+            raise ValueError('Invalid parameter collection type')
 
-	@property
-	def request_id(self):
-		return self._request_id
+        value = list(value) if isinstance(value, tuple) else value
 
-	@request_id.setter
-	def request_id(self, value):
-		self._request_id = value
+        if value is not None:
+            self._params = value
 
-	@property
-	def data(self):
-		data = {
-			'jsonrpc': self.JSONRPC_VERSION,
-			'method':  self.method
-		}
+    @property
+    def request_id(self):
+        """
+        The ID of the request
+        """
 
-		if self.params:
-			data['params'] = self.params
+        return self._request_id
 
-		if self.request_id:
-			data['id'] = self.request_id
+    @request_id.setter
+    def request_id(self, value):
+        self._request_id = value
 
-		return data
+    @property
+    def data(self):
+        data = super(JsonRpcRequest, self).data
+        data['method'] = self.method
 
-	@property
-	def args(self):
-		return tuple(self.params) if isinstance(self.params, list) else ()
+        if self.params:
+            data['params'] = self.params
 
-	@property
-	def kwargs(self):
-		return self.params if isinstance(self.params, dict) else {}
+        if self.request_id:
+            data['id'] = self.request_id
 
-	@property
-	def json(self):
-		return json.dumps(self.data)
+        return data
 
-	@classmethod
-	def from_json(cls, json_str):
-		try:
-			data = json.loads(json_str)
-		except (json.JSONDecodeError, TypeError, ValueError):
-			raise errors.JsonRpcParseRequestError()
+    @property
+    def args(self):
+        """
+        The parameters for the request as a tuple
+        """
 
-		is_batch = isinstance(data, list)
-		data     = data if is_batch else [data]
+        return tuple(self.params) if isinstance(self.params, list) else ()
 
-		if not data:
-			raise errors.JsonRpcInvalidRequestError('Expected JSON request')
+    @property
+    def kwargs(self):
+        """
+        The parameters for the request as a dictionary
+        """
 
-		if not all(isinstance(d, dict) for d in data):
-			raise errors.JsonRpcInvalidRequestError('Expected Json object')
+        return self.params if isinstance(self.params, dict) else {}
 
-		result = []
-		for req in data:
-			req_keys = set(req.keys())
+    @classmethod
+    def from_json(cls, json_str):
+        try:
+            data = json.loads(json_str)
+        except (json.JSONDecodeError, TypeError, ValueError):
+            raise errors.JsonRpcParseRequestError()
 
-			if not cls.REQUIRED_FIELDS.issubset(req_keys):
-				raise errors.JsonRpcInvalidRequestError(
-					'Missing required fields: {}',
-					cls.REQUIRED_FIELDS.difference(req_keys),
-				)
+        is_batch = isinstance(data, list)
+        data     = data if is_batch else [data]
 
-			if not cls.POSSIBLE_FIELDS.issuperset(req_keys):
-				raise errors.JsonRpcInvalidRequestError(
-					'Unexpected fields: {}',
-					req_keys.difference(cls.POSSIBLE_FIELDS),
-				)
+        if not data:
+            raise errors.JsonRpcInvalidRequestError('Expected JSON request')
 
-			if req['jsonrpc'] != cls.JSONRPC_VERSION:
-				raise errors.JsonRpcInvalidRequestError(
-					'Invalid JSON RPC version',
-				)
+        if not all(isinstance(d, dict) for d in data):
+            raise errors.JsonRpcInvalidRequestError('Expected Json object')
 
-			try:
-				result.append(
-					JsonRpcRequest(
-						method          = req['method'],
-						params          = req.get('params'),
-						request_id      = req.get('id'),
-						is_notification = 'id' not in req,
-					)
-				)
-			except ValueError as e:
-				raise errors.JsonRpcInvalidRequestError(str(e))
+        result = []
+        for req in data:
+            req_keys = set(req.keys())
 
-		return JsonRpcBatchRequest(result) if is_batch else result[0]
+            if not cls.REQUIRED_FIELDS.issubset(req_keys):
+                raise errors.JsonRpcInvalidRequestError(
+                    'Missing required fields: {}',
+                    cls.REQUIRED_FIELDS.difference(req_keys),
+                )
 
-class JsonRpcBatchRequest(object):
-	def __init__(self, requests):
-		self.requests = requests
+            if not cls.POSSIBLE_FIELDS.issuperset(req_keys):
+                raise errors.JsonRpcInvalidRequestError(
+                    'Unexpected fields: {}',
+                    req_keys.difference(cls.POSSIBLE_FIELDS),
+                )
 
-	@classmethod
-	def from_json(cls, json_str):
-		return JsonRpcRequest.from_json(json_str)
+            if req['jsonrpc'] != cls.JSONRPC_VERSION:
+                raise errors.JsonRpcInvalidRequestError(
+                    'Invalid JSON RPC version',
+                )
 
-	@property
-	def json(self):
-		return json.dumps([r.data for r in self.requests])
+            result.append(
+                JsonRpcRequest(
+                    method          = req['method'],
+                    params          = req.get('params'),
+                    request_id      = req.get('id'),
+                    is_notification = 'id' not in req,
+                )
+            )
 
-	def __iter__(self):
-		return iter(self.requests)
+        return JsonRpcBatchRequest(result) if is_batch else result[0]
+
+class JsonRpcBatchRequest(base.JsonSerializable):
+    """
+    A batch of JSON RPC requests
+    """
+
+    def __init__(self, requests):
+        self.requests = requests
+
+    @property
+    def data(self):
+        return [r.data for r in self.requests]
+
+    def __iter__(self):
+        return iter(self.requests)
+
+    @classmethod
+    def from_json(cls, json_str):
+        """
+        Build a request from a JSON string
+        """
+
+        return JsonRpcRequest.from_json(json_str)
 

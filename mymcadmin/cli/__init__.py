@@ -1,19 +1,16 @@
+"""
+Command Line Interface
+"""
+
 from .base import mymcadmin
-from .commands import (
-	create_server,
-	list_servers,
-	list_versions,
-	start,
-	start_all,
-	stop,
-	stop_all,
-	restart,
-	restart_all,
-	terminate,
-	terminate_all,
-)
+from .commands.create import create_server
+from .commands.list import list_servers, list_versions
+from .commands.start import start, start_daemon, start_all
+from .commands.stop import stop, stop_all
+from .commands.restart import restart, restart_all
+from .commands.shutdown import shutdown
 
 __all__ = [
-	'mymcadmin',
+    'mymcadmin',
 ]
 

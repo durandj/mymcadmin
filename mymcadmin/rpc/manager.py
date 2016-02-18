@@ -1,78 +1,96 @@
+"""
+JSON RPC response manager for handling requests
+"""
+
 import logging
 
 from . import errors, request, response
 
 class JsonRpcResponseManager(object):
-	@classmethod
-	async def handle(cls, request_str, dispatcher):
-		if isinstance(request_str, bytes):
-			request_str = request_str.decode('utf-8')
+    """
+    JSON RPC response manager for handling requests
+    """
 
-		try:
-			req = request.JsonRpcRequest.from_json(request_str)
-		except errors.JsonRpcError as e:
-			logging.exception(e.message, exc_info = True)
+    @classmethod
+    async def handle(cls, request_str, dispatcher):
+        """
+        Handle a JSON RPC request
+        """
 
-			return e.response
+        if isinstance(request_str, bytes):
+            request_str = request_str.decode('utf-8')
 
-		return await cls.handle_request(req, dispatcher)
+        try:
+            req = request.JsonRpcRequest.from_json(request_str)
+        except errors.JsonRpcError as ex:
+            logging.exception(ex.message, exc_info = True)
 
-	@classmethod
-	async def handle_request(cls, rpc_request, dispatcher):
-		if not isinstance(rpc_request, request.JsonRpcBatchRequest):
-			rpc_request = [rpc_request]
+            return ex.response
 
-		responses = await cls._get_responses(rpc_request, dispatcher)
-		responses = [resp for resp in responses if resp is not None]
+        return await cls.handle_request(req, dispatcher)
 
-		# Happens when we recieve a batch of notifications
-		if not responses:
-			return
+    @classmethod
+    async def handle_request(cls, rpc_request, dispatcher):
+        """
+        Backend handling of a request
+        """
 
-		if isinstance(rpc_request, request.JsonRpcRequest):
-			return response.JsonRpcBatchResponse(responses)
-		else:
-			return responses[0]
+        if not isinstance(rpc_request, request.JsonRpcBatchRequest):
+            rpc_request = [rpc_request]
 
-	@classmethod
-	async def _get_responses(cls, requests, dispatcher):
-		responses = []
+        responses = await cls._get_responses(rpc_request, dispatcher)
+        responses = [resp for resp in responses if resp is not None]
 
-		for req in requests:
-			try:
-				try:
-					method = dispatcher[req.method]
-				except KeyError:
-					raise errors.JsonRpcMethodNotFoundError(
-						req.request_id,
-						'Unknown method: {}',
-						req.method,
-					)
+        # Happens when we recieve a batch of notifications
+        if not responses:
+            return
 
-				result = await method(*req.args, **req.kwargs)
-				resp   = response.JsonRpcResponse(
-					response_id = req.request_id,
-					result      = result,
-				)
+        if isinstance(rpc_request, request.JsonRpcBatchRequest):
+            return response.JsonRpcBatchResponse(responses)
+        else:
+            return responses[0]
 
-				if not req.is_notification:
-					responses.append(resp)
-			except errors.JsonRpcError as e:
-				logging.exception(e.message, exc_info = True)
+    @classmethod
+    async def _get_responses(cls, requests, dispatcher):
+        responses = []
 
-				resp = e.response
-				if not req.is_notification:
-					responses.append(resp)
-			except Exception as e:
-				logging.exception(str(e), exc_info = True)
+        # pylint: disable=broad-except
+        for req in requests:
+            try:
+                try:
+                    method = dispatcher[req.method]
+                except KeyError:
+                    raise errors.JsonRpcMethodNotFoundError(
+                        req.request_id,
+                        'Unknown method: {}',
+                        req.method,
+                    )
 
-				resp = errors.JsonRpcServerError(
-					req.request_id,
-					str(e),
-				).response
+                result = await method(*req.args, **req.kwargs)
+                resp   = response.JsonRpcResponse(
+                    response_id = req.request_id,
+                    result      = result,
+                )
 
-				if not req.is_notification:
-					responses.append(resp)
+                if not req.is_notification:
+                    responses.append(resp)
+            except errors.JsonRpcError as ex:
+                logging.exception(ex.message, exc_info = True)
 
-		return responses
+                resp = ex.response
+                if not req.is_notification:
+                    responses.append(resp)
+            except Exception as ex:
+                logging.exception(str(ex), exc_info = True)
+
+                resp = errors.JsonRpcServerError(
+                    req.request_id,
+                    str(ex),
+                ).response
+
+                if not req.is_notification:
+                    responses.append(resp)
+        # pylint: enable=broad-except
+
+        return responses
 
