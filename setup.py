@@ -9,7 +9,7 @@ with open('requirements.txt', 'r') as req_file:
 
 setuptools.setup(
     name             = 'mymcadmin',
-    version          = '0.1.0',
+    version          = '0.2.0',
     packages         = setuptools.find_packages(),
     install_requires = REQUIREMENTS,
     entry_points     = """
