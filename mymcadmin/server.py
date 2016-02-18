@@ -161,6 +161,7 @@ class Server(object):
         Create the Minecraft server
         """
 
+        # TODO(durandj): list_versions doesn't exist anymore
         versions = Server.list_versions()
         if version is None:
             version = versions['latest']['release']
