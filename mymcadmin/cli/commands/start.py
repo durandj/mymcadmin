@@ -123,8 +123,7 @@ def start_daemon(ctx, **kwargs):
     Start management daemon
     """
 
-    config        = ctx.obj['config']
-    daemon_config = config.daemon or {}
+    daemon_config = ctx.obj['config'].daemon or {}
 
     def _get_option(name, default, convert = None):
         if kwargs[name] is not None:
