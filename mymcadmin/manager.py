@@ -235,7 +235,7 @@ class Manager(object):
 
         stopped_instances = []
         if self.instances:
-            for server_id in self.instances.keys():
+            for server_id in list(self.instances.keys()):
                 # pylint: disable=broad-except
                 try:
                     stopped_instances.append(
