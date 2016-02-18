@@ -1,6 +1,7 @@
 asynctest
 click
 coverage
+django>=1.9
 nose
 pylint
 python-daemon
