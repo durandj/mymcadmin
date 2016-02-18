@@ -316,5 +316,4 @@ class Server(object):
             return int(value)
         else:
             return value
->>>>>>> master
 
