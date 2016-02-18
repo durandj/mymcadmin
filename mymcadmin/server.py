@@ -166,6 +166,7 @@ class Server(object):
 
         return asyncio.create_subprocess_exec(
             *command_args,
+            cwd    = self.path,
             stdin  = asyncio.subprocess.PIPE,
             stdout = asyncio.subprocess.PIPE,
             stderr = asyncio.subprocess.PIPE,

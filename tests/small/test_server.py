@@ -431,6 +431,7 @@ class TestServer(unittest.TestCase):
             'java',
             '-jar',
             fake_jar,
+            cwd    = self.server_path,
             stdin  = asyncio.subprocess.PIPE,
             stdout = asyncio.subprocess.PIPE,
             stderr = asyncio.subprocess.PIPE,
