@@ -239,7 +239,7 @@ class Manager(object):
                 # pylint: disable=broad-except
                 try:
                     stopped_instances.append(
-                        await self.rpc_command_server_stop(server_id)
+                        await self.rpc_command_server_stop(server_id = server_id)
                     )
                 except Exception as ex:
                     logging.exception(str(ex))
@@ -323,5 +323,5 @@ class Manager(object):
 
     @staticmethod
     async def _send_to_server(proc, message):
-        return proc.communicate(message.encode())
+        return await proc.communicate(message.encode())
 

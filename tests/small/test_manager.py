@@ -866,7 +866,7 @@ class TestRpcCommands(unittest.TestCase):
 
         mock_server_stop.assert_has_calls(
             [
-                unittest.mock.call(server_id)
+                unittest.mock.call(server_id = server_id)
                 for server_id in instances.keys()
             ]
         )
