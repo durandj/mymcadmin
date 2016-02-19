@@ -13,6 +13,7 @@ import unittest
 import unittest.mock
 
 import nose
+import requests
 
 from mymcadmin import errors, server
 
@@ -558,40 +559,222 @@ class TestServer(unittest.TestCase):
 
     @unittest.mock.patch('requests.get')
     @unittest.mock.patch('mymcadmin.server.Server.list_versions')
-    def test_download_server_default(self, list_versions, requests_get):
+    def test_get_version_info(self, list_versions, requests_get):
+        """
+        Tests that we can get the information about a specific version
+        """
+
+        list_versions.return_value = {
+            'latest': {
+                'snapshot': 'mysnapshot',
+                'release':  'myrelease',
+            },
+            'versions': [
+                {
+                    'id':          'mysnapshot',
+                    'type':        'snapshot',
+                    'time':        '2016-01-04T00:00:00+00:00',
+                    'releaseTime': '2016-01-04T00:00:00+00:00',
+                    'url':         'http://example.com/mc/mysnapshot',
+                },
+                {
+                    'id':          'myrelease',
+                    'type':        'release',
+                    'time':        '2016-01-03T00:00:00+00:00',
+                    'releaseTime': '2016-01-03T00:00:00+00:00',
+                    'url':         'http://example.com/mc/myrelease',
+                },
+                {
+                    'id':          'mybeta',
+                    'type':        'old_beta',
+                    'time':        '2016-01-02T00:00:00+00:00',
+                    'releaseTime': '2016-01-02T00:00:00+00:00',
+                    'url':         'http://example.com/mc/mybeta',
+                },
+                {
+                    'id':          'myalpha',
+                    'type':        'old_alpha',
+                    'time':        '2016-01-01T00:00:00+00:00',
+                    'releaseTime': '2016-01-01T00:00:00+00:00',
+                    'url':         'http://example.com/mc/myalpha',
+                },
+            ],
+        }
+
+        version_info = {
+            'id':        'myrelease',
+            'type':      'release',
+            'downloads': {
+                'client': {
+                    'sha1': 'deadbeef',
+                    'size': 0xDEADBEEF,
+                    'url':  'http://example.com/download/myrelease/client',
+                },
+                'server': {
+                    'sha1': 'deadbeef',
+                    'size': 0xDEADBEEF,
+                    'url':  'http://example.com/download/myrelease/server',
+                },
+            },
+        }
+
+        mock_response = unittest.mock.Mock(spec = requests.Response)
+        mock_response.ok = True
+        mock_response.json.return_value = version_info
+
+        requests_get.return_value = mock_response
+
+        version = server.Server.get_version_info('myrelease')
+
+        requests_get.assert_called_with('http://example.com/mc/myrelease')
+
+        self.assertDictEqual(
+            version_info,
+            version,
+            'The version metadata did not match',
+        )
+
+    @unittest.mock.patch('requests.get')
+    @unittest.mock.patch('mymcadmin.server.Server.list_versions')
+    def test_get_version_info_latest(self, list_versions, requests_get):
+        """
+        Tests that we get the info for the latest version by default
+        """
+
+        list_versions.return_value = {
+            'latest': {
+                'snapshot': 'mysnapshot',
+                'release':  'myrelease',
+            },
+            'versions': [
+                {
+                    'id':          'myrelease',
+                    'type':        'release',
+                    'time':        '2016-01-03T00:00:00+00:00',
+                    'releaseTime': '2016-01-03T00:00:00+00:00',
+                    'url':         'http://example.com/mc/myrelease',
+                },
+            ],
+        }
+
+        version_info = {
+            'id':        'myrelease',
+            'type':      'release',
+            'downloads': {
+                'client': {
+                    'sha1': 'deadbeef',
+                    'size': 0xDEADBEEF,
+                    'url':  'http://example.com/download/myrelease/client',
+                },
+                'server': {
+                    'sha1': 'deadbeef',
+                    'size': 0xDEADBEEF,
+                    'url':  'http://example.com/download/myrelease/server',
+                },
+            },
+        }
+
+        mock_response = unittest.mock.Mock(spec = requests.Response)
+        mock_response.ok = True
+        mock_response.json.return_value = version_info
+
+        requests_get.return_value = mock_response
+
+        version = server.Server.get_version_info()
+
+        requests_get.assert_called_with('http://example.com/mc/myrelease')
+
+        self.assertDictEqual(
+            version_info,
+            version,
+            'Version metadata did not match',
+        )
+
+    # pylint: disable=no-self-use
+    @nose.tools.raises(errors.VersionDoesNotExist)
+    @unittest.mock.patch('mymcadmin.server.Server.list_versions')
+    def test_get_version_info_missing(self, list_versions):
+        """
+        Tests that we return the right error when the version can't be found
+        """
+
+        list_versions.return_value = {
+            'latest':   {},
+            'versions': [],
+        }
+
+        server.Server.get_version_info('nope')
+    # pylint: enable=no-self-use
+
+    # pylint: disable=no-self-use
+    @nose.tools.raises(errors.MyMCAdminError)
+    @unittest.mock.patch('requests.get')
+    @unittest.mock.patch('mymcadmin.server.Server.list_versions')
+    def test_get_version_info_network(self, list_versions, requests_get):
+        """
+        Tests that we handle when there's a networking problem
+        """
+
+        list_versions.return_value = {
+            'latest': {
+                'release':  'myrelease',
+                'snapshot': 'mysnapshot',
+            },
+            'versions': [
+                {
+                    'id':          'myrelease',
+                    'type':        'release',
+                    'time':        '2016-01-03T00:00:00+00:00',
+                    'releaseTime': '2016-01-03T00:00:00+00:00',
+                    'url':         'http://example.com/mc/myrelease',
+                },
+            ],
+        }
+
+        mock_response = unittest.mock.Mock(spec = requests.Response)
+        mock_response.ok = False
+
+        requests_get.return_value = mock_response
+
+        server.Server.get_version_info('myrelease')
+    # pylint: enable=no-self-use
+
+    @unittest.mock.patch('requests.get')
+    @unittest.mock.patch('mymcadmin.server.Server.get_version_info')
+    def test_download_server_default(self, get_version_info, requests_get):
         """
         Check that we get the latest version by default
         """
 
-        list_versions.return_value = {
-            'versions': [
-                {
-                    'id': 'test',
-                    'downloads': {
-                        'server': {
-                            'url': 'http://example.com/mc/test/server.jar',
-                            'sha1': '943a702d06f34599aee1f8da8ef9f7296031d699',
-                        },
-                    },
+        get_version_info.return_value = {
+            'id': 'test',
+            'downloads': {
+                'server': {
+                    'url': 'http://example.com/mc/test/server.jar',
+                    'sha1': '943a702d06f34599aee1f8da8ef9f7296031d699',
                 },
-            ]
+            },
         }
 
-        mock_response = unittest.mock.Mock()
-        mock_response.configure_mock(
-            ok = True,
-            **{
-                'iter_content.return_value': io.BytesIO(
-                    'Hello, world!'.encode(),
-                ),
-            }
+        mock_response = unittest.mock.Mock(spec = requests.Response)
+        mock_response.ok = True
+        mock_response.iter_content.return_value = io.BytesIO(
+            'Hello, world!'.encode(),
         )
         requests_get.return_value = mock_response
 
         cwd = os.getcwd()
         os.chdir(self.root_path)
-        jar_path = server.Server.download_server_jar('test')
+        jar_path = server.Server.download_server_jar()
         os.chdir(cwd)
+
+        self.assertEqual(
+            os.path.join(self.root_path, 'minecraft_server_test.jar'),
+            jar_path,
+            'Jar file path did not match expected',
+        )
+
+        get_version_info.assert_called_with(None)
 
         requests_get.assert_called_with(
             'http://example.com/mc/test/server.jar',
@@ -610,41 +793,36 @@ class TestServer(unittest.TestCase):
         )
 
     @unittest.mock.patch('requests.get')
-    @unittest.mock.patch('mymcadmin.server.Server.list_versions')
-    def test_download_server_jar(self, list_versions, requests_get):
+    @unittest.mock.patch('mymcadmin.server.Server.get_version_info')
+    def test_download_server_jar(self, get_version_info, requests_get):
         """
         Test that we get that we can download a specific version
         """
 
-        list_versions.return_value = {
-            'versions': [
-                {
-                    'id': 'test',
-                    'downloads': {
-                        'server': {
-                            'url': 'http://example.com/mc/test/server.jar',
-                            'sha1': '943a702d06f34599aee1f8da8ef9f7296031d699',
-                        },
-                    },
+        get_version_info.return_value = {
+            'id': 'test',
+            'downloads': {
+                'server': {
+                    'url': 'http://example.com/mc/test/server.jar',
+                    'sha1': '943a702d06f34599aee1f8da8ef9f7296031d699',
                 },
-            ]
+            },
         }
 
-        mock_response = unittest.mock.Mock()
-        mock_response.configure_mock(
-            ok = True,
-            **{
-                'iter_content.return_value': io.BytesIO(
-                    'Hello, world!'.encode(),
-                ),
-            }
+        mock_response = unittest.mock.Mock(spec = requests.Response)
+        mock_response.ok = True
+        mock_response.iter_content.return_value = io.BytesIO(
+            'Hello, world!'.encode(),
         )
+
         requests_get.return_value = mock_response
 
         jar_path = server.Server.download_server_jar(
             'test',
             path = self.root_path,
         )
+
+        get_version_info.assert_called_with('test')
 
         requests_get.assert_called_with(
             'http://example.com/mc/test/server.jar',
@@ -683,28 +861,25 @@ class TestServer(unittest.TestCase):
     # pylint: disable=no-self-use
     @nose.tools.raises(errors.MyMCAdminError)
     @unittest.mock.patch('requests.get')
-    @unittest.mock.patch('mymcadmin.server.Server.list_versions')
-    def test_download_server_response(self, list_versions, requests_get):
+    @unittest.mock.patch('mymcadmin.server.Server.get_version_info')
+    def test_download_server_response(self, get_version_info, requests_get):
         """
         Test that we handle bad responses while downloading
         """
 
-        list_versions.return_value = {
-            'versions': [
-                {
-                    'id': 'test',
-                    'downloads': {
-                        'server': {
-                            'url': 'http://example.com/mc/test/server.jar',
-                            'sha1': '943a702d06f34599aee1f8da8ef9f7296031d699',
-                        },
-                    },
+        get_version_info.return_value = {
+            'id': 'test',
+            'downloads': {
+                'server': {
+                    'url': 'http://example.com/mc/test/server.jar',
+                    'sha1': '943a702d06f34599aee1f8da8ef9f7296031d699',
                 },
-            ]
+            },
         }
 
-        mock_response = unittest.mock.Mock()
-        mock_response.configure_mock(ok = False)
+        mock_response = unittest.mock.Mock(spec = requests.Response)
+        mock_response.ok = False
+
         requests_get.return_value = mock_response
 
         server.Server.download_server_jar('test')
@@ -712,19 +887,15 @@ class TestServer(unittest.TestCase):
 
     # pylint: disable=no-self-use
     @nose.tools.raises(errors.MyMCAdminError)
-    @unittest.mock.patch('mymcadmin.server.Server.list_versions')
-    def test_download_server_no_server(self, list_versions):
+    @unittest.mock.patch('mymcadmin.server.Server.get_version_info')
+    def test_download_server_no_server(self, get_version_info):
         """
         Test that we handle when there was no server jar available for a version
         """
 
-        list_versions.return_value = {
-            'versions': [
-                {
-                    'id': 'test',
-                    'downloads': {},
-                },
-            ]
+        get_version_info.return_value = {
+            'id': 'test',
+            'downloads': {},
         }
 
         server.Server.download_server_jar('test')
@@ -732,41 +903,220 @@ class TestServer(unittest.TestCase):
 
     @nose.tools.raises(errors.MyMCAdminError)
     @unittest.mock.patch('requests.get')
-    @unittest.mock.patch('mymcadmin.server.Server.list_versions')
-    def test_download_server_bad_sha(self, list_versions, requests_get):
+    @unittest.mock.patch('mymcadmin.server.Server.get_version_info')
+    def test_download_server_bad_sha(self, get_version_info, requests_get):
         """
-        Test that we handle when the downloadeds file has an incorrect sha
+        Test that we handle when the downloads file has an incorrect SHA
         """
 
-        list_versions.return_value = {
-            'versions': [
-                {
-                    'id': 'test',
-                    'downloads': {
-                        'server': {
-                            'url': 'http://example.com/mc/test/server.jar',
-                            'sha1': 'deadbeef',
-                        },
-                    },
+        get_version_info.return_value = {
+            'id': 'test',
+            'downloads': {
+                'server': {
+                    'url': 'http://example.com/mc/test/server.jar',
+                    'sha1': 'deadbeef',
                 },
-            ]
+            },
         }
 
-        mock_response = unittest.mock.Mock()
-        mock_response.configure_mock(
-            ok = True,
-            **{
-                'iter_content.return_value': io.BytesIO(
-                    'Hello, world!'.encode(),
-                ),
-            }
+        mock_response = unittest.mock.Mock(spec = requests.Response)
+        mock_response.ok = True
+        mock_response.iter_content.return_value = io.BytesIO(
+            'Hello, world!'.encode(),
         )
+
         requests_get.return_value = mock_response
 
         server.Server.download_server_jar(
             'test',
             path = self.root_path,
         )
+
+    # pylint: disable=no-self-use
+    @unittest.mock.patch('builtins.print')
+    @unittest.mock.patch('fileinput.FileInput')
+    def test_agree_to_eula_default(self, file_input, mock_print):
+        """
+        Tests that we can agree to a EULA for a server in the CWD
+        """
+
+        stream = io.StringIO(
+            """#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://account.mojang.com/documents/minecraft_eula).
+#Mon Jan 01 00:00:00 CST 2016
+eula=FALSE""",
+        )
+
+        file_input.return_value = file_input
+        file_input.__enter__.return_value = stream
+
+        server.Server.agree_to_eula()
+
+        file_input.assert_called_with(
+            'eula.txt',
+            inplace = True,
+            backup  = '.bak',
+        )
+
+        mock_print.assert_has_calls(
+            [
+                unittest.mock.call(
+                    '#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://account.mojang.com/documents/minecraft_eula).\n',
+                    end = '',
+                ),
+                unittest.mock.call(
+                    '#Mon Jan 01 00:00:00 CST 2016\n',
+                    end = '',
+                ),
+                unittest.mock.call(
+                    'eula=TRUE',
+                    end = '',
+                ),
+            ]
+        )
+    # pylint: enable=no-self-use
+
+    # pylint: disable=no-self-use
+    @unittest.mock.patch('builtins.print')
+    @unittest.mock.patch('fileinput.FileInput')
+    def test_agree_to_eula(self, file_input, mock_print):
+        """
+        Tests that we can agree to a EULA for a server
+        """
+
+        path = 'home'
+
+        stream = io.StringIO(
+            """#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://account.mojang.com/documents/minecraft_eula).
+#Mon Jan 01 00:00:00 CST 2016
+eula=FALSE""",
+        )
+
+        file_input.return_value = file_input
+        file_input.__enter__.return_value = stream
+
+        server.Server.agree_to_eula(path = path)
+
+        file_input.assert_called_with(
+            os.path.join(path, 'eula.txt'),
+            inplace = True,
+            backup  = '.bak',
+        )
+
+        mock_print.assert_has_calls(
+            [
+                unittest.mock.call(
+                    '#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://account.mojang.com/documents/minecraft_eula).\n',
+                    end = '',
+                ),
+                unittest.mock.call(
+                    '#Mon Jan 01 00:00:00 CST 2016\n',
+                    end = '',
+                ),
+                unittest.mock.call(
+                    'eula=TRUE',
+                    end = '',
+                ),
+            ]
+        )
+    # pylint: enable=no-self-use
+
+    # pylint: disable=no-self-use
+    @unittest.mock.patch('json.dump')
+    @unittest.mock.patch('builtins.open')
+    def test_gen_default_settings_cwd(self, mock_open, json_dump):
+        """
+        Tests that we can generate a default settings file in the CWD
+        """
+
+        file_stream = unittest.mock.Mock(spec = io.IOBase)
+
+        mock_open.return_value = mock_open
+        mock_open.__enter__.return_value = file_stream
+
+        server.Server.generate_default_settings()
+
+        mock_open.assert_called_with('mymcadmin.settings', 'w')
+
+        json_dump.assert_called_with(
+            {
+                'java':      'java',
+                'jvm_args':  [],
+                'args':      ['nogui'],
+                'autostart': True,
+            },
+            file_stream,
+            indent = '\t',
+        )
+    # pylint: enable=no-self-use
+
+    # pylint: disable=no-self-use
+    @unittest.mock.patch('json.dump')
+    @unittest.mock.patch('builtins.open')
+    def test_gen_default_settings(self, mock_open, json_dump):
+        """
+        Tests that we can generate a default settings file
+        """
+
+        path = 'home'
+
+        file_stream = unittest.mock.Mock(spec = io.IOBase)
+
+        mock_open.return_value = mock_open
+        mock_open.__enter__.return_value = file_stream
+
+        server.Server.generate_default_settings(path = path)
+
+        mock_open.assert_called_with(
+            os.path.join(path, 'mymcadmin.settings'),
+            'w',
+        )
+
+        json_dump.assert_called_with(
+            {
+                'java':      'java',
+                'jvm_args':  [],
+                'args':      ['nogui'],
+                'autostart': True,
+            },
+            file_stream,
+            indent = '\t',
+        )
+    # pylint: enable=no-self-use
+
+    # pylint: disable=no-self-use
+    @unittest.mock.patch('json.dump')
+    @unittest.mock.patch('builtins.open')
+    def test_gen_default_settings_opts(self, mock_open, json_dump):
+        """
+        Tests that we can generate a default settings file with configured options
+        """
+
+        path = 'home'
+
+        file_stream = unittest.mock.Mock(spec = io.IOBase)
+
+        mock_open.return_value = mock_open
+        mock_open.__enter__.return_value = file_stream
+
+        server.Server.generate_default_settings(path = path, jar = 'mc.jar')
+
+        mock_open.assert_called_with(
+            os.path.join(path, 'mymcadmin.settings'),
+            'w',
+        )
+
+        json_dump.assert_called_with(
+            {
+                'java':      'java',
+                'jvm_args':  [],
+                'jar':       'mc.jar',
+                'args':      ['nogui'],
+                'autostart': True,
+            },
+            file_stream,
+            indent = '\t',
+        )
+    # pylint: enable=no-self-use
 
     def _set_server_settings(self, settings):
         settings_file = os.path.join(self.server_path, 'mymcadmin.settings')

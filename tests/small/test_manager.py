@@ -13,7 +13,7 @@ import nose
 
 from .. import utils
 
-from mymcadmin.errors import ServerDoesNotExistError
+from mymcadmin.errors import ServerDoesNotExistError, ServerExistsError
 from mymcadmin.manager import Manager
 from mymcadmin.rpc.errors import JsonRpcInvalidRequestError
 from mymcadmin.server import Server
@@ -33,24 +33,6 @@ class TestManager(unittest.TestCase):
 
     def tearDown(self):
         self.event_loop.close()
-
-    def test_constructor(self):
-        """
-        Check that the constructor starts the handlers properly
-        """
-
-        manager = Manager(self.host, self.port, self.root)
-
-        self.assertEqual(
-            8,
-            len(manager.rpc_dispatcher),
-            'Not all JSON RPC handlers were set up',
-        )
-
-        self.assertTrue(
-            len(manager.rpc_dispatcher) > 0,
-            'Dispatcher was not initialized with handlers',
-        )
 
     @asynctest.patch('asyncio.gather')
     @asynctest.patch('asyncio.Task.all_tasks')
@@ -291,6 +273,7 @@ class TestManager(unittest.TestCase):
             )
 
         _test_method('list_servers',       manager.rpc_command_list_servers)
+        _test_method('server_create',      manager.rpc_command_server_create)
         _test_method('server_restart',     manager.rpc_command_server_restart)
         _test_method('server_restart_all', manager.rpc_command_server_restart_all)
         _test_method('server_start',       manager.rpc_command_server_start)
@@ -348,6 +331,130 @@ class TestRpcCommands(unittest.TestCase):
             result,
             'The server list was not correct',
         )
+
+    @unittest.mock.patch('mymcadmin.server.Server')
+    @unittest.mock.patch('os.mkdir')
+    @unittest.mock.patch('os.path.exists')
+    @utils.run_async
+    async def test_server_create(self, exists, mkdir, server):
+        """
+        Tests that the server_create method creates a new server
+        """
+
+        version = 'stable-release'
+        jar     = 'minecraft-stable-release.jar'
+
+        server_id   = 'testification'
+        server_path = os.path.join(self.root, server_id)
+
+        exists.return_value = False
+
+        server.download_server_jar.return_value = jar
+
+        mock_proc = asynctest.Mock(spec = asyncio.subprocess.Process)
+
+        server.return_value = server
+        server.start = asynctest.CoroutineMock()
+        server.start.return_value = mock_proc
+
+        result = await self.manager.rpc_command_server_create(
+            server_id = server_id,
+            version   = version,
+        )
+
+        self.assertEqual(
+            server_id,
+            result,
+            'RPC response did not match',
+        )
+
+        mkdir.assert_called_with(server_path)
+
+        server.download_server_jar.assert_called_with(
+            version,
+            path = server_path,
+        )
+
+        server.generate_default_settings.assert_called_with(
+            path = server_path,
+            jar  = jar,
+        )
+
+        server.assert_called_with(server_path)
+
+        mock_proc.wait.assert_called_with()
+
+        server.agree_to_eula.assert_called_with(
+            path = server_path,
+        )
+
+    @unittest.mock.patch('mymcadmin.server.Server')
+    @unittest.mock.patch('os.mkdir')
+    @unittest.mock.patch('os.path.exists')
+    @utils.run_async
+    async def test_server_create_latest(self, exists, mkdir, server):
+        """
+        Tests that the server_create method gets the latest version by default
+        """
+
+        jar = 'minecraft-stable-release.jar'
+
+        server_id   = 'testification'
+        server_path = os.path.join(self.root, server_id)
+
+        exists.return_value = False
+
+        server.download_server_jar.return_value = jar
+
+        mock_proc = asynctest.Mock(spec = asyncio.subprocess.Process)
+
+        server.return_value = server
+        server.start = asynctest.CoroutineMock()
+        server.start.return_value = mock_proc
+
+        result = await self.manager.rpc_command_server_create(
+            server_id = server_id,
+        )
+
+        self.assertEqual(
+            server_id,
+            result,
+            'RPC response did not match',
+        )
+
+        mkdir.assert_called_with(server_path)
+
+        server.download_server_jar.assert_called_with(
+            None,
+            path = server_path,
+        )
+
+        server.generate_default_settings.assert_called_with(
+            path = server_path,
+            jar  = jar,
+        )
+
+        server.assert_called_with(server_path)
+
+        mock_proc.wait.assert_called_with()
+
+        server.agree_to_eula.assert_called_with(
+            path = server_path,
+        )
+
+    @nose.tools.raises(ServerExistsError)
+    @unittest.mock.patch('os.path.exists')
+    @utils.run_async
+    async def test_server_create_exists(self, exists):
+        """
+        Tests that the server_create method checks if the server_id is in use
+        """
+
+        server_id = 'testification'
+
+        exists.side_effect = lambda p: p.endswith(server_id)
+
+        await self.manager.rpc_command_server_create(server_id = server_id)
 
     @utils.run_async
     async def test_server_restart(self):
