@@ -4,7 +4,7 @@ Commands for creating a server
 
 import click
 
-from ..base import mymcadmin, success, error
+from ..base import mymcadmin, success, error, warn
 from ... import rpc
 
 @mymcadmin.command()
@@ -32,6 +32,10 @@ def server_create(ctx, server_id, version, host, port):
 
     if port is None:
         port = rpc_config.get('port', 2323)
+
+    warn('By creating a server you are agreeing to Mojang\'s EULA.')
+    warn('https://account.mojang.com/documents/minecraft_eula')
+    click.confirm('Do you agree to the EULA?', abort = True)
 
     click.echo('Attempting to create server {}'.format(server_id))
 

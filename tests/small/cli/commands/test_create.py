@@ -94,6 +94,8 @@ class TestServerCreate(utils.CliRunnerMixin, unittest.TestCase):
         server_id = 'testification'
 
         with unittest.mock.patch('mymcadmin.rpc.RpcClient') as rpc_client, \
+             unittest.mock.patch('mymcadmin.cli.commands.create.warn') as warn, \
+             unittest.mock.patch('click.confirm') as confirm, \
              unittest.mock.patch('mymcadmin.cli.commands.create.success') as success:
             rpc_client.return_value = rpc_client
             rpc_client.__enter__.return_value = rpc_client
@@ -114,6 +116,22 @@ class TestServerCreate(utils.CliRunnerMixin, unittest.TestCase):
                 0,
                 result.exit_code,
                 'Command did not terminate properly',
+            )
+
+            warn.assert_has_calls(
+                [
+                    unittest.mock.call(
+                        'By creating a server you are agreeing to Mojang\'s EULA.',
+                    ),
+                    unittest.mock.call(
+                        'https://account.mojang.com/documents/minecraft_eula',
+                    ),
+                ]
+            )
+
+            confirm.assert_called_with(
+                'Do you agree to the EULA?',
+                abort = True,
             )
 
             rpc_client.assert_called_with(expected_host, expected_port)
