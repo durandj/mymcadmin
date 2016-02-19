@@ -3,6 +3,7 @@ Minecraft server instance representation
 """
 
 import asyncio
+import fileinput
 import glob
 import hashlib
 import json
@@ -222,7 +223,38 @@ class Server(object):
         }
 
     @classmethod
-    def download_server_jar(cls, version_id, path = None):
+    def get_version_info(cls, version = None):
+        """
+        Get information about a specific Minecraft server version
+        """
+
+        versions = cls.list_versions()
+        if version is None:
+            version = versions['latest']['release']
+
+        versions = [
+            v
+            for v in versions['versions']
+            if v['id'] == version
+        ]
+
+        if len(versions) == 0:
+            raise errors.VersionDoesNotExist(version)
+
+        version     = versions[0]
+        version_url = version['url']
+
+        resp = requests.get(version_url)
+        if not resp.ok:
+            raise errors.MyMCAdminError(
+                'Unable to retrieve version information for {}',
+                version,
+            )
+
+        return resp.json()
+
+    @classmethod
+    def download_server_jar(cls, version_id = None, path = None):
         """
         Download a server Jar based on its version ID
         """
@@ -230,18 +262,15 @@ class Server(object):
         if path is None:
             path = os.getcwd()
 
+        version = cls.get_version_info(version_id)
+        if version_id is None:
+            version_id = version['id']
+
         jar_path = os.path.join(
             path,
             'minecraft_server_{}.jar'.format(version_id),
         )
 
-        versions = cls.list_versions()['versions']
-        versions = [v for v in versions if v['id'] == version_id]
-
-        if len(versions) == 0:
-            raise errors.MyMCAdminError('Could not find version {}', version_id)
-
-        version   = versions[0]
         downloads = version['downloads']
 
         if 'server' not in downloads:
@@ -275,6 +304,57 @@ class Server(object):
             )
 
         return jar_path
+
+    @classmethod
+    def agree_to_eula(cls, path = None):
+        """
+        Accepts Mojang's EULA
+        """
+
+        if path is None:
+            path = 'eula.txt'
+        else:
+            path = os.path.join(path, 'eula.txt')
+
+        with fileinput.FileInput(path, inplace = True, backup = '.bak') as file_handle:
+            for line in file_handle:
+                print(
+                    re.sub(
+                        r'FALSE',
+                        'TRUE',
+                        line,
+                        flags = re.IGNORECASE,
+                    ),
+                    end = '',
+                )
+
+    @classmethod
+    def generate_default_settings(cls, path = None, jar = None):
+        """
+        Generates a default settings file for a server
+        """
+
+        if path is None:
+            path = 'mymcadmin.settings'
+        else:
+            path = os.path.join(path, 'mymcadmin.settings')
+
+        default_settings = {
+            'java':      'java',
+            'jvm_args':  [],
+            'args':      ['nogui'],
+            'autostart': True,
+        }
+
+        if jar is not None:
+            default_settings['jar'] = jar
+
+        with open(path, 'w') as file_handle:
+            json.dump(
+                default_settings,
+                file_handle,
+                indent = '\t',
+            )
 
     @classmethod
     def _convert_property_value(cls, value):

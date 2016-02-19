@@ -33,13 +33,40 @@ class ServerDoesNotExistError(ManagerError):
             server_id,
         )
 
+class ServerExistsError(ManagerError):
+    """
+    Raised when creating a server and the server ID is already in use
+    """
+
+    def __init__(self, server_id):
+        super(ServerExistsError, self).__init__(
+            'Server {} already exists',
+            server_id,
+        )
+
 class ServerError(MyMCAdminError):
     """
     An error with the Minecraft server
+    """
+
+class ServerCreationError(ServerError):
+    """
+    An error with creating a new Minecraft server
     """
 
 class ServerSettingsError(ServerError):
     """
     An error in the MyMCAdmin settings for the server
     """
+
+class VersionDoesNotExist(ManagerError):
+    """
+    Version does not exist
+    """
+
+    def __init__(self, version):
+        super(VersionDoesNotExist, self).__init__(
+            'Version {} does not exist',
+            version,
+        )
 

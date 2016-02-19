@@ -153,6 +153,33 @@ class TestRpcClient(unittest.TestCase):
             result = ['test0', 'test1', 'test2'],
         )
 
+    def test_server_create(self):
+        """
+        Tests that the server_create method works properly
+        """
+
+        self._test_method(
+            'server_create',
+            params = {
+                'server_id': 'test_server',
+                'version':   '1.8.9',
+            },
+            result = 'test_server',
+        )
+
+    def test_server_create_default_version(self):
+        """
+        Tests that the server_create method only sends version when its present
+        """
+
+        self._test_method(
+            'server_create',
+            params = {
+                'server_id': 'test_server',
+            },
+            result = 'test_server',
+        )
+
     def test_server_start(self):
         """
         Tests that the server_start method works properly
