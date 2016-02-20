@@ -59,13 +59,13 @@ class ServerSettingsError(ServerError):
     An error in the MyMCAdmin settings for the server
     """
 
-class VersionDoesNotExist(ManagerError):
+class VersionDoesNotExistError(ManagerError):
     """
     Version does not exist
     """
 
     def __init__(self, version):
-        super(VersionDoesNotExist, self).__init__(
+        super(VersionDoesNotExistError, self).__init__(
             'Version {} does not exist',
             version,
         )

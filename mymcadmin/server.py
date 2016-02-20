@@ -239,7 +239,7 @@ class Server(object):
         ]
 
         if len(versions) == 0:
-            raise errors.VersionDoesNotExist(version)
+            raise errors.VersionDoesNotExistError(version)
 
         version     = versions[0]
         version_url = version['url']
