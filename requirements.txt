@@ -1,4 +1,5 @@
 asynctest
+beautifulsoup4
 click
 coverage
 nose

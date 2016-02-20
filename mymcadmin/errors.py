@@ -70,3 +70,8 @@ class VersionDoesNotExistError(ManagerError):
             version,
         )
 
+class ForgeError(MyMCAdminError):
+    """
+    A general error when working with Forge
+    """
+
