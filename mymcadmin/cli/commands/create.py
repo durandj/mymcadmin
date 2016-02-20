@@ -34,7 +34,7 @@ def server_create(ctx, server_id, version, host, port):
         port = rpc_config.get('port', 2323)
 
     warn('By creating a server you are agreeing to Mojang\'s EULA.')
-    warn('https://account.mojang.com/documents/minecraft_eula')
+    warn('https://account.mojang.com/documents/minecraft_eula', underline = True)
     click.confirm('Do you agree to the EULA?', abort = True)
 
     click.echo('Attempting to create server {}'.format(server_id))

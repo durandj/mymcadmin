@@ -125,6 +125,7 @@ class TestServerCreate(utils.CliRunnerMixin, unittest.TestCase):
                     ),
                     unittest.mock.call(
                         'https://account.mojang.com/documents/minecraft_eula',
+                        underline = True,
                     ),
                 ]
             )
