@@ -56,7 +56,10 @@ class TestServerCreate(utils.CliRunnerMixin, unittest.TestCase):
         self._run_test(
             'example.com',
             8080,
-            params = [
+            expected_forge = '10.10.10.10',
+            params         = [
+                '--forge',
+                '--forge_version', '10.10.10.10',
                 '--host', 'example.com',
                 '--port', 8080,
             ],
@@ -87,7 +90,8 @@ class TestServerCreate(utils.CliRunnerMixin, unittest.TestCase):
             'Command did not terminate properly',
         )
 
-    def _run_test(self, expected_host, expected_port, expected_version = None, params = None):
+    def _run_test(self, expected_host, expected_port,
+                  expected_version = None, expected_forge = None, params = None):
         if params is None:
             params = []
 
@@ -135,8 +139,16 @@ class TestServerCreate(utils.CliRunnerMixin, unittest.TestCase):
                 abort = True,
             )
 
+            expected_kwargs = {}
+            if expected_forge:
+                expected_kwargs['forge'] = expected_forge
+
             rpc_client.assert_called_with(expected_host, expected_port)
-            rpc_client.server_create.assert_called_with(server_id, expected_version)
+            rpc_client.server_create.assert_called_with(
+                server_id,
+                expected_version,
+                **expected_kwargs
+            )
 
             success.assert_called_with(
                 'Server {} successfully created'.format(server_id),

@@ -163,13 +163,14 @@ class TestRpcClient(unittest.TestCase):
             params = {
                 'server_id': 'test_server',
                 'version':   '1.8.9',
+                'forge':     True,
             },
             result = 'test_server',
         )
 
-    def test_server_create_default_version(self):
+    def test_server_create_defaults(self):
         """
-        Tests that the server_create method only sends version when its present
+        Tests that the server_create method only sends optionals when present
         """
 
         self._test_method(

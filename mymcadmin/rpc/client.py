@@ -55,7 +55,7 @@ class RpcClient(object):
 
         return self.execute_rpc_method('shutdown')
 
-    def server_create(self, server_id, version = None):
+    def server_create(self, server_id, version = None, forge = None):
         """
         Ask the management process to create a Minecraft server
         """
@@ -66,6 +66,9 @@ class RpcClient(object):
 
         if version is not None:
             params['version'] = version
+
+        if forge is not None:
+            params['forge'] = forge
 
         return self.execute_rpc_method(
             'server_create',
