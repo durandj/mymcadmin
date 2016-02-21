@@ -10,6 +10,7 @@ import click.testing
 
 from mymcadmin.cli.base import (
     mymcadmin,
+    rpc_command,
     success,
     info,
     warn,
@@ -58,83 +59,179 @@ class TestMyMCAdmin(unittest.TestCase):
 
         self.cli_runner.invoke(mymcadmin, ['test'])
 
-    # pylint: disable=no-self-use
-    @unittest.mock.patch('click.secho')
-    def test_success(self, secho):
+    @unittest.mock.patch('mymcadmin.config.Config')
+    def test_rpc_command_default(self, config):
         """
-        Tests that the success method works correctly
-        """
-
-        success('Hello, world!')
-        secho.assert_called_with('Hello, world!', fg = 'green')
-
-    @unittest.mock.patch('click.secho')
-    def test_success_formatting(self, secho):
-        """
-        Tests that the success method passes on formatting
+        Tests that the rpc_command decorator uses sensible defaults
         """
 
-        success('Hello, world!', bold = True)
-        secho.assert_called_with('Hello, world!', fg = 'green', bold = True)
+        config.return_value = config
+        config.rpc          = None
 
-    @unittest.mock.patch('click.secho')
-    def test_info(self, secho):
-        """
-        Tests that the info command works correctly
-        """
+        self._do_rpc_command('localhost', 2323)
 
-        info('Hello, world!')
-        secho.assert_called_with('Hello, world!', fg = 'blue')
-
-    @unittest.mock.patch('click.secho')
-    def test_info_formatting(self, secho):
+    @unittest.mock.patch('mymcadmin.config.Config')
+    def test_rpc_command_config(self, config):
         """
-        Tests that the info command passes on formatting
+        Tests that the rpc_command decorator uses the config
         """
 
-        info('Hello, world!', underline = True)
-        secho.assert_called_with('Hello, world!', fg = 'blue', underline = True)
+        config.return_value = config
+        config.rpc          = {
+            'host': 'example.com',
+            'port': 8080,
+        }
 
-    @unittest.mock.patch('click.secho')
-    def test_warn(self, secho):
-        """
-        Tests that the warn command works correctly
-        """
+        self._do_rpc_command('example.com', 8080)
 
-        warn('Hello, world!')
-        secho.assert_called_with('Hello, world!', fg = 'yellow')
-
-    @unittest.mock.patch('click.secho')
-    def test_warn_formatting(self, secho):
+    @unittest.mock.patch('mymcadmin.config.Config')
+    def test_rpc_command_options(self, config):
         """
-        Tests that the warn command passes on formatting
+        Tests that the rpc_command decorator uses the CLI options
         """
 
-        warn('Hello, world!', strikethrough = True)
-        secho.assert_called_with(
-            'Hello, world!',
-            fg            = 'yellow',
-            strikethrough = True,
+        config.return_value = config
+        config.rpc          = None
+
+        self._do_rpc_command(
+            'example.com',
+            8080,
+            params = [
+                '--host', 'example.com',
+                '--port', 8080,
+            ],
         )
 
-    @unittest.mock.patch('click.secho')
-    def test_error(self, secho):
+    @unittest.mock.patch('mymcadmin.config.Config')
+    def test_rpc_command_cli_first(self, config):
         """
-        Tests that the error command works correctly
-        """
-
-        error('Hello, world!')
-        secho.assert_called_with('Hello, world!', fg = 'red')
-
-    @unittest.mock.patch('click.secho')
-    def test_error_formatting(self, secho):
-        """
-        Tests that the error command passes on formatting
+        Tests that the rpc_command decorator uses CLI options over the config
         """
 
-        error('Hello, world!', bg = 'orange')
-        secho.assert_called_with('Hello, world!', fg = 'red', bg = 'orange')
-    # pylint: enable=no-self-use
+        config.return_value = config
+        config.rpc          = {
+            'host': 'test.com',
+            'port': 8000,
+        }
+
+        self._do_rpc_command(
+            'example.com',
+            8080,
+            params = [
+                '--host', 'example.com',
+                '--port', 8080,
+            ],
+        )
+
+    def _do_rpc_command(self, expected_host, expected_port, params = None):
+        if params is None:
+            params = []
+
+        connection = {}
+
+        # pylint: disable=unused-variable
+        @mymcadmin.command()
+        @rpc_command
+        def test(rpc_conn):
+            """
+            Dumby test command
+            """
+
+            connection['host'], connection['port'] = rpc_conn
+        # pylint: enable=unused-variable
+
+        result = self.cli_runner.invoke(mymcadmin, ['test'] + params)
+
+        if result.exit_code != 0:
+            print(result.output)
+
+        self.assertEqual(
+            0,
+            result.exit_code,
+            'Test command did not terminate properly',
+        )
+
+        self.assertDictEqual(
+            {'host': expected_host, 'port': expected_port},
+            connection,
+            'RPC connection details did not match expected',
+        )
+
+@unittest.mock.patch('click.secho')
+def test_success(secho):
+    """
+    Tests that the success method works correctly
+    """
+
+    success('Hello, world!')
+    secho.assert_called_with('Hello, world!', fg = 'green')
+
+@unittest.mock.patch('click.secho')
+def test_success_formatting(secho):
+    """
+    Tests that the success method passes on formatting
+    """
+
+    success('Hello, world!', bold = True)
+    secho.assert_called_with('Hello, world!', fg = 'green', bold = True)
+
+@unittest.mock.patch('click.secho')
+def test_info(secho):
+    """
+    Tests that the info command works correctly
+    """
+
+    info('Hello, world!')
+    secho.assert_called_with('Hello, world!', fg = 'blue')
+
+@unittest.mock.patch('click.secho')
+def test_info_formatting(secho):
+    """
+    Tests that the info command passes on formatting
+    """
+
+    info('Hello, world!', underline = True)
+    secho.assert_called_with('Hello, world!', fg = 'blue', underline = True)
+
+@unittest.mock.patch('click.secho')
+def test_warn(secho):
+    """
+    Tests that the warn command works correctly
+    """
+
+    warn('Hello, world!')
+    secho.assert_called_with('Hello, world!', fg = 'yellow')
+
+@unittest.mock.patch('click.secho')
+def test_warn_formatting(secho):
+    """
+    Tests that the warn command passes on formatting
+    """
+
+    warn('Hello, world!', strikethrough = True)
+    secho.assert_called_with(
+        'Hello, world!',
+        fg            = 'yellow',
+        strikethrough = True,
+    )
+
+@unittest.mock.patch('click.secho')
+def test_error(secho):
+    """
+    Tests that the error command works correctly
+    """
+
+    error('Hello, world!')
+    secho.assert_called_with('Hello, world!', fg = 'red')
+
+@unittest.mock.patch('click.secho')
+def test_error_formatting(secho):
+    """
+    Tests that the error command passes on formatting
+    """
+
+    error('Hello, world!', bg = 'orange')
+    secho.assert_called_with('Hello, world!', fg = 'red', bg = 'orange')
 
 if __name__ == '__main__':
     unittest.main()

@@ -13,7 +13,7 @@ import daemon
 import daemon.pidfile
 
 from .. import params
-from ..base import mymcadmin, error, success
+from ..base import mymcadmin, rpc_command, error, success
 from ... import (
     errors,
     manager,
@@ -23,26 +23,16 @@ from ... import (
 
 @mymcadmin.command()
 @click.argument('server_id')
-@click.option('--host', default = None, help = 'The host to connect to')
-@click.option('--port', default = None, help = 'The port to connect to')
-@click.pass_context
-def start(ctx, server_id, host, port):
+@rpc_command
+def start(rpc_conn, server_id):
     """
     Start a Minecraft server
     """
 
-    rpc_config = ctx.obj['config'].rpc or {}
-
-    if not host:
-        host = rpc_config.get('host', 'localhost')
-
-    if not port:
-        port = rpc_config.get('port', 2323)
-
     click.echo('Starting {}...'.format(server_id), nl = False)
 
     try:
-        with rpc.RpcClient(host, port) as rpc_client:
+        with rpc.RpcClient(*rpc_conn) as rpc_client:
             rpc_client.server_start(server_id)
     except Exception as ex:
         error('Failure')
@@ -51,26 +41,16 @@ def start(ctx, server_id, host, port):
         success('Success')
 
 @mymcadmin.command()
-@click.option('--host', default = None, help = 'The host to connect to')
-@click.option('--port', default = None, help = 'The port to connect to')
-@click.pass_context
-def start_all(ctx, host, port):
+@rpc_command
+def start_all(rpc_conn):
     """
     Start all Minecraft servers
     """
 
-    rpc_config = ctx.obj['config'].rpc or {}
-
-    if not host:
-        host = rpc_config.get('host', 'localhost')
-
-    if not port:
-        port = rpc_config.get('port', 2323)
-
     click.echo('Attempting to start all servers...')
 
     try:
-        with rpc.RpcClient(host, port) as rpc_client:
+        with rpc.RpcClient(*rpc_conn) as rpc_client:
             result = rpc_client.server_start_all()
 
             successful = result['success']
