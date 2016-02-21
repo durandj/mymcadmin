@@ -173,6 +173,25 @@ class Server(object):
             stderr = asyncio.subprocess.PIPE,
         )
 
+    def save_settings(self):
+        """
+        Save any changes to the server settings to disk
+        """
+
+        logging.info('Saving settings for %s to disk', self.server_id)
+
+        tmp_file = self._settings_file + '.tmp'
+        with open(tmp_file, 'w') as file_handle:
+            json.dump(
+                self.settings,
+                file_handle,
+                indent = '\t',
+            )
+
+        os.replace(tmp_file, self._settings_file)
+
+        logging.info('Settings successfully saved')
+
     @classmethod
     def list_versions(
             cls,

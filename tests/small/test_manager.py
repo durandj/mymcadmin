@@ -442,6 +442,162 @@ class TestRpcCommands(unittest.TestCase):
             path = server_path,
         )
 
+    @unittest.mock.patch('mymcadmin.forge.get_forge_for_mc_version')
+    @unittest.mock.patch('mymcadmin.server.Server')
+    @unittest.mock.patch('os.mkdir')
+    @unittest.mock.patch('os.path.exists')
+    @utils.run_async
+    async def test_server_create_forge_any(self, exists, mkdir, server, get_forge):
+        """
+        Tests that we get the latest version of Forge for this server
+        """
+
+        version = 'stable-release'
+        jar     = 'minecraft-stable-release.jar'
+
+        server_id   = 'testification'
+        server_path = os.path.join(self.root, server_id)
+
+        exists.return_value = False
+
+        server.download_server_jar.return_value = jar
+
+        mock_proc = asynctest.Mock(spec = asyncio.subprocess.Process)
+
+        server.return_value = server
+        server.settings = {}
+        server.start = asynctest.CoroutineMock()
+        server.start.return_value = mock_proc
+
+        forge_jar = 'forge-{}-latest-universal.jar'.format(version)
+
+        get_forge.return_value = os.path.join(
+            server_path,
+            forge_jar,
+        )
+
+        result = await self.manager.rpc_command_server_create(
+            server_id = server_id,
+            version   = version,
+            forge     = True,
+        )
+
+        self.assertEqual(
+            server_id,
+            result,
+            'RPC response did not match',
+        )
+
+        mkdir.assert_called_with(server_path)
+
+        server.download_server_jar.assert_called_with(
+            version,
+            path = server_path,
+        )
+
+        server.generate_default_settings.assert_called_with(
+            path = server_path,
+            jar  = jar,
+        )
+
+        server.assert_called_with(server_path)
+
+        mock_proc.wait.assert_called_with()
+
+        server.agree_to_eula.assert_called_with(
+            path = server_path,
+        )
+
+        get_forge.assert_called_with(version, path = server_path)
+
+        self.assertDictEqual(
+            {'jar': forge_jar},
+            server.settings,
+            'Settings were not updated',
+        )
+
+        server.save_settings.assert_called_with()
+
+    @unittest.mock.patch('mymcadmin.forge.get_forge_version')
+    @unittest.mock.patch('mymcadmin.server.Server')
+    @unittest.mock.patch('os.mkdir')
+    @unittest.mock.patch('os.path.exists')
+    @utils.run_async
+    async def test_server_create_forge(self, exists, mkdir, server, get_forge):
+        """
+        Tests that we can get Forge for this server
+        """
+
+        version = 'stable-release'
+        jar     = 'minecraft-stable-release.jar'
+
+        server_id   = 'testification'
+        server_path = os.path.join(self.root, server_id)
+
+        exists.return_value = False
+
+        server.download_server_jar.return_value = jar
+
+        mock_proc = asynctest.Mock(spec = asyncio.subprocess.Process)
+
+        server.return_value = server
+        server.settings = {}
+        server.start = asynctest.CoroutineMock()
+        server.start.return_value = mock_proc
+
+        forge_jar = 'forge-{}-release-universal.jar'.format(version)
+
+        get_forge.return_value = os.path.join(
+            server_path,
+            forge_jar,
+        )
+
+        result = await self.manager.rpc_command_server_create(
+            server_id = server_id,
+            version   = version,
+            forge     = 'release',
+        )
+
+        self.assertEqual(
+            server_id,
+            result,
+            'RPC response did not match',
+        )
+
+        mkdir.assert_called_with(server_path)
+
+        server.download_server_jar.assert_called_with(
+            version,
+            path = server_path,
+        )
+
+        server.generate_default_settings.assert_called_with(
+            path = server_path,
+            jar  = jar,
+        )
+
+        server.assert_called_with(server_path)
+
+        mock_proc.wait.assert_called_with()
+
+        server.agree_to_eula.assert_called_with(
+            path = server_path,
+        )
+
+        get_forge.assert_called_with(
+            version,
+            'release',
+            path = server_path,
+        )
+
+        self.assertDictEqual(
+            {'jar': forge_jar},
+            server.settings,
+            'Settings were not updated',
+        )
+
+        server.save_settings.assert_called_with()
+
     @nose.tools.raises(ServerExistsError)
     @unittest.mock.patch('os.path.exists')
     @utils.run_async

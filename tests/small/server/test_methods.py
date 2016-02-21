@@ -3,6 +3,7 @@ Tests the methods of the Server class
 """
 
 import asyncio
+import io
 import os.path
 import unittest
 import unittest.mock
@@ -50,6 +51,46 @@ class TestServerMethods(unittest.TestCase):
                 stdout = asyncio.subprocess.PIPE,
                 stderr = asyncio.subprocess.PIPE,
             )
+
+    @unittest.mock.patch('os.replace')
+    @unittest.mock.patch('builtins.open')
+    def test_save_settings(self, mock_open, replace):
+        """
+        Test that we can save settings changes
+        """
+
+        settings_file = os.path.join(self.server_path, 'mymcadmin.settings')
+        tmp_file      = settings_file + '.tmp'
+
+        file_stream = io.StringIO()
+
+        mock_open.return_value = mock_open
+        mock_open.__enter__.return_value = file_stream
+
+        with utils.mock_property(self.server, 'settings') as settings:
+            settings.return_value = {
+                'java': 'java',
+            }
+
+            self.server.save_settings()
+
+        mock_open.assert_called_with(
+            tmp_file,
+            'w',
+        )
+
+        replace.assert_called_with(
+            tmp_file,
+            settings_file,
+        )
+
+        self.assertEqual(
+            """{
+	"java": "java"
+}""",
+            file_stream.getvalue(),
+            'Settings file did not match expected',
+        )
 
 if __name__ == '__main__':
     unittest.main()

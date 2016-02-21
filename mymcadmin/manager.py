@@ -7,7 +7,7 @@ import asyncio.subprocess
 import logging
 import os.path
 
-from . import errors, rpc, server
+from . import errors, forge as forge_utils, rpc, server
 from .rpc import errors as rpc_errors
 
 class Manager(object):
@@ -98,7 +98,7 @@ class Manager(object):
         ]
 
     @rpc.required_param('server_id')
-    async def rpc_command_server_create(self, server_id, version = None):
+    async def rpc_command_server_create(self, server_id, version = None, forge = None):
         """
         Handle RPC command: server_create
         """
@@ -131,6 +131,34 @@ class Manager(object):
 
         logging.info('Marking EULA as accepted')
         server.Server.agree_to_eula(path = server_path)
+
+        if forge is not None:
+            logging.info('Setting up Forge')
+            if forge is True:
+                logging.info(
+                    'Downloading latest Forge for Minecraft %s',
+                    version,
+                )
+
+                jar_path = forge_utils.get_forge_for_mc_version(
+                    version,
+                    path = server_path,
+                )
+            elif isinstance(forge, str):
+                logging.info(
+                    'Downloading Forge %s for Minecraft',
+                    forge,
+                )
+
+                jar_path = forge_utils.get_forge_version(
+                    version,
+                    forge,
+                    path = server_path,
+                )
+
+            logging.info('Configuring server to use Forge')
+            srv.settings['jar'] = os.path.basename(jar_path)
+            srv.save_settings()
 
         return server_id
 
