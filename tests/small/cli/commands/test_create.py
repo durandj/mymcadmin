@@ -8,9 +8,9 @@ from .... import utils
 
 from mymcadmin.cli.base import mymcadmin as mma_command
 
-class TestServerCreate(utils.CliRunnerMixin, unittest.TestCase):
+class TestCreate(utils.CliRunnerMixin, unittest.TestCase):
     """
-    Tests for the server_create CLI command
+    Tests for the create CLI command
     """
 
     @unittest.mock.patch('mymcadmin.config.Config')
@@ -77,9 +77,9 @@ class TestServerCreate(utils.CliRunnerMixin, unittest.TestCase):
 
         rpc_client.return_value = rpc_client
         rpc_client.__enter__.return_value = rpc_client
-        rpc_client.server_create.side_effect = RuntimeError('Boom!')
+        rpc_client.create.side_effect = RuntimeError('Boom!')
 
-        result = self.cli_runner.invoke(mma_command, ['server_create', 'test'])
+        result = self.cli_runner.invoke(mma_command, ['create', 'test'])
 
         if result.exit_code != 1:
             print(result.output)
@@ -108,7 +108,7 @@ class TestServerCreate(utils.CliRunnerMixin, unittest.TestCase):
             result = self.cli_runner.invoke(
                 mma_command,
                 [
-                    'server_create',
+                    'create',
                     server_id,
                 ] + params,
             )
