@@ -1,7 +1,9 @@
 asynctest
+beautifulsoup4
 click
 coverage
 django>=1.9
+html5lib
 nose
 pylint
 python-daemon

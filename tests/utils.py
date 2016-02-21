@@ -3,6 +3,7 @@ Utilities to be used for testing
 """
 
 import asyncio
+import contextlib
 import functools
 import unittest.mock
 
@@ -53,6 +54,25 @@ def apply_mock(target):
 
         return wrapper
     return decorator
+
+@contextlib.contextmanager
+def mock_property(target, prop_name):
+    """
+    Temporarily mocks a property for an existing object and
+    then restores the property after leaving the context
+    scope.
+    """
+
+    target_type   = type(target)
+    original_prop = getattr(target_type, prop_name)
+    mock_prop     = unittest.mock.PropertyMock()
+
+    setattr(target_type, prop_name, mock_prop)
+
+    try:
+        yield mock_prop
+    finally:
+        setattr(target_type, prop_name, original_prop)
 
 # pylint: disable=invalid-name, too-few-public-methods
 class CliRunnerMixin(object):

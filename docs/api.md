@@ -18,13 +18,27 @@ None
 
 A list of server ID's
 
+### server_create
+
+Creates a new server
+
+#### Parameters
+
+`server_id` - String - the server ID
+`version`   - String - the server version (optional)
+`forge`     - Bool|String - if true then get the latest Forge, if a string get that version of Forge
+
+#### Return
+
+TODO(durandj): document the return value
+
 ### server_restart
 
 Restarts a server
 
 #### Parameters
 
-`server_id` - the server ID
+`server_id` - String - the server ID
 
 #### Return
 
@@ -50,7 +64,7 @@ Start a server
 
 #### Parameters
 
-`server_id` - the server ID
+`server_id` - String - the server ID
 
 #### Return
 
@@ -76,7 +90,7 @@ Stop a server
 
 #### Parameters
 
-`server_id` - the server ID
+`server_id` - String - the server ID
 
 #### Return
 

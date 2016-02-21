@@ -7,7 +7,7 @@ import asyncio.subprocess
 import logging
 import os.path
 
-from . import errors, rpc, server
+from . import errors, forge as forge_utils, rpc, server
 from .rpc import errors as rpc_errors
 
 class Manager(object):
@@ -76,6 +76,7 @@ class Manager(object):
         self.rpc_dispatcher.add_dict(
             {
                 'list_servers':       self.rpc_command_list_servers,
+                'server_create':      self.rpc_command_server_create,
                 'server_restart':     self.rpc_command_server_restart,
                 'server_restart_all': self.rpc_command_server_restart_all,
                 'server_start':       self.rpc_command_server_start,
@@ -97,9 +98,88 @@ class Manager(object):
         ]
 
     @rpc.required_param('server_id')
+    async def rpc_command_server_create(self, server_id, version = None, forge = None):
+        """
+        Handle RPC command: server_create
+        """
+
+        logging.info('Preparing to create server %s', server_id)
+
+        server_path = os.path.join(self.root, server_id)
+
+        if os.path.exists(server_path):
+            raise errors.ServerExistsError(server_id)
+
+        logging.info('Creating directory for instance %s', server_id)
+        os.mkdir(server_path)
+
+        logging.info('Downloading server jar')
+        jar = server.Server.download_server_jar(version, path = server_path)
+
+        logging.info('Generating a default settings file')
+        server.Server.generate_default_settings(
+            path = server_path,
+            jar  = jar,
+        )
+
+        logging.info('Starting server for the first time')
+        srv  = server.Server(server_path)
+        proc = await srv.start()
+
+        await proc.wait()
+        logging.info('Server stopped')
+
+        logging.info('Marking EULA as accepted')
+        server.Server.agree_to_eula(path = server_path)
+
+        if forge is not None:
+            logging.info('Setting up Forge')
+            if forge is True:
+                logging.info(
+                    'Downloading latest Forge for Minecraft %s',
+                    version,
+                )
+
+                installer, jar_path = forge_utils.get_forge_for_mc_version(
+                    version,
+                    path = server_path,
+                )
+            elif isinstance(forge, str):
+                logging.info(
+                    'Downloading Forge %s for Minecraft',
+                    forge,
+                )
+
+                installer, jar_path = forge_utils.get_forge_version(
+                    version,
+                    forge,
+                    path = server_path,
+                )
+
+            logging.info('Installing Forge dependencies')
+            proc = await asyncio.create_subprocess_exec(
+                srv.java,
+                '-jar',
+                installer,
+                '--installServer',
+                cwd    = server_path,
+                stdin  = asyncio.subprocess.PIPE,
+                stdout = asyncio.subprocess.PIPE,
+                stderr = asyncio.subprocess.PIPE,
+            )
+
+            await proc.wait()
+
+            logging.info('Configuring server to use Forge')
+            srv.settings['jar'] = os.path.basename(jar_path)
+            srv.save_settings()
+
+        return server_id
+
+    @rpc.required_param('server_id')
     async def rpc_command_server_restart(self, server_id):
         """
-        Handle RPC command: serverRestart
+        Handle RPC command: server_restart
         """
 
         logging.info('Sending restart command to server %s', server_id)
@@ -111,7 +191,7 @@ class Manager(object):
 
     async def rpc_command_server_restart_all(self):
         """
-        Handle RPC command: serverRestartAll
+        Handle RPC command: server_restart_all
         """
 
         logging.info('Restarting all servers...')
@@ -138,7 +218,7 @@ class Manager(object):
     @rpc.required_param('server_id')
     async def rpc_command_server_start(self, server_id):
         """
-        Handle RPC command: serverStart
+        Handle RPC command: server_start
         """
 
         srv = self._get_server_by_id(server_id)
@@ -151,7 +231,7 @@ class Manager(object):
 
     async def rpc_command_server_start_all(self):
         """
-        Handle RPC command: serverStartAll
+        Handle RPC command: server_start_all
         """
 
         server_ids  = await self.rpc_command_list_servers()
@@ -184,7 +264,7 @@ class Manager(object):
     @rpc.required_param('server_id')
     async def rpc_command_server_stop(self, server_id):
         """
-        Handle RPC command: serverStop
+        Handle RPC command: server_stop
         """
 
         proc = self._get_proc_by_id(server_id)
@@ -202,7 +282,7 @@ class Manager(object):
 
     async def rpc_command_server_stop_all(self):
         """
-        Handle RPC command: serverStopAll
+        Handle RPC command: server_stop_all
         """
 
         server_ids = self.instances.keys()

@@ -17,6 +17,11 @@ class ConfigurationError(MyMCAdminError):
     An error in a configuration of MyMCAdmin
     """
 
+class DownloadError(MyMCAdminError):
+    """
+    Raised when there's a problem downloading a file
+    """
+
 class ManagerError(MyMCAdminError):
     """
     An error with the management process
@@ -33,13 +38,45 @@ class ServerDoesNotExistError(ManagerError):
             server_id,
         )
 
+class ServerExistsError(ManagerError):
+    """
+    Raised when creating a server and the server ID is already in use
+    """
+
+    def __init__(self, server_id):
+        super(ServerExistsError, self).__init__(
+            'Server {} already exists',
+            server_id,
+        )
+
 class ServerError(MyMCAdminError):
     """
     An error with the Minecraft server
     """
 
+class ServerCreationError(ServerError):
+    """
+    An error with creating a new Minecraft server
+    """
+
 class ServerSettingsError(ServerError):
     """
     An error in the MyMCAdmin settings for the server
+    """
+
+class VersionDoesNotExistError(ManagerError):
+    """
+    Version does not exist
+    """
+
+    def __init__(self, version):
+        super(VersionDoesNotExistError, self).__init__(
+            'Version {} does not exist',
+            version,
+        )
+
+class ForgeError(MyMCAdminError):
+    """
+    A general error when working with Forge
     """
 
