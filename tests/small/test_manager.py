@@ -442,12 +442,13 @@ class TestRpcCommands(unittest.TestCase):
             path = server_path,
         )
 
+    @asynctest.patch('asyncio.create_subprocess_exec')
     @unittest.mock.patch('mymcadmin.forge.get_forge_for_mc_version')
     @unittest.mock.patch('mymcadmin.server.Server')
     @unittest.mock.patch('os.mkdir')
     @unittest.mock.patch('os.path.exists')
     @utils.run_async
-    async def test_server_create_forge_any(self, exists, mkdir, server, get_forge):
+    async def test_server_create_forge_any(self, exists, mkdir, server, get_forge, subproc):
         """
         Tests that we get the latest version of Forge for this server
         """
@@ -476,6 +477,8 @@ class TestRpcCommands(unittest.TestCase):
         forge_path     = os.path.join(server_path, forge_jar)
 
         get_forge.return_value = (installer_path, forge_path)
+
+        subproc.return_value = subproc
 
         result = await self.manager.rpc_command_server_create(
             server_id = server_id,
@@ -511,6 +514,19 @@ class TestRpcCommands(unittest.TestCase):
 
         get_forge.assert_called_with(version, path = server_path)
 
+        subproc.assert_called_with(
+            server.java,
+            '-jar',
+            installer_path,
+            '--installServer',
+            cwd    = server_path,
+            stdin  = asyncio.subprocess.PIPE,
+            stdout = asyncio.subprocess.PIPE,
+            stderr = asyncio.subprocess.PIPE,
+        )
+
+        subproc.wait.assert_called_with()
+
         self.assertDictEqual(
             {'jar': forge_jar},
             server.settings,
@@ -519,12 +535,13 @@ class TestRpcCommands(unittest.TestCase):
 
         server.save_settings.assert_called_with()
 
+    @asynctest.patch('asyncio.create_subprocess_exec')
     @unittest.mock.patch('mymcadmin.forge.get_forge_version')
     @unittest.mock.patch('mymcadmin.server.Server')
     @unittest.mock.patch('os.mkdir')
     @unittest.mock.patch('os.path.exists')
     @utils.run_async
-    async def test_server_create_forge(self, exists, mkdir, server, get_forge):
+    async def test_server_create_forge(self, exists, mkdir, server, get_forge, subproc):
         """
         Tests that we can get Forge for this server
         """
@@ -556,6 +573,8 @@ class TestRpcCommands(unittest.TestCase):
             installer_path,
             forge_path,
         )
+
+        subproc.return_value = subproc
 
         result = await self.manager.rpc_command_server_create(
             server_id = server_id,
@@ -594,6 +613,19 @@ class TestRpcCommands(unittest.TestCase):
             'release',
             path = server_path,
         )
+
+        subproc.assert_called_with(
+            server.java,
+            '-jar',
+            installer_path,
+            '--installServer',
+            cwd    = server_path,
+            stdin  = asyncio.subprocess.PIPE,
+            stdout = asyncio.subprocess.PIPE,
+            stderr = asyncio.subprocess.PIPE,
+        )
+
+        subproc.wait.assert_called_with()
 
         self.assertDictEqual(
             {'jar': forge_jar},
