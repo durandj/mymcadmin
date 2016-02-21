@@ -2,7 +2,6 @@
 Tests for the Forge related functions
 """
 
-import io
 import os
 import os.path
 import unittest
