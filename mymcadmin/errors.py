@@ -17,6 +17,11 @@ class ConfigurationError(MyMCAdminError):
     An error in a configuration of MyMCAdmin
     """
 
+class DownloadError(MyMCAdminError):
+    """
+    Raised when there's a problem downloading a file
+    """
+
 class ManagerError(MyMCAdminError):
     """
     An error with the management process

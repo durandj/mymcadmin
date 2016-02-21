@@ -2,6 +2,7 @@ asynctest
 beautifulsoup4
 click
 coverage
+html5lib
 nose
 pylint
 python-daemon

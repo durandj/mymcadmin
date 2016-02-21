@@ -283,39 +283,39 @@ class TestForge(unittest.TestCase):
 
         with unittest.mock.patch('mymcadmin.forge.get_forge_mc_versions') as forge_versions, \
              unittest.mock.patch('requests.get') as requests_get, \
-             unittest.mock.patch('builtins.open') as mock_open:
+             unittest.mock.patch('mymcadmin.utils.download_file') as download_file:
             forge_versions.return_value = ['1.8.9']
 
             mock_version_response = unittest.mock.Mock(spec = requests.Response)
             mock_version_response.ok      = True
             mock_version_response.content = SAMPLE_DOWNLOADS_PAGE.format(release)
 
-            jar_stream = io.BytesIO(
-                'Hello, world!'.encode(),
-            )
+            mock_inst_jar_response = unittest.mock.Mock(spec = requests.Response)
+            mock_inst_jar_response.ok = True
 
-            mock_jar_response = unittest.mock.Mock(spec = requests.Response)
-            mock_jar_response.ok = True
-            mock_jar_response.iter_content.return_value = jar_stream
+            mock_uni_jar_response = unittest.mock.Mock(spec = requests.Response)
+            mock_uni_jar_response.ok = True
 
             requests_get.side_effect = [
                 mock_version_response,
-                mock_jar_response,
+                mock_inst_jar_response,
+                mock_uni_jar_response,
             ]
 
-            file_stream = io.BytesIO()
-
-            mock_open.return_value = mock_open
-            mock_open.__enter__.return_value = file_stream
-
-            jar_path = get_forge_for_mc_version(
+            inst_jar_path, uni_jar_path = get_forge_for_mc_version(
                 version_id,
                 path = path,
             )
 
             self.assertEqual(
+                os.path.join(root, 'forge-1.8.9-10.10.10.10-installer.jar'),
+                inst_jar_path,
+                'Installer path did not match expected',
+            )
+
+            self.assertEqual(
                 os.path.join(root, 'forge-1.8.9-10.10.10.10-universal.jar'),
-                jar_path,
+                uni_jar_path,
                 'Jar path did not match expected',
             )
 
@@ -326,6 +326,10 @@ class TestForge(unittest.TestCase):
                         'http://files.minecraftforge.net/maven/net/minecraftforge/forge/index_1.8.9.html',
                     ),
                     unittest.mock.call(
+                        'http://example.com/10.10.10.10/forge-1.8.9-10.10.10.10-installer.jar',
+                        stream = True,
+                    ),
+                    unittest.mock.call(
                         'http://example.com/10.10.10.10/forge-1.8.9-10.10.10.10-universal.jar',
                         stream = True,
                     ),
@@ -333,16 +337,20 @@ class TestForge(unittest.TestCase):
             )
             # pylint: enable=line-too-long
 
-            mock_open.assert_called_with(
-                jar_path,
-                'wb',
-            )
-
-            self.assertEqual(
-                'Hello, world!',
-                file_stream.getvalue().decode(),
-                'Jar file contents did not match expected',
-            )
+        download_file.assert_has_calls(
+            [
+                unittest.mock.call(
+                    mock_inst_jar_response,
+                    inst_jar_path,
+                    '943a702d06f34599aee1f8da8ef9f7296031d699',
+                ),
+                unittest.mock.call(
+                    mock_uni_jar_response,
+                    uni_jar_path,
+                    '943a702d06f34599aee1f8da8ef9f7296031d699',
+                )
+            ]
+        )
 
     def _do_forge_version(self, path = None):
         root       = path if path is not None else os.getcwd()
@@ -350,40 +358,40 @@ class TestForge(unittest.TestCase):
 
         with unittest.mock.patch('mymcadmin.forge.get_forge_mc_versions') as forge_versions, \
              unittest.mock.patch('requests.get') as requests_get, \
-             unittest.mock.patch('builtins.open') as mock_open:
+             unittest.mock.patch('mymcadmin.utils.download_file') as download_file:
             forge_versions.return_value = ['1.8.9']
 
             mock_version_response = unittest.mock.Mock(spec = requests.Response)
             mock_version_response.ok      = True
             mock_version_response.content = SAMPLE_DOWNLOADS_PAGE.format('LATEST')
 
-            jar_stream = io.BytesIO(
-                'Hello, world!'.encode(),
-            )
+            mock_inst_jar_response = unittest.mock.Mock(spec = requests.Response)
+            mock_inst_jar_response.ok = True
 
-            mock_jar_response = unittest.mock.Mock(spec = requests.Response)
-            mock_jar_response.ok = True
-            mock_jar_response.iter_content.return_value = jar_stream
+            mock_uni_jar_response = unittest.mock.Mock(spec = requests.Response)
+            mock_uni_jar_response.ok = True
 
             requests_get.side_effect = [
                 mock_version_response,
-                mock_jar_response,
+                mock_inst_jar_response,
+                mock_uni_jar_response,
             ]
 
-            file_stream = io.BytesIO()
-
-            mock_open.return_value = mock_open
-            mock_open.__enter__.return_value = file_stream
-
-            jar_path = get_forge_version(
+            inst_jar, uni_jar = get_forge_version(
                 version_id,
                 '10.10.10.10',
                 path = path,
             )
 
             self.assertEqual(
+                os.path.join(root, 'forge-1.8.9-10.10.10.10-installer.jar'),
+                inst_jar,
+                'Installer path did not match expected',
+            )
+
+            self.assertEqual(
                 os.path.join(root, 'forge-1.8.9-10.10.10.10-universal.jar'),
-                jar_path,
+                uni_jar,
                 'Jar path did not match expected',
             )
 
@@ -394,6 +402,10 @@ class TestForge(unittest.TestCase):
                         'http://files.minecraftforge.net/maven/net/minecraftforge/forge/index_1.8.9.html',
                     ),
                     unittest.mock.call(
+                        'http://example.com/10.10.10.10/forge-1.8.9-10.10.10.10-installer.jar',
+                        stream = True,
+                    ),
+                    unittest.mock.call(
                         'http://example.com/10.10.10.10/forge-1.8.9-10.10.10.10-universal.jar',
                         stream = True,
                     ),
@@ -401,15 +413,19 @@ class TestForge(unittest.TestCase):
             )
             # pylint: enable=line-too-long
 
-            mock_open.assert_called_with(
-                jar_path,
-                'wb',
-            )
-
-            self.assertEqual(
-                'Hello, world!',
-                file_stream.getvalue().decode(),
-                'Jar file contents did not match expected',
+            download_file.assert_has_calls(
+                [
+                    unittest.mock.call(
+                        mock_inst_jar_response,
+                        inst_jar,
+                        '943a702d06f34599aee1f8da8ef9f7296031d699',
+                    ),
+                    unittest.mock.call(
+                        mock_uni_jar_response,
+                        uni_jar,
+                        '943a702d06f34599aee1f8da8ef9f7296031d699',
+                    ),
+                ]
             )
 
 SAMPLE_DOWNLOADS_PAGE = """
@@ -437,10 +453,29 @@ SAMPLE_DOWNLOADS_PAGE = """
           <td>
             <ul>
               <li>
-                <a href="http://example.com/10.10.10.10/changelog">
-                  <i class="fa fa-save classifier-changelog"></i>
-                  Changelog
+                Changelog
+              </li>
+              <li>
+                <a href="http://example.com/10.10.10.10/forge-1.8.9-10.10.10.10-installer.jar">
+                  <i class="fa fa-save classifier-installer"></i>
+                  Installer
                 </a>
+                <div class="info">
+                  <strong>MD5:</strong>
+                  deadbeef
+                  <strong>SHA1:</strong>
+                  943a702d06f34599aee1f8da8ef9f7296031d699
+                  <br>
+                  <a href="http://example.com/10.10.10.10/forge-1.8.9-10.10.10.10-installer.jar">
+                    (Direct Download)
+                  </a>
+                </div>
+              </li>
+              <li>
+                Installer-win
+              </li>
+              <li>
+                MDK
               </li>
               <li>
                 <a href="http://example.com/10.10.10.10/forge-1.8.9-10.10.10.10-universal.jar">

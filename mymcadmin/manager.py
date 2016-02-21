@@ -140,7 +140,7 @@ class Manager(object):
                     version,
                 )
 
-                jar_path = forge_utils.get_forge_for_mc_version(
+                installer, jar_path = forge_utils.get_forge_for_mc_version(
                     version,
                     path = server_path,
                 )
@@ -150,11 +150,25 @@ class Manager(object):
                     forge,
                 )
 
-                jar_path = forge_utils.get_forge_version(
+                installer, jar_path = forge_utils.get_forge_version(
                     version,
                     forge,
                     path = server_path,
                 )
+
+            logging.info('Installing Forge dependencies')
+            proc = await asyncio.create_subprocess_exec(
+                'java', # TODO(durandj): use conf java
+                '-jar',
+                installer,
+                '--installServer',
+                cwd    = server_path,
+                stdin  = asyncio.subprocess.PIPE,
+                stdout = asyncio.subprocess.PIPE,
+                stderr = asyncio.subprocess.PIPE,
+            )
+
+            await proc.wait()
 
             logging.info('Configuring server to use Forge')
             srv.settings['jar'] = os.path.basename(jar_path)

@@ -2,7 +2,6 @@
 Forge related functions
 """
 
-import hashlib
 import os
 import os.path
 import urllib.parse
@@ -10,7 +9,7 @@ import urllib.parse
 import bs4
 import requests
 
-from . import errors
+from . import errors, utils
 
 FORGE_MC_VERSION_URL = \
     'http://files.minecraftforge.net/maven/net/minecraftforge/forge/index_{}.html'
@@ -30,7 +29,7 @@ def get_forge_mc_versions():
     if not resp.ok:
         raise errors.ForgeError('Forge servers could not be reached')
 
-    soup = bs4.BeautifulSoup(resp.content, 'html.parser')
+    soup = bs4.BeautifulSoup(resp.content, 'html5lib')
 
     version_elem = soup.find(class_ = 'versions')
     versions     = version_elem.find_all(_versions_filter)
@@ -68,15 +67,13 @@ def get_forge_version(mc_version, forge_version, path = None):
             mc_version,
         )
 
-    soup = bs4.BeautifulSoup(resp.content, 'html.parser')
+    soup = bs4.BeautifulSoup(resp.content, 'html5lib')
 
     downloads = soup.find(class_ = 'downloadsTable')
     releases  = downloads.find_all('tr')[1:]
-    print(releases)
 
     for release in releases:
-        version, _, _, _ = _get_forge_build_info(release)
-        print(version)
+        version = release.find('td').text.strip()
 
         if version == forge_version:
             return _get_forge_build(path, release)
@@ -116,7 +113,7 @@ def get_forge_for_mc_version(version_id, path = None):
             version_id,
         )
 
-    soup = bs4.BeautifulSoup(resp.content, 'html.parser')
+    soup = bs4.BeautifulSoup(resp.content, 'html5lib')
 
     downloads = soup.find(class_ = 'downloadsTable')
 
@@ -138,53 +135,47 @@ def _get_forge_build_info(tag):
             if parent is None:
                 raise errors.ForgeError('Could not found build information')
 
-            if parent.name != 'tr':
-                continue
-
-            build = parent
+            if parent.name == 'tr':
+                build = parent
+                break
     else:
         build = tag
 
     cells = build.find_all('td', recursive = False)
 
-    downloads = cells[-1]
-    info      = downloads.find(class_ = 'info')
+    downloads = cells[-1].find('ul').find_all('li', recursive = False)
+    installer = downloads[1]
+    universal = downloads[-1]
 
-    version    = cells[0].text.strip()
-    url        = info.find('a').get('href').strip()
-    sha        = info.find_all('strong')[-1].nextSibling.strip()
-    components = urllib.parse.urlparse(url)
-    jar_file   = components.path.split('/')[-1]
+    inst_url   = installer.find_all('a')[-1].get('href').strip()
+    inst_sha   = installer.find_all('strong')[-1].nextSibling.strip()
+    components = urllib.parse.urlparse(inst_url)
+    inst_jar   = components.path.split('/')[-1]
+    uni_url    = universal.find_all('a')[-1].get('href').strip()
+    uni_sha    = universal.find_all('strong')[-1].nextSibling.strip()
+    components = urllib.parse.urlparse(uni_url)
+    uni_jar    = components.path.split('/')[-1]
 
-    return (version, url, sha, jar_file)
+    return (inst_url, inst_sha, inst_jar, uni_url, uni_sha, uni_jar)
 
 def _get_forge_build(path, promo_tag):
-    _, url, sha, jar_file = _get_forge_build_info(promo_tag)
+    inst_url, inst_sha, inst_jar, uni_url, uni_sha, uni_jar = \
+            _get_forge_build_info(promo_tag)
 
-    jar_path = os.path.join(path, jar_file)
+    inst_jar = os.path.join(path, inst_jar)
+    uni_jar  = os.path.join(path, uni_jar)
 
-    resp = requests.get(url, stream = True)
+    resp = requests.get(inst_url, stream = True)
+    if not resp.ok:
+        raise errors.ForgeError('Could not download Forge installer')
+
+    utils.download_file(resp, inst_jar, inst_sha)
+
+    resp = requests.get(uni_url, stream = True)
     if not resp.ok:
         raise errors.ForgeError('Could not download Forge jar')
 
-    file_sha = hashlib.sha1()
-    with open(jar_path, 'wb') as file_handle:
-        for chunk in resp.iter_content(chunk_size = 1024):
-            # Ignore keep-alive chunks
-            if not chunk:
-                continue
+    utils.download_file(resp, uni_jar, uni_sha)
 
-            file_handle.write(chunk)
-            file_sha.update(chunk)
-
-    file_sha = file_sha.hexdigest()
-    if file_sha != sha:
-        raise errors.ForgeError(
-            'Downloaded Forge jar\'s SHA1 did not match expected' +
-            ' Was {}, should be {}',
-            file_sha,
-            sha,
-        )
-
-    return jar_path
+    return (inst_jar, uni_jar)
 

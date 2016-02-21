@@ -469,12 +469,13 @@ class TestRpcCommands(unittest.TestCase):
         server.start = asynctest.CoroutineMock()
         server.start.return_value = mock_proc
 
+        installer = 'forge-{}-latest-installer.jar'.format(version)
         forge_jar = 'forge-{}-latest-universal.jar'.format(version)
 
-        get_forge.return_value = os.path.join(
-            server_path,
-            forge_jar,
-        )
+        installer_path = os.path.join(server_path, installer)
+        forge_path     = os.path.join(server_path, forge_jar)
+
+        get_forge.return_value = (installer_path, forge_path)
 
         result = await self.manager.rpc_command_server_create(
             server_id = server_id,
@@ -545,11 +546,15 @@ class TestRpcCommands(unittest.TestCase):
         server.start = asynctest.CoroutineMock()
         server.start.return_value = mock_proc
 
+        installer = 'forge-{}-release-installer.jar'.format(version)
         forge_jar = 'forge-{}-release-universal.jar'.format(version)
 
-        get_forge.return_value = os.path.join(
-            server_path,
-            forge_jar,
+        installer_path = os.path.join(server_path, installer)
+        forge_path     = os.path.join(server_path, forge_jar)
+
+        get_forge.return_value = (
+            installer_path,
+            forge_path,
         )
 
         result = await self.manager.rpc_command_server_create(
