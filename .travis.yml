@@ -9,4 +9,7 @@ before_script:
     - pylint --rcfile .pylintrc mymcadmin
 script:
     - nosetests --with-coverage --cover-package=mymcadmin --cover-min-percentage=95 --rednose
+addons:
+    code_climate:
+        repo_token: a5c8e35dadeee9be6a65bb89f05b2630177f0717c8f0002ba14d637a2ae38584
 
