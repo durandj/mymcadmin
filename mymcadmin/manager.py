@@ -158,7 +158,7 @@ class Manager(object):
 
             logging.info('Installing Forge dependencies')
             proc = await asyncio.create_subprocess_exec(
-                'java', # TODO(durandj): use conf java
+                srv.java,
                 '-jar',
                 installer,
                 '--installServer',
