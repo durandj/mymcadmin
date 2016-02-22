@@ -17,8 +17,11 @@ Including another URLconf
 from django.conf.urls import url
 from django.contrib import admin
 
+from mymcadmin.web import views
+
 # pylint: disable=invalid-name
 urlpatterns = [
+    url(r'^$', views.RootView.as_view(), name = 'root'),
     url(r'^admin/', admin.site.urls),
 ]
 # pylint: enable=invalid-name

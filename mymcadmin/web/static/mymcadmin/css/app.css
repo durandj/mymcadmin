@@ -1,0 +1,14 @@
+body {
+	display: flex;
+	flex-direction: column;
+}
+
+main {
+	display: flex;
+	flex: 1;
+}
+
+main md-content {
+	flex: 1;
+}
+
