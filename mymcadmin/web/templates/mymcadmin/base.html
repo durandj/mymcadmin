@@ -12,6 +12,7 @@
 
 		<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:400,500,700,400italic" />
 		<link rel="stylesheet" href="{% static 'angular-material/angular-material.min.css' %}" />
+		<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
 
 		<link rel="stylesheet" href="{% static 'mymcadmin/css/app.css' %}" />
 
@@ -22,20 +23,20 @@
 			}
 		</style>
 	</head>
-	<body data-ng-app="MyMCAdminApp" data-ng-cloak>
+	<body data-ng-app="MyMCAdminApp" data-layout="row" data-flex data-ng-cloak>
 		<header>
-			<md-toolbar data-md-scroll-shrink data-ng-if="true">
-				<div class="md-toolbar-tools">
-					<h1>
-						<a href="{% url 'root' %}">
-							MyMCAdmin
-						</a>
-					</h1>
-				</div>
-			</md-toolbar>
+			<md-sidenav class="md-hue-1" data-md-is-locked-open="true" data-md-whiteframe="6">
+				<md-button class="md-icon-button" aria-label="Home" href="{% url 'root' %}">
+					<md-icon md-font-set="material-icons">home</md-icon>
+				</md-button>
+				<md-divider class="bottom"></md-divider>
+				<md-button class="md-icon-button" aria-label="Settings">
+					<md-icon md-font-set="material-icons">settings</md-icon>
+				</md-button>
+			</md-sidenav>
 		</header>
 		<main>
-			<md-content data-flex>
+			<md-content>
 				TODO(durandj): do the thing
 			</md-content>
 		</main>

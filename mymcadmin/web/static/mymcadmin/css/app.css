@@ -1,11 +1,30 @@
-body {
+header {
 	display: flex;
-	flex-direction: column;
+}
+
+header md-sidenav {
+	width: auto;
+}
+
+header md-sidenav .md-icon-button {
+	height: 64px !important;
+	width: 64px !important;
+}
+
+header md-sidenav .md-icon-button md-icon {
+	font-size: 48px !important;
+	height: 48px;
+	width: 48px;
+}
+
+header md-sidenav .bottom {
+	margin-top: auto;
 }
 
 main {
 	display: flex;
 	flex: 1;
+	flex-direction: column;
 }
 
 main md-content {
