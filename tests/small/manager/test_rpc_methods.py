@@ -16,14 +16,13 @@ from mymcadmin.manager import Manager
 from mymcadmin.rpc.errors import JsonRpcInvalidRequestError
 
 # pylint: disable=too-many-public-methods
-class TestRpcCommands(unittest.TestCase):
+class TestRpcCommands(utils.EventLoopMixin, unittest.TestCase):
     """
     Tests for the JSON RPC commands
     """
 
     def setUp(self):
-        self.event_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.event_loop)
+        super(TestRpcCommands, self).setUp()
 
         self.host            = 'example.com'
         self.port            = 8000
@@ -36,9 +35,6 @@ class TestRpcCommands(unittest.TestCase):
             self.root,
             event_loop = self.mock_event_loop,
         )
-
-    def tearDown(self):
-        self.event_loop.close()
 
     @unittest.mock.patch('os.path.isdir')
     @unittest.mock.patch('os.listdir')
