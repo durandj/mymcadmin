@@ -174,6 +174,8 @@ class Manager(object):
             srv.settings['jar'] = os.path.basename(jar_path)
             srv.save_settings()
 
+        logging.info('Server %s successfully created', server_id)
+
         return server_id
 
     @rpc.required_param('server_id')
