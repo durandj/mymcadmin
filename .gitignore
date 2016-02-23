@@ -94,6 +94,6 @@ webpack-stats.json
 
 #####=== MyMCAdmin ===#####
 
-/db.sqlite3
+/runtime/
 /static/
 

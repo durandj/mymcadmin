@@ -164,7 +164,7 @@ module.exports = (function () {
 		 * Reference: https://github.com/owais/webpack-bundle-tracker
 		 * Generates outputs stats about webpack builds for tracking purposes
 		 */
-		new BundleTracker({filename: './webpack-stats.json'})
+		new BundleTracker({filename: './runtime/webpack-stats.json'})
 	];
 
 	if (ENV !== 'test') {
