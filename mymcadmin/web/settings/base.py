@@ -45,9 +45,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'webpack_loader',
 ]
 
 MIDDLEWARE_CLASSES = [
+    'django.middleware.gzip.GZipMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -131,7 +133,16 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'node_modules'),
-    os.path.join(BASE_DIR, 'mymcadmin', 'web', 'static'),
+    os.path.join(BASE_DIR, 'assets'),
 ]
+
+# Django Webpack Loader
+# https://github.com/owais/django-webpack-loader/
+
+WEBPACK_LOADER = {
+    'DEFAULT': {
+        'BUNDLE_DIR_NAME': 'bundles/',
+        'STATS_FILE':      os.path.join(BASE_DIR, 'webpack-stats.json'),
+    },
+}
 

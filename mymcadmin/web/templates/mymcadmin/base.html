@@ -3,7 +3,7 @@
 	<head>
 		<title>{% block title %}MyMCAdmin{% endblock %}</title>
 
-		{% load staticfiles %}
+		{% load render_bundle from webpack_loader %}
 
 		<meta charset="utf-8" />
 		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -11,10 +11,7 @@
 		<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
 
 		<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:400,500,700,400italic" />
-		<link rel="stylesheet" href="{% static 'angular-material/angular-material.min.css' %}" />
 		<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
-
-		<link rel="stylesheet" href="{% static 'mymcadmin/css/app.css' %}" />
 
 		<style style="text/css">
 			[ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak],
@@ -41,12 +38,7 @@
 			</md-content>
 		</main>
 
-		<script src="{% static 'angular/angular.min.js' %}"></script>
-		<script src="{% static 'angular-animate/angular-animate.min.js' %}"></script>
-		<script src="{% static 'angular-aria/angular-aria.min.js' %}"></script>
-		<script src="{% static 'angular-material/angular-material.min.js' %}"></script>
-
-		<script src="{% static 'mymcadmin/js/app.js' %}"></script>
+		{% render_bundle 'main' %}
 	</body>
 </html>
 

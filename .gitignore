@@ -88,6 +88,10 @@ node_modules
 # Debug log from npm
 npm-debug.log
 
+#####=== Webpack ===#####
+/assets/bundles/
+webpack-stats.json
+
 #####=== MyMCAdmin ===#####
 
 /db.sqlite3
