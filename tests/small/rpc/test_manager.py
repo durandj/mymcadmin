@@ -23,7 +23,7 @@ from mymcadmin.rpc.response import (
     JsonRpcServerErrorResponse,
 )
 
-class TestJsonRpcResponseManager(unittest.TestCase):
+class TestJsonRpcResponseManager(utils.EventLoopMixin, unittest.TestCase):
     """
     Tests for the JsonRpcResponseManager class
     """

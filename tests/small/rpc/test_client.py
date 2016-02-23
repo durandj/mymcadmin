@@ -10,16 +10,17 @@ import unittest.mock
 import asynctest
 import nose
 
+from ... import utils
+
 from mymcadmin.rpc import JsonRpcError, RpcClient
 
-class TestRpcClient(unittest.TestCase):
+class TestRpcClient(utils.EventLoopMixin, unittest.TestCase):
     """
     Tests for the JSON RPC client
     """
 
     def setUp(self):
-        self.event_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.event_loop)
+        super(TestRpcClient, self).setUp()
 
         self.host   = 'localhost'
         self.port   = 8080

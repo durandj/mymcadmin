@@ -14,21 +14,17 @@ from ... import utils
 from mymcadmin.manager import Manager
 from mymcadmin.server import Server
 
-class TestManager(unittest.TestCase):
+class TestManager(utils.EventLoopMixin, unittest.TestCase):
     """
     Tests for the mymcadmin.manager.Manager class
     """
 
     def setUp(self):
-        self.event_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.event_loop)
+        super(TestManager, self).setUp()
 
         self.host = 'example.com'
         self.port = 8000
         self.root = 'root'
-
-    def tearDown(self):
-        self.event_loop.close()
 
     @asynctest.patch('asyncio.gather')
     @asynctest.patch('asyncio.Task.all_tasks')
@@ -84,8 +80,6 @@ class TestManager(unittest.TestCase):
         manager.start_server_proc = mock_start_server_proc
 
         manager.run()
-
-        asyncio.set_event_loop(self.event_loop)
 
         start_server.assert_called_with(
             handle_network,

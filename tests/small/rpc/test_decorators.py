@@ -2,7 +2,6 @@
 Tests for the JSON RPC decorators
 """
 
-import asyncio
 import unittest
 
 import nose
@@ -12,17 +11,10 @@ from ... import utils
 from mymcadmin.rpc.errors import JsonRpcInvalidRequestError
 from mymcadmin.rpc.decorators import required_param
 
-class TestRequiredParam(unittest.TestCase):
+class TestRequiredParam(utils.EventLoopMixin, unittest.TestCase):
     """
     Tests for the required_param decorator
     """
-
-    def setUp(self):
-        self.event_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.event_loop)
-
-    def tearDown(self):
-        self.event_loop.close()
 
     @utils.run_async
     async def test_valid(self):
