@@ -38,8 +38,8 @@ module.exports = (function () {
 	 * This is where all the entry points live
 	 */
 	config.entry = [
-		'./assets/js/app.js',
-		'./assets/css/app.css'
+		'./assets/mymcadmin/js/app.js',
+		'./assets/mymcadmin/css/app.css'
 	];
 
 	/**
