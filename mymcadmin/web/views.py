@@ -9,5 +9,5 @@ class RootView(generic.TemplateView):
     Root view
     """
 
-    template_name = 'mymcadmin/base.html'
+    template_name = 'mymcadmin/root.html'
 

@@ -21,22 +21,7 @@
 		</style>
 	</head>
 	<body data-ng-app="MyMCAdminApp" data-layout="row" data-flex data-ng-cloak>
-		<header>
-			<md-sidenav class="md-hue-1" data-md-is-locked-open="true" data-md-whiteframe="6">
-				<md-button class="md-icon-button" aria-label="Home" href="{% url 'root' %}">
-					<md-icon md-font-set="material-icons">home</md-icon>
-				</md-button>
-				<md-divider class="bottom"></md-divider>
-				<md-button class="md-icon-button" aria-label="Settings">
-					<md-icon md-font-set="material-icons">settings</md-icon>
-				</md-button>
-			</md-sidenav>
-		</header>
-		<main>
-			<md-content>
-				TODO(durandj): do the thing
-			</md-content>
-		</main>
+		{% block page %}TODO{% endblock %}
 
 		{% render_bundle 'main' %}
 	</body>
