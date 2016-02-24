@@ -3,6 +3,7 @@
 var autoprefixer  = require('autoprefixer');
 var BundleTracker = require('webpack-bundle-tracker');
 var LessCleanCSS  = require('less-plugin-clean-css');
+var NgAnnotate    = require('ng-annotate-webpack-plugin');
 var path          = require('path');
 var webpack       = require('webpack');
 
@@ -138,11 +139,11 @@ module.exports = (function () {
 	 */
 	config.resolve = {
 		/**
-		 * modulesDirectories
-		 * Reference: http://webpack.github.io/docs/configuration.html#resolve-modulesdirectories
-		 * Directories to search for modules
+		 * root
+		 * Reference: http://webpack.github.io/docs/configuration.html#resolve-root
+		 * Root absolute directory of project modules
 		 */
-		modulesDirectories: ['node_modules', './assets/']
+		root: path.resolve('./assets/')
 	};
 
 	/**
@@ -177,7 +178,13 @@ module.exports = (function () {
 		 * Reference: https://github.com/owais/webpack-bundle-tracker
 		 * Generates outputs stats about webpack builds for tracking purposes
 		 */
-		new BundleTracker({filename: './runtime/webpack-stats.json'})
+		new BundleTracker({filename: './runtime/webpack-stats.json'}),
+
+		/**
+		 * Reference: https://github.com/olov/ng-annotate
+		 * Manages Angular dependency injection for minification
+		 */
+		new NgAnnotate({add: true})
 	];
 
 	if (ENV === 'build') {
