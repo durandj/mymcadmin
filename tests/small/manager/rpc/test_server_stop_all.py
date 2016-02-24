@@ -77,13 +77,21 @@ class TestServerStopAll(utils.ManagerMixin, unittest.TestCase):
         )
 
         self.assertListEqual(
-            list(set(success_ids)),
+            [
+                server_id
+                for server_id in self.manager.instances.keys()
+                if server_id in success_ids
+            ],
             result.get('success'),
             'Method did not return the correct list of successful server IDs',
         )
 
         self.assertListEqual(
-            error_ids,
+            [
+                server_id
+                for server_id in self.manager.instances.keys()
+                if server_id in error_ids
+            ],
             result.get('failure'),
             'Method did not return the correct list of failed server IDs',
         )
