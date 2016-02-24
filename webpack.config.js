@@ -73,6 +73,32 @@ module.exports = (function () {
 	 */
 	config.module = {
 		/**
+		 * Preloaders
+		 * Reference: https://webpack.github.io/docs/configuration.html#module-preloaders-module-postloaders
+		 * Configures how we pre-process modules
+		 */
+		preLoaders: [
+			/**
+			 * JSCS Loader
+			 * Reference: https://github.com/unindented/jscs-loader
+			 * Checks that the JS code matches a style guide
+			 */
+			/**
+			 * JSHint Loader
+			 * Reference: https://www.npmjs.com/package/jshint-loader
+			 * Checks JS code for common JS problems
+			 */
+			{
+				test:    /\.js$/,
+				exclude: /node_modules/,
+				loaders: [
+					'jscs',
+					'jshint'
+				]
+			}
+		],
+
+		/**
 		 * Loaders
 		 * Reference: http://webpack.github.io/docs/configuration.html#module-loaders
 		 * Configures how modules are loaded and processed
@@ -167,6 +193,29 @@ module.exports = (function () {
 			browsers: ['last 2 versions']
 		})
 	];
+
+	/**
+	 * JSHint
+	 * Reference: https://github.com/webpack/jshint-loader
+	 * Configures how JSHint checks the JS code
+	 */
+	config.jshint = {
+		esversion:  6,
+		emitErrors: true,
+		failOnHint: true
+	};
+
+	/**
+	 * JSCS
+	 * Reference: https://github.com/jscs-dev/node-jscs
+	 * Configures how JSCS checks the JS code
+	 */
+	config.jscs = {
+		emitErrors:          true,
+		failOnHint:          true,
+		preset:              'google',
+		validateIndentation: '\t'
+	};
 
 	/**
 	 * Plugins

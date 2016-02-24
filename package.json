@@ -26,7 +26,10 @@
     "angular": "^1.5.0",
     "angular-animate": "^1.5.0",
     "angular-aria": "^1.5.0",
-    "angular-material": "^1.0.5"
+    "angular-material": "^1.0.5",
+    "express": "^4.13.4",
+    "minimist": "^1.2.0",
+    "nunjucks": "^2.3.0"
   },
   "devDependencies": {
     "autoprefixer": "^6.3.3",
@@ -37,6 +40,10 @@
     "babel-preset-stage-0": "^6.5.0",
     "css-loader": "^0.23.1",
     "file-loader": "^0.8.5",
+    "jscs": "^2.10.1",
+    "jscs-loader": "^0.2.0",
+    "jshint": "^2.9.1",
+    "jshint-loader": "^0.8.3",
     "less": "^2.6.0",
     "less-loader": "^2.2.2",
     "less-plugin-clean-css": "^1.5.1",
