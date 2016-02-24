@@ -6,10 +6,11 @@ import os.path
 
 import click
 
-from ..base import mymcadmin, rpc_command, info
+from ..base import mymcadmin, cli_command, rpc_command, info
 from ... import rpc, server
 
 @mymcadmin.command()
+@cli_command
 @rpc_command
 def list_servers(rpc_conn):
     """
@@ -40,6 +41,7 @@ def list_servers(rpc_conn):
     '--alphas/--no-alphas',
     default = True,
     help    = 'Include alphas')
+@cli_command
 def list_versions(snapshots, releases, betas, alphas):
     """
     List possible server download versions

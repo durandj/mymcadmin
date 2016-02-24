@@ -4,7 +4,7 @@ Commands for creating a server
 
 import click
 
-from ..base import mymcadmin, rpc_command, success, error, warn
+from ..base import mymcadmin, cli_command, rpc_command, success, warn
 from ... import rpc
 
 @mymcadmin.command()
@@ -20,6 +20,7 @@ from ... import rpc
     '--forge_version',
     default = None,
     help    = 'The specfic Forge version to get')
+@cli_command
 @rpc_command
 def create(rpc_conn, server_id, version, forge, forge_version):
     """
@@ -32,16 +33,12 @@ def create(rpc_conn, server_id, version, forge, forge_version):
 
     click.echo('Attempting to create server {}'.format(server_id))
 
-    try:
-        with rpc.RpcClient(*rpc_conn) as rpc_client:
-            rpc_kwargs = {}
-            if forge:
-                rpc_kwargs['forge'] = forge_version or forge
+    with rpc.RpcClient(*rpc_conn) as rpc_client:
+        rpc_kwargs = {}
+        if forge:
+            rpc_kwargs['forge'] = forge_version or forge
 
-            rpc_client.server_create(server_id, version, **rpc_kwargs)
-    except Exception as ex:
-        error('Failed')
-        raise click.ClickException(ex)
-    else:
-        success('Server {} successfully created'.format(server_id))
+        rpc_client.server_create(server_id, version, **rpc_kwargs)
+
+    success('Server {} successfully created'.format(server_id))
 
