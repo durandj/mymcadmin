@@ -5,6 +5,7 @@ import 'angular-material/angular-material.css';
 import 'angular-animate';
 import 'angular-aria';
 import 'angular-material';
+import 'mymcadmin/less/app.less';
 
 angular
 	.module('MyMCAdminApp', ['ngMaterial'])

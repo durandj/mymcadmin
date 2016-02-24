@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 
 import os
 
+from django.core import urlresolvers
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(
     os.path.dirname(
@@ -130,6 +132,13 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'assets'),
 ]
+
+# Authentication
+# https://docs.djangoproject.com/en/1.9/ref/settings/#auth
+
+LOGIN_REDIRECT_URL = urlresolvers.reverse_lazy('root')
+LOGIN_URL          = urlresolvers.reverse_lazy('login')
+LOGOUT_URL         = urlresolvers.reverse_lazy('logout')
 
 # Django Webpack Loader
 # https://github.com/owais/django-webpack-loader/

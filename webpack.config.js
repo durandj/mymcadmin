@@ -2,7 +2,6 @@
 
 var autoprefixer  = require('autoprefixer');
 var BundleTracker = require('webpack-bundle-tracker');
-var ExtractText   = require('extract-text-webpack-plugin');
 var LessCleanCSS  = require('less-plugin-clean-css');
 var path          = require('path');
 var webpack       = require('webpack');
@@ -39,7 +38,6 @@ module.exports = (function () {
 	 */
 	config.entry = [
 		'./assets/mymcadmin/js/app.js',
-		'./assets/mymcadmin/css/app.css'
 	];
 
 	/**
@@ -99,10 +97,11 @@ module.exports = (function () {
 			 */
 			{
 				test: /\.less$/,
-				loader: ExtractText.extract(
+				loaders: [
+					'style',
 					'css?sourceMap!postcss',
 					'less?sourceMap'
-				)
+				]
 			},
 
 			/**
@@ -114,10 +113,10 @@ module.exports = (function () {
 			 */
 			{
 				test: /\.css$/,
-				loader: ExtractText.extract(
+				loaders: [
 					'style',
-					'css?sourceMap'
-				)
+					'css?sourceMap!postcss'
+				]
 			},
 
 			/**
@@ -130,6 +129,20 @@ module.exports = (function () {
 				loader: 'file'
 			}
 		]
+	};
+
+	/**
+	 * Resolve
+	 * Reference: http://webpack.github.io/docs/configuration.html#resolve
+	 * Configration for how modules are resolved
+	 */
+	config.resolve = {
+		/**
+		 * modulesDirectories
+		 * Reference: http://webpack.github.io/docs/configuration.html#resolve-modulesdirectories
+		 * Directories to search for modules
+		 */
+		modulesDirectories: ['node_modules', './assets/']
 	};
 
 	/**
@@ -166,16 +179,6 @@ module.exports = (function () {
 		 */
 		new BundleTracker({filename: './runtime/webpack-stats.json'})
 	];
-
-	if (ENV !== 'test') {
-		config.plugins.push(
-			/**
-			 * Reference: https://github.com/webpack/extract-text-webpack-plugin
-			 * Extract CSS files into their own bundle to speed up loading
-			 */
-			new ExtractText('[name].[hash].css', {disable: ENV !== 'build'})
-		);
-	}
 
 	if (ENV === 'build') {
 		config.plugins.push(
