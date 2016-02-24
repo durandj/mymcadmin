@@ -22,6 +22,21 @@ def mymcadmin(ctx, conf):
 
     ctx.obj = {'config': config.Config(config_file = conf)}
 
+def cli_command(command):
+    """
+    Adds common error handling to CLI commands
+    """
+
+    @click.pass_context
+    def _wrapper(ctx, *args, **kwargs):
+        try:
+            return ctx.invoke(command, *args, **kwargs)
+        except Exception as ex:
+            error('Failed')
+            raise click.ClickException(ex)
+
+    return functools.update_wrapper(_wrapper, command)
+
 def rpc_command(command):
     """
     Sets up a command to connect to the server via RPC

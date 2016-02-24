@@ -13,7 +13,7 @@ import daemon
 import daemon.pidfile
 
 from .. import params
-from ..base import mymcadmin, rpc_command, error, success
+from ..base import mymcadmin, cli_command, rpc_command, error, success
 from ... import (
     errors,
     manager,
@@ -23,6 +23,7 @@ from ... import (
 
 @mymcadmin.command()
 @click.argument('server_id')
+@cli_command
 @rpc_command
 def start(rpc_conn, server_id):
     """
@@ -31,16 +32,13 @@ def start(rpc_conn, server_id):
 
     click.echo('Starting {}...'.format(server_id), nl = False)
 
-    try:
-        with rpc.RpcClient(*rpc_conn) as rpc_client:
-            rpc_client.server_start(server_id)
-    except Exception as ex:
-        error('Failure')
-        raise click.ClickException(ex)
-    else:
-        success('Success')
+    with rpc.RpcClient(*rpc_conn) as rpc_client:
+        rpc_client.server_start(server_id)
+
+    success('Success')
 
 @mymcadmin.command()
+@cli_command
 @rpc_command
 def start_all(rpc_conn):
     """
@@ -49,21 +47,17 @@ def start_all(rpc_conn):
 
     click.echo('Attempting to start all servers...')
 
-    try:
-        with rpc.RpcClient(*rpc_conn) as rpc_client:
-            result = rpc_client.server_start_all()
+    with rpc.RpcClient(*rpc_conn) as rpc_client:
+        result = rpc_client.server_start_all()
 
-            successful = result['success']
-            failure    = result['failure']
-    except Exception as ex:
-        error('Failure')
-        raise click.ClickException(ex)
-    else:
-        for server_id in successful:
-            success('{} successfully started'.format(server_id))
+        successful = result['success']
+        failure    = result['failure']
 
-        for server_id in failure:
-            error('{} did not start properly'.format(server_id))
+    for server_id in successful:
+        success('{} successfully started'.format(server_id))
+
+    for server_id in failure:
+        error('{} did not start properly'.format(server_id))
 
 @mymcadmin.command()
 @click.option('--host', default = None, help = 'The host to listen on')
@@ -97,6 +91,7 @@ def start_all(rpc_conn):
     type    = click.Path(dir_okay = False),
     default = None,
     help    = 'The log file to write to')
+@cli_command
 @click.pass_context
 def start_daemon(ctx, **kwargs):
     """
@@ -159,30 +154,26 @@ def start_daemon(ctx, **kwargs):
         nl = False,
     )
 
-    try:
-        if os.path.exists(pid):
-            raise errors.ManagerError('Management daemon is already started')
+    if os.path.exists(pid):
+        raise errors.ManagerError('Management daemon is already started')
 
-        proc = multiprocessing.Process(
-            target = start_management_daemon,
-            kwargs = {
-                'host':  host,
-                'port':  port,
-                'user':  user,
-                'group': group,
-                'root':  root,
-                'pid':   pid,
-                'log':   log,
-            },
-        )
+    proc = multiprocessing.Process(
+        target = start_management_daemon,
+        kwargs = {
+            'host':  host,
+            'port':  port,
+            'user':  user,
+            'group': group,
+            'root':  root,
+            'pid':   pid,
+            'log':   log,
+        },
+    )
 
-        proc.start()
-        proc.join()
-    except Exception as ex:
-        error('Failure')
-        raise click.ClickException(str(ex))
-    else:
-        success('Success')
+    proc.start()
+    proc.join()
+
+    success('Success')
 
 def start_management_daemon(**kwargs):
     """
