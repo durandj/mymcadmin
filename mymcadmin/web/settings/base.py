@@ -146,6 +146,7 @@ LOGOUT_URL         = urlresolvers.reverse_lazy('logout')
 WEBPACK_LOADER = {
     'DEFAULT': {
         'BUNDLE_DIR_NAME': 'bundles/',
+        'CACHE':           not DEBUG,
         'STATS_FILE':      os.path.join(BASE_DIR, 'webpack-stats.json'),
     },
 }

@@ -1,14 +1,11 @@
 'use strict';
 
-var autoprefixer  = require('autoprefixer');
-var BundleTracker = require('webpack-bundle-tracker');
-var LessCleanCSS  = require('less-plugin-clean-css');
-var NgAnnotate    = require('ng-annotate-webpack-plugin');
-var path          = require('path');
-var webpack       = require('webpack');
-
-// Identify the NPM lifecycle event to figure out our environment
-var ENV = process.env.npm_lifecycle_event;
+import autoprefixer from 'autoprefixer';
+import BundleTracker from 'webpack-bundle-tracker';
+import LessCleanCSS from 'less-plugin-clean-css';
+import NgAnnotate from 'ng-annotate-webpack-plugin';
+import path from 'path';
+import webpack from 'webpack';
 
 /*
  * The ideas behind this config were brought together from:
@@ -17,13 +14,24 @@ var ENV = process.env.npm_lifecycle_event;
  * http://angular-tips.com/blog/2015/06/using-angular-1-dot-x-with-es6-and-webpack/
  */
 
-module.exports = (function () {
-	/**
-	 * Config
-	 * Reference: http://webpack.github.io/docs/configuration.html
-	 * This is the object where all configurations go
+/**
+ * Get the build environment. Expected values are "prod", "test", and "dev".
+ * The default is "prod".
+ */
+const ENV = process.env.BUILD_TYPE || 'prod';
+if (ENV !== 'prod' && ENV !== 'test' && ENV !== 'dev') {
+	console.error(ENV + ' is not a valid build type');
+	process.exit(1);
+}
+
+export default (() => {
+	/*
+	 * The ideas behind this config were brought together from:
+	 * http://owaislone.org/blog/modern-frontends-with-django/
+	 * http://owaislone.org/blog/webpack-plus-reactjs-and-django/
+	 * http://angular-tips.com/blog/2015/06/using-angular-1-dot-x-with-es6-and-webpack/
 	 */
-	var config = {};
+	let config = {};
 
 	/**
 	 * Context
@@ -37,9 +45,9 @@ module.exports = (function () {
 	 * Reference: http://webpack.github.io/docs/configuration.html#entry
 	 * This is where all the entry points live
 	 */
-	config.entry = [
-		'./assets/mymcadmin/js/app.js',
-	];
+	config.entry = {
+		mymcadmin: path.resolve('./web/mymcadmin/js/app.js')
+	};
 
 	/**
 	 * Output
@@ -47,8 +55,9 @@ module.exports = (function () {
 	 * This is how we configure the output for webpack
 	 */
 	config.output = {
-		path:     path.resolve('./assets/bundles'),
-		filename: '[name]-[hash].js'
+		path:     path.resolve('./web/bundles'),
+		filename: ENV === 'prod' ? '[name].[chunkhash].js' : '[name].js',
+		pathinfo: ENV !== 'prod'
 	};
 
 	/**
@@ -59,7 +68,7 @@ module.exports = (function () {
 	if (ENV === 'test') {
 		config.devtool = 'inline-source-map';
 	}
-	else if (ENV === 'build') {
+	else if (ENV === 'prod') {
 		config.devtool = 'source-map';
 	}
 	else {
@@ -158,6 +167,20 @@ module.exports = (function () {
 		]
 	};
 
+	if (ENV === 'dev') {
+		/**
+		 * No Parse
+		 * Reference: http://webpack.github.io/docs/configuration.html#module-noparse
+		 * Exclude modules from being parsed
+		 */
+		config.module.noParse = [
+			'angular',
+			'angular-aria',
+			'angular-animate',
+			'angular-material'
+		];
+	}
+
 	/**
 	 * Resolve
 	 * Reference: http://webpack.github.io/docs/configuration.html#resolve
@@ -179,6 +202,10 @@ module.exports = (function () {
 	 */
 	config.lessLoader = {
 		lessPlugins: [
+			/**
+			 * Reference: https://github.com/less/less-plugin-clean-css
+			 * Applies some simple optimizations to Less files
+			 */
 			new LessCleanCSS({advanced: true})
 		]
 	};
@@ -224,6 +251,15 @@ module.exports = (function () {
 	 */
 	config.plugins = [
 		/**
+		 * Reference: http://webpack.github.io/docs/list-of-plugins.html#prefetchplugin
+		 * Prefetches modules to give small improvements in load time
+		 */
+		new webpack.PrefetchPlugin('angular'),
+		new webpack.PrefetchPlugin('angular-animate'),
+		new webpack.PrefetchPlugin('angular-aria'),
+		new webpack.PrefetchPlugin('angular-material'),
+
+		/**
 		 * Reference: https://github.com/owais/webpack-bundle-tracker
 		 * Generates outputs stats about webpack builds for tracking purposes
 		 */
@@ -236,7 +272,7 @@ module.exports = (function () {
 		new NgAnnotate({add: true})
 	];
 
-	if (ENV === 'build') {
+	if (ENV === 'prod') {
 		config.plugins.push(
 			/**
 			 * Reference: http://webpack.github.io/docs/list-of-plugins.html#noerrorsplugin
@@ -249,6 +285,21 @@ module.exports = (function () {
 			 * Dedupe modules in the output
 			 */
 			new webpack.optimize.DedupePlugin(),
+
+			/**
+			 * Reference: http://webpack.github.io/docs/list-of-plugins.html#occurrenceorderplugin
+			 * Orders chunk by how often they are requested in modules
+			 */
+			new webpack.optimize.OccurrenceOrderPlugin(true),
+
+			/**
+			 * Reference: http://webpack.github.io/docs/list-of-plugins.html#commonschunkplugin
+			 * Pulls common chunks into a seperate file
+			 */
+			new webpack.optimize.CommonsChunkPlugin({
+				async:    true,
+				children: true
+			}),
 
 			/**
 			 * Reference: http://webpack.github.io/docs/list-of-plugins.html#uglifyjsplugin
