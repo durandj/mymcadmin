@@ -21,9 +21,7 @@ from mymcadmin.web import views
 
 # pylint: disable=invalid-name
 urlpatterns = [
-    url(r'^$',       views.RootView.as_view(),   name = 'root'),
-    url(r'^login$',  views.LoginView.as_view(),  name = 'login'),
-    url(r'^logout$', views.LogoutView.as_view(), name = 'logout'),
+    url(r'^$', views.UIView.as_view(), name = 'ui'),
     url(r'^admin/', admin.site.urls),
 ]
 # pylint: enable=invalid-name
