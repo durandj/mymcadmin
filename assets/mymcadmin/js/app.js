@@ -10,8 +10,6 @@ import 'mymcadmin/less/app.less';
 
 import rootTemplateUrl from 'mymcadmin/partials/root.html';
 
-console.log(rootTemplateUrl.path);
-
 angular
 	.module('MyMCAdminApp', ['ngMaterial', 'ngRoute'])
 	.config(($mdThemingProvider, $mdIconProvider) => {
