@@ -46,7 +46,7 @@ export default (() => {
 	 * This is where all the entry points live
 	 */
 	config.entry = {
-		mymcadmin: path.resolve('./web/mymcadmin/js/app.js')
+		mymcadmin: './assets/mymcadmin/js/app.js'
 	};
 
 	/**
@@ -55,7 +55,7 @@ export default (() => {
 	 * This is how we configure the output for webpack
 	 */
 	config.output = {
-		path:     path.resolve('./web/bundles'),
+		path:     path.resolve('./runtime/bundles'),
 		filename: ENV === 'prod' ? '[name].[chunkhash].js' : '[name].js',
 		pathinfo: ENV !== 'prod'
 	};
@@ -163,6 +163,20 @@ export default (() => {
 			{
 				test: /\.(png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)$/,
 				loader: 'file'
+			},
+
+			/**
+			 * HTML Loader
+			 * Reference: https://github.com/WearyMonkey/ngtemplate-loader
+			 * Reference: https://github.com/webpack/html-loader
+			 * Inlines HTML partials and adds them to the template cache
+			 */
+			{
+				test: /.html$/,
+				loaders: [
+					'ngtemplate?relativeTo=assets',
+					'html'
+				]
 			}
 		]
 	};
@@ -258,6 +272,7 @@ export default (() => {
 		new webpack.PrefetchPlugin('angular-animate'),
 		new webpack.PrefetchPlugin('angular-aria'),
 		new webpack.PrefetchPlugin('angular-material'),
+		new webpack.PrefetchPlugin('angular-route'),
 
 		/**
 		 * Reference: https://github.com/owais/webpack-bundle-tracker

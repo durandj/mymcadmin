@@ -1,2 +1,37 @@
-{% extends 'mymcadmin/layout.html' %}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>{% block title %}MyMCAdmin{% endblock %}</title>
+
+		{% load render_bundle from webpack_loader %}
+
+		<meta charset="utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="description" content="MyMCAdmin - Minecraft Administration" />
+		<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+
+		<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:400,500,700,400italic" />
+		<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+	</head>
+	<body data-ng-app="MyMCAdminApp" data-layout="row" data-flex data-ng-cloak>
+		<header>
+			<md-sidenav class="md-hue-1" data-md-is-locked-open="true" data-md-whiteframe="6">
+				<md-button class="md-icon-button" aria-label="Home" href="{% url 'root' %}">
+					<md-icon md-font-set="material-icons">home</md-icon>
+				</md-button>
+				<md-divider class="bottom"></md-divider>
+				<md-button class="md-icon-button" aria-label="Settings">
+					<md-icon md-font-set="material-icons">settings</md-icon>
+				</md-button>
+			</md-sidenav>
+		</header>
+		<main>
+			<md-content>
+				<div data-ng-view></div>
+			</md-content>
+		</main>
+
+		{% render_bundle 'mymcadmin' %}
+	</body>
+</html>
 
