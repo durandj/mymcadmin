@@ -46,7 +46,10 @@ export default (() => {
 	 * This is where all the entry points live
 	 */
 	config.entry = {
-		mymcadmin: './assets/mymcadmin/js/app.js'
+		mymcadmin: [
+			'./assets/mymcadmin/js/app.js',
+			'./assets/mymcadmin/js/controllers.js'
+		]
 	};
 
 	/**

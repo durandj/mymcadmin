@@ -6,12 +6,17 @@ import 'angular-animate';
 import 'angular-aria';
 import 'angular-material';
 import 'angular-route';
+
 import 'mymcadmin/less/app.less';
 
 import rootTemplateUrl from 'mymcadmin/partials/root.html';
 
 angular
-	.module('MyMCAdminApp', ['ngMaterial', 'ngRoute'])
+	.module('myMCAdmin.app', [
+		'ngMaterial',
+		'ngRoute',
+		'myMCAdmin.controllers'
+	])
 	.config(($mdThemingProvider, $mdIconProvider) => {
 		$mdThemingProvider.theme('default')
 			.primaryPalette('deep-purple')
@@ -28,6 +33,7 @@ angular
 	.config(($routeProvider) => {
 		$routeProvider
 			.when('/', {
+				controller:  'RootController',
 				templateUrl: rootTemplateUrl
 			})
 			.otherwise({
