@@ -53,6 +53,7 @@
     "style-loader": "^0.13.0",
     "webpack": "^1.12.14",
     "webpack-bundle-tracker": "0.0.93",
+    "webpack-dev-server": "^1.14.1",
     "yuglify": "^0.1.4"
   }
 }
