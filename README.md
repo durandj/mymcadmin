@@ -9,3 +9,7 @@
 An administration tool for Minecraft server admins. It's the tool you need
 but not the one you deserve.
 
+## TODOs
+
+Add note about production building to use BABEL_ENV=production
+
