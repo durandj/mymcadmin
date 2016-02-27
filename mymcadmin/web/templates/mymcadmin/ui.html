@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>{% block title %}MyMCAdmin{% endblock %}</title>
+		<title>MyMCAdmin</title>
 
 		{% load render_bundle from webpack_loader %}
 
@@ -9,28 +9,24 @@
 		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 		<meta name="description" content="MyMCAdmin - Minecraft Administration" />
 		<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
-
-		<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:400,500,700,400italic" />
-		<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
 	</head>
-	<body data-ng-app="myMCAdmin.app" data-layout="row" data-flex data-ng-cloak>
-		<header>
-			<md-sidenav class="md-hue-1" data-md-is-locked-open="true" data-md-whiteframe="6">
-				<md-button class="md-icon-button" aria-label="Home" href="{% url 'ui' %}">
-					<md-icon md-font-set="material-icons">home</md-icon>
-				</md-button>
-				<md-divider class="bottom"></md-divider>
-				<md-button class="md-icon-button" aria-label="Settings">
-					<md-icon md-font-set="material-icons">settings</md-icon>
-				</md-button>
-			</md-sidenav>
-		</header>
-		<main>
-			<md-content>
-				<div data-ng-view></div>
-			</md-content>
-		</main>
+	<body>
+		<div id="app"></div>
 
+		<script>
+			var WebFontConfig = {
+				google: { families: [ 'Roboto:400,300,500:latin' ] }
+			};
+			(function() {
+				var wf = document.createElement('script');
+				wf.src = ('https:' == document.location.protocol ? 'https' : 'http') +
+				'://ajax.googleapis.com/ajax/libs/webfont/1/webfont.js';
+				wf.type = 'text/javascript';
+				wf.async = 'true';
+				var s = document.getElementsByTagName('script')[0];
+				s.parentNode.insertBefore(wf, s);
+			})();
+		</script>
 		{% render_bundle 'mymcadmin' %}
 	</body>
 </html>

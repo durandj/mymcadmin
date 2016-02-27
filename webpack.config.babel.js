@@ -3,7 +3,6 @@
 import autoprefixer from 'autoprefixer';
 import BundleTracker from 'webpack-bundle-tracker';
 import LessCleanCSS from 'less-plugin-clean-css';
-import NgAnnotate from 'ng-annotate-webpack-plugin';
 import path from 'path';
 import webpack from 'webpack';
 
@@ -26,10 +25,9 @@ if (ENV !== 'prod' && ENV !== 'test' && ENV !== 'dev') {
 
 export default (() => {
 	/*
-	 * The ideas behind this config were brought together from:
-	 * http://owaislone.org/blog/modern-frontends-with-django/
-	 * http://owaislone.org/blog/webpack-plus-reactjs-and-django/
-	 * http://angular-tips.com/blog/2015/06/using-angular-1-dot-x-with-es6-and-webpack/
+	 * Config
+	 * Reference: http://webpack.github.io/docs/configuration.html
+	 * This is the object where all configurations go
 	 */
 	let config = {};
 
@@ -46,10 +44,7 @@ export default (() => {
 	 * This is where all the entry points live
 	 */
 	config.entry = {
-		mymcadmin: [
-			'./assets/mymcadmin/js/app.js',
-			'./assets/mymcadmin/js/controllers.js'
-		]
+		mymcadmin: './assets/mymcadmin/app.jsx'
 	};
 
 	/**
@@ -122,7 +117,7 @@ export default (() => {
 			 * Transpiles .js files for ES6/ES7 to ES5
 			 */
 			{
-				test: /\.js$/,
+				test: /\.jsx?$/,
 				loader: 'babel',
 				exclude: /node_modules/
 			},
@@ -175,7 +170,7 @@ export default (() => {
 			 * Inlines HTML partials and adds them to the template cache
 			 */
 			{
-				test: /.html$/,
+				test: /\.html$/,
 				loaders: [
 					'ngtemplate?relativeTo=assets',
 					'html'
@@ -191,10 +186,8 @@ export default (() => {
 		 * Exclude modules from being parsed
 		 */
 		config.module.noParse = [
-			'angular',
-			'angular-aria',
-			'angular-animate',
-			'angular-material'
+			'material-ui',
+			'react'
 		];
 	}
 
@@ -205,11 +198,18 @@ export default (() => {
 	 */
 	config.resolve = {
 		/**
-		 * root
+		 * Root
 		 * Reference: http://webpack.github.io/docs/configuration.html#resolve-root
 		 * Root absolute directory of project modules
 		 */
-		root: path.resolve('./assets/')
+		root: path.resolve('./assets/'),
+
+		/**
+		 * Extensions
+		 * Reference: http://webpack.github.io/docs/configuration.html#resolve-extensions
+		 * The extensions for javascript modules to load
+		 */
+		extensions: ['', '.js', '.jsx']
 	};
 
 	/**
@@ -244,6 +244,7 @@ export default (() => {
 	 * Configures how JSHint checks the JS code
 	 */
 	config.jshint = {
+		curly:      true,
 		esversion:  6,
 		emitErrors: true,
 		failOnHint: true
@@ -271,23 +272,14 @@ export default (() => {
 		 * Reference: http://webpack.github.io/docs/list-of-plugins.html#prefetchplugin
 		 * Prefetches modules to give small improvements in load time
 		 */
-		new webpack.PrefetchPlugin('angular'),
-		new webpack.PrefetchPlugin('angular-animate'),
-		new webpack.PrefetchPlugin('angular-aria'),
-		new webpack.PrefetchPlugin('angular-material'),
-		new webpack.PrefetchPlugin('angular-route'),
+		new webpack.PrefetchPlugin('react'),
+		new webpack.PrefetchPlugin('material-ui'),
 
 		/**
 		 * Reference: https://github.com/owais/webpack-bundle-tracker
 		 * Generates outputs stats about webpack builds for tracking purposes
 		 */
 		new BundleTracker({filename: './runtime/webpack-stats.json'}),
-
-		/**
-		 * Reference: https://github.com/olov/ng-annotate
-		 * Manages Angular dependency injection for minification
-		 */
-		new NgAnnotate({add: true})
 	];
 
 	if (ENV === 'prod') {
