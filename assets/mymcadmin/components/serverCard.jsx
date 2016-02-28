@@ -49,9 +49,7 @@ class ServerCard extends React.Component {
 							Players:
 						</label>
 						<span>
-							<span>{server.players.online}</span>
-							/
-							<span>{server.players.max}</span>
+							{server.players.online}/{server.players.max}
 						</span>
 					</div>
 				</CardText>
