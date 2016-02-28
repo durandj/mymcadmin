@@ -20,8 +20,6 @@ import AppBar from 'material-ui/lib/app-bar';
 import LeftNav from 'material-ui/lib/left-nav';
 import MenuItem from 'material-ui/lib/menus/menu-item';
 
-import './app.less';
-
 import Dashboard from './components/pages/dashboard';
 
 class MyMCAdminApp extends React.Component {
