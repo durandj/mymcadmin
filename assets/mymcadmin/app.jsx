@@ -8,11 +8,21 @@ import injectTapEventPlugin from 'react-tap-event-plugin';
 // https://github.com/zilverline/react-tap-event-plugin
 injectTapEventPlugin(); // Needed for onTouchTap
 
+import {createHashHistory} from 'history';
+import {
+	Router,
+	Route,
+	IndexRoute,
+	useRouterHistory
+} from 'react-router';
+
 import AppBar from 'material-ui/lib/app-bar';
 import LeftNav from 'material-ui/lib/left-nav';
 import MenuItem from 'material-ui/lib/menus/menu-item';
 
 import './app.less';
+
+import Dashboard from './components/pages/dashboard';
 
 class MyMCAdminApp extends React.Component {
 	constructor(props) {
@@ -43,7 +53,7 @@ class MyMCAdminApp extends React.Component {
 					</LeftNav>
 				</aside>
 				<main>
-					TODO(durandj): do the body
+					{ this.props.children }
 				</main>
 			</div>
 		);
@@ -51,7 +61,13 @@ class MyMCAdminApp extends React.Component {
 }
 
 ReactDOM.render(
-	<MyMCAdminApp />,
+	<Router
+			history={useRouterHistory(createHashHistory)({queryKey: false})}
+			onUpdate={() => window.scrollTo(0, 0)}>
+		<Route path="/" component={MyMCAdminApp}>
+			<IndexRoute component={Dashboard} />
+		</Route>
+	</Router>,
 	document.getElementById('app')
 );
 
