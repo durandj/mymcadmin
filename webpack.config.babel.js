@@ -244,8 +244,6 @@ export default (() => {
 	 * Configures how JSHint checks the JS code
 	 */
 	config.jshint = {
-		curly:      true,
-		esversion:  6,
 		emitErrors: true,
 		failOnHint: true
 	};
@@ -256,11 +254,8 @@ export default (() => {
 	 * Configures how JSCS checks the JS code
 	 */
 	config.jscs = {
-		emitErrors:                true,
-		disallowKeywordsOnNewLine: [],
-		failOnHint:                true,
-		preset:                    'google',
-		validateIndentation:       '\t'
+		emitErrors: true,
+		failOnHint: true,
 	};
 
 	/**

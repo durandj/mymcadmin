@@ -1,0 +1,6 @@
+{
+	"disallowKeywordsOnNewLine": [],
+	"preset":                    "google",
+	"validateIndentation":       "\t"
+}
+
