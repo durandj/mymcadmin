@@ -12,7 +12,7 @@ class Login extends React.Component {
 			wrapper: {
 				alignItems:     'center',
 				display:        'flex',
-				flex:           1,
+				height:         '100vh',
 				justifyContent: 'center',
 			},
 			paper: {
