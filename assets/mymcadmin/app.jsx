@@ -26,6 +26,7 @@ import MenuItem from 'material-ui/lib/menus/menu-item';
 import { Spacing, Typography } from 'material-ui/lib/styles';
 
 import Dashboard from './components/pages/dashboard';
+import Login from './components/pages/login';
 import Resizable from './mixins/resizable';
 
 class MyMCAdminApp extends React.Component {
@@ -58,6 +59,9 @@ class MyMCAdminApp extends React.Component {
 
 	getStyles() {
 		return {
+			layout: {
+				height: '100%'
+			},
 			appBar: {
 				position: 'fixed',
 				top:      0,
@@ -74,11 +78,15 @@ class MyMCAdminApp extends React.Component {
 				marginBottom: 8
 			},
 			main: {
-				paddingTop: Spacing.desktopKeylineIncrement,
-				minHeight:  400
+				display:       'flex',
+				flexDirection: 'row',
+				height:        '100%',
+				paddingTop:    Spacing.desktopKeylineIncrement,
 			},
 			mainContent: {
-				margin: Spacing.desktopGutter
+				display: 'flex',
+				flex:    1,
+				margin:  Spacing.desktopGutter
 			}
 		};
 	}
@@ -106,7 +114,7 @@ class MyMCAdminApp extends React.Component {
 
 		return (
 			<DocumentTitle title="MyMCAdmin">
-				<div>
+				<div style={styles.layout}>
 					<header>
 						<AppBar
 								title="MyMCAdmin"
@@ -154,6 +162,7 @@ ReactDOM.render(
 			onUpdate={() => window.scrollTo(0, 0)}>
 		<Route path="/" component={MyMCAdminApp}>
 			<IndexRoute component={Dashboard} />
+			<Route path="login" component={Login} />
 		</Route>
 	</Router>,
 	document.getElementById('app')
