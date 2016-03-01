@@ -256,10 +256,11 @@ export default (() => {
 	 * Configures how JSCS checks the JS code
 	 */
 	config.jscs = {
-		emitErrors:          true,
-		failOnHint:          true,
-		preset:              'google',
-		validateIndentation: '\t'
+		emitErrors:                true,
+		disallowKeywordsOnNewLine: [],
+		failOnHint:                true,
+		preset:                    'google',
+		validateIndentation:       '\t'
 	};
 
 	/**

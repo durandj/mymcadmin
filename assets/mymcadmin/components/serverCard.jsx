@@ -18,6 +18,7 @@ const cardLabelStyles = {
 	width:        '48px'
 };
 
+// TODO(durandj): convert to stateless function
 class ServerCard extends React.Component {
 	onClickStart() {
 		alert('TODO(durandj): start ' + this.props.server.server_id);

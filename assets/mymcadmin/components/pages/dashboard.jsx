@@ -1,5 +1,7 @@
 import React from 'react';
 
+import DocumentTitle from 'react-document-title';
+
 import ServerCard from '../serverCard';
 
 const dashboardGridStyles = {
@@ -43,9 +45,11 @@ class Dashboard extends React.Component {
 
 	render() {
 		return (
-			<div style={dashboardGridStyles}>
-				{this.renderServerCards()}
-			</div>
+			<DocumentTitle title="Dashboard">
+				<div style={dashboardGridStyles}>
+					{this.renderServerCards()}
+				</div>
+			</DocumentTitle>
 		);
 	}
 
