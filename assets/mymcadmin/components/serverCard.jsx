@@ -7,7 +7,7 @@ import CardTitle from 'material-ui/lib/card/card-title';
 import FlatButton from 'material-ui/lib/flat-button';
 
 const serverCardStyles = {
-	margin: '8px',
+	margin:   '8px',
 	minWidth: '225px'
 };
 
@@ -18,7 +18,6 @@ const cardLabelStyles = {
 	width:        '48px'
 };
 
-// TODO(durandj): convert to stateless function
 class ServerCard extends React.Component {
 	onClickStart() {
 		alert('TODO(durandj): start ' + this.props.server.server_id);
