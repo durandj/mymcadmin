@@ -3,7 +3,9 @@ beautifulsoup4
 click
 coverage
 django>=1.9
+django-rest-auth
 django-webpack-loader
+djangorestframework
 html5lib
 nose
 pylint

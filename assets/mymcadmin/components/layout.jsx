@@ -42,7 +42,7 @@ class Layout extends React.Component {
 	}
 
 	onClickNavLogo() {
-		this.context.route.push('/');
+		this.context.router.push('/');
 		this.onNavRequestChange(false);
 	}
 

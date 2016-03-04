@@ -47,6 +47,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework.authtoken',
+    'rest_auth',
     'webpack_loader',
 ]
 
@@ -139,6 +142,16 @@ STATICFILES_DIRS = [
 LOGIN_REDIRECT_URL = urlresolvers.reverse_lazy('root')
 LOGIN_URL          = urlresolvers.reverse_lazy('login')
 LOGOUT_URL         = urlresolvers.reverse_lazy('logout')
+
+# Django Rest Framework
+# http://www.django-rest-framework.org/api-guide/settings/
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAdminUser',
+    ),
+    'PAGE_SIZE': 10,
+}
 
 # Django Webpack Loader
 # https://github.com/owais/django-webpack-loader/

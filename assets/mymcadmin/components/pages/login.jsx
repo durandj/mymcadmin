@@ -6,7 +6,29 @@ import Paper from 'material-ui/lib/paper';
 import RaisedButton from 'material-ui/lib/raised-button';
 import TextField from 'material-ui/lib/text-field';
 
+import Form from '../form';
+import {sessionLogin} from '../../actions';
+
 class Login extends React.Component {
+	componentDidMount() {
+		this.unsubscribe = this.context.store.subscribe(this.onStoreUpdate.bind(this));
+	}
+
+	componentWillUnmount() {
+		this.unsubscribe();
+	}
+
+	onStoreUpdate() {
+		const sessionState = this.context.store.getState().session;
+		const meta         = sessionState.meta;
+
+		if (meta.dirty || meta.inProgress && !meta.lastUpdated) {
+			return;
+		}
+
+		this.context.router.push('/');
+	}
+
 	getStyles() {
 		return {
 			wrapper: {
@@ -34,27 +56,35 @@ class Login extends React.Component {
 		return (
 			<DocumentTitle title="Login">
 				<div style={styles.wrapper}>
-					<Paper zDepth={2} style={styles.paper}>
-						<h3>Login</h3>
-						<TextField
-							ref="username"
-							hintText="Username"
-							style={styles.textField} />
-						<TextField
-							ref="password"
-							type="password"
-							hintText="Password"
-							style={styles.textField} />
-						<RaisedButton
-							label="Login"
-							primary={true}
-							style={styles.raisedButton} />
-					</Paper>
+					<Form submitAction={sessionLogin} storeState="session">
+						<Paper zDepth={2} style={styles.paper}>
+							<h3>Login</h3>
+							<TextField
+								name="username"
+								hintText="Username"
+								style={styles.textField} />
+							<TextField
+								name="password"
+								type="password"
+								hintText="Password"
+								style={styles.textField} />
+							<RaisedButton
+								label="Login"
+								primary={true}
+								type="submit"
+								style={styles.raisedButton} />
+						</Paper>
+					</Form>
 				</div>
 			</DocumentTitle>
 		);
 	}
 }
+
+Login.contextTypes = {
+	router: React.PropTypes.object.isRequired,
+	store:  React.PropTypes.object.isRequired
+};
 
 export default Login;
 

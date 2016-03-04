@@ -14,15 +14,24 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
 
-from django.conf.urls import url
+from django.conf.urls import url, include
 from django.contrib import admin
 
+from rest_framework import routers
+
 from mymcadmin.web import views
+
+router = routers.DefaultRouter()
+router.register(r'users',  views.UserViewSet)
+router.register(r'groups', views.GroupViewSet)
 
 # pylint: disable=invalid-name
 urlpatterns = [
     url(r'^$', views.UIView.as_view(), name = 'ui'),
     url(r'^admin/', admin.site.urls),
+    url(r'^api/', include(router.urls)),
+    url(r'^api-auth/', include('rest_framework.urls', namespace = 'rest_framework')),
+    url(r'^rest-auth/', include('rest_auth.urls'))
 ]
 # pylint: enable=invalid-name
 
