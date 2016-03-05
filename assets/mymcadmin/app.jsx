@@ -27,6 +27,7 @@ import Dashboard from './components/pages/dashboard';
 import Layout from './components/layout';
 import Login from './components/pages/login';
 import reducers from './reducers';
+import {requireLogin} from './utils';
 
 // TODO(durandj): use build environment to set logger configuration
 const loggerMiddleware = createLogger(
@@ -56,7 +57,7 @@ ReactDOM.render(
 				onUpdate={() => window.scrollTo(0, 0)}>
 			<Route path="/login" component={Login} />
 			<Route path="/" component={Layout}>
-				<IndexRoute component={Dashboard} />
+				<IndexRoute component={Dashboard} onEnter={requireLogin(store)} />
 			</Route>
 		</Router>
 	</Provider>,
