@@ -19,8 +19,6 @@ const defaultSessionState = {
 // jshint -W138
 const session = (session = defaultSessionState, action) => {
 	switch (action.type) {
-		case SESSION_LOGIN:
-			throw new Error('Not implemented error');
 		case SESSION_LOGIN_PROGRESS:
 			return Object.assign({}, session, {
 				meta: {
@@ -36,7 +34,7 @@ const session = (session = defaultSessionState, action) => {
 					inProgress:  false,
 					lastUpdated: new Date(),
 				}
-			});
+			}, action.data);
 		case SESSION_LOGIN_FAILURE:
 		case SESSION_LOGOUT:
 		case SESSION_LOGOUT_SUCCESS:

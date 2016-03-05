@@ -8,23 +8,34 @@ export const SESSION_LOGOUT         = 'SESSION_LOGOUT';
 export const SESSION_LOGOUT_SUCCESS = 'SESSION_LOGOUT_SUCCESS';
 export const SESSION_LOGOUT_FAILURE = 'SESSION_LOGOUT_FAILURE';
 
+export const sessionLoginFailure = () => {
+	return {
+		type: SESSION_LOGIN_FAILURE
+	};
+};
+
 export const sessionLogin = (credentials) => {
 	return (dispatch) => {
 		dispatch(sessionLoginProgress());
 
-		return fetch('/rest-auth/login/', {
+		return fetch('/auth/login/', {
 			method: 'post',
 			headers: {
 				'Accept':       'application/json',
 				'Content-Type': 'application/json'
 			},
+			credentials: 'same-origin',
 			body: JSON.stringify(credentials)
 		}).then((response) => {
 			if (response.status >= 400) {
 				dispatch(sessionLoginFailure(response));
 			}
 			else {
-				dispatch(sessionLoginSuccess(response.json()));
+				response.json().then((jsonResp) => {
+					// jscs:disable requireCamelCaseOrUpperCaseIdentifiers
+					dispatch(sessionLoginUser(jsonResp.auth_token));
+					// jscs:enable requireCamelCaseOrUpperCaseIdentifiers
+				});
 			}
 		});
 	};
@@ -36,15 +47,35 @@ export const sessionLoginProgress = () => {
 	};
 };
 
-export const sessionLoginSuccess = () => {
-	return {
-		type: SESSION_LOGIN_SUCCESS
+export const sessionLoginUser = (authToken) => {
+	return (dispatch) => {
+		return fetch('/auth/me/', {
+			method: 'get',
+			headers: {
+				'Accept':        'application/json',
+				'Content-Type':  'application/json',
+				'Authorization': `Token ${authToken}`
+			},
+			credentials: 'same-origin'
+		}).then((response) => {
+			if (response.status >= 400) {
+				dispatch(sessionLoginFailure(response));
+			}
+			else {
+				response.json().then((jsonResp) => {
+					jsonResp.authToken = authToken;
+
+					dispatch(sessionLoginSuccess(jsonResp));
+				});
+			}
+		});
 	};
 };
 
-export const sessionLoginFailure = () => {
+export const sessionLoginSuccess = (user) => {
 	return {
-		type: SESSION_LOGIN_FAILURE
+		type: SESSION_LOGIN_SUCCESS,
+		data: user
 	};
 };
 

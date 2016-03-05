@@ -18,7 +18,7 @@ import {
 	useRouterHistory
 } from 'react-router';
 
-import { applyMiddleware, createStore } from 'redux';
+import { applyMiddleware, compose, createStore } from 'redux';
 import createLogger from 'redux-logger';
 import {Provider} from 'react-redux';
 import thunkMiddleware from 'redux-thunk';
@@ -37,11 +37,15 @@ const loggerMiddleware = createLogger(
 	}
 );
 
+// TODO(durandj): only add devtools in dev
 const store = createStore(
 	reducers,
-	applyMiddleware(
-		thunkMiddleware,
-		loggerMiddleware
+	compose(
+		applyMiddleware(
+			thunkMiddleware,
+			loggerMiddleware
+		),
+		typeof window === 'object' && typeof window.devToolsExtension !== 'undefined' ? window.devToolsExtension() : f => f
 	)
 );
 
