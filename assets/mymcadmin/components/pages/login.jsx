@@ -62,11 +62,13 @@ class Login extends React.Component {
 							<TextField
 								name="username"
 								hintText="Username"
+								required
 								style={styles.textField} />
 							<TextField
 								name="password"
 								type="password"
 								hintText="Password"
+								required
 								style={styles.textField} />
 							<RaisedButton
 								label="Login"
