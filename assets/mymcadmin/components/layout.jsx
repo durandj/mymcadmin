@@ -6,10 +6,14 @@ import reactMixin from 'react-mixin';
 import AppBar from 'material-ui/lib/app-bar';
 import {cyan500} from 'material-ui/lib/styles/colors';
 import getMuiTheme from 'material-ui/lib/styles/getMuiTheme';
+import IconButton from 'material-ui/lib/icon-button';
+import IconMenu from 'material-ui/lib/menus/icon-menu';
 import LeftNav from 'material-ui/lib/left-nav';
 import MenuItem from 'material-ui/lib/menus/menu-item';
+import MoreVertIcon from 'material-ui/lib/svg-icons/navigation/more-vert';
 import { Spacing, Typography } from 'material-ui/lib/styles';
 
+import {sessionLogout} from '../actions';
 import Resizable from '../mixins/resizable';
 
 class Layout extends React.Component {
@@ -44,6 +48,13 @@ class Layout extends React.Component {
 	onClickNavLogo() {
 		this.context.router.push('/');
 		this.onNavRequestChange(false);
+	}
+
+	onClickLogout() {
+		const store = this.context.store;
+
+		store.dispatch(sessionLogout(store.getState().session.authToken));
+		this.context.router.push('/login')
 	}
 
 	getStyles() {
@@ -108,6 +119,7 @@ class Layout extends React.Component {
 						<AppBar
 								title="MyMCAdmin"
 								showMenuIconButton={showMenuIcon}
+								iconElementRight={this.renderAppMenu()}
 								style={styles.appBar}
 								zDepth={0}
 								onLeftIconButtonTouchTap={this.onToggleNav.bind(this)} />
@@ -133,10 +145,24 @@ class Layout extends React.Component {
 			</DocumentTitle>
 		);
 	}
+
+	renderAppMenu() {
+		return (
+			<IconMenu
+				iconButtonElement={<IconButton><MoreVertIcon /></IconButton>}
+				targetOrigin={{horizontal: 'right', vertical: 'top'}}
+				anchorOrigin={{horizontal: 'right', vertical: 'top'}}>
+				<MenuItem
+						primaryText="Logout"
+						onTouchTap={this.onClickLogout.bind(this)} />
+			</IconMenu>
+		);
+	}
 }
 
 Layout.contextTypes = {
-	router: React.PropTypes.object.isRequired
+	router: React.PropTypes.object.isRequired,
+	store:  React.PropTypes.object.isRequired
 };
 
 Layout.childContextTypes = {

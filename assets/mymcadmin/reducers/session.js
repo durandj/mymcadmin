@@ -3,7 +3,6 @@ import {
 	SESSION_LOGIN_PROGRESS,
 	SESSION_LOGIN_SUCCESS,
 	SESSION_LOGIN_FAILURE,
-	SESSION_LOGOUT,
 	SESSION_LOGOUT_SUCCESS,
 	SESSION_LOGOUT_FAILURE
 } from '../actions';
@@ -36,10 +35,17 @@ const session = (session = defaultSessionState, action) => {
 				}
 			}, action.data);
 		case SESSION_LOGIN_FAILURE:
-		case SESSION_LOGOUT:
+			throw new Error('Not implemented error'); // TODO(durandj): implement
 		case SESSION_LOGOUT_SUCCESS:
+			return {
+				meta: {
+					dirty:       false,
+					inProgress:  false,
+					lastUpdated: new Date()
+				}
+			};
 		case SESSION_LOGOUT_FAILURE:
-			throw new Error('Not implemented error');
+			throw new Error('Not implemented error'); // TODO(durandj): implement
 		default:
 			return session;
 	}

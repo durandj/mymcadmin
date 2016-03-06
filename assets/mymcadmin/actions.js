@@ -79,9 +79,24 @@ export const sessionLoginSuccess = (user) => {
 	};
 };
 
-export const sessionLogout = () => {
-	return {
-		type: SESSION_LOGOUT
+export const sessionLogout = (authToken) => {
+	return (dispatch) => {
+		return fetch('/auth/logout/', {
+			method: 'post',
+			headers: {
+				'Accept':        'application/json',
+				'Content-Type':  'application/json',
+				'Authorization': `Token ${authToken}`
+			},
+			credentials: 'same-origin'
+		}).then((response) => {
+			if (response.status >= 400) {
+				dispatch(sessionLogoutFailure(response));
+			}
+			else {
+				dispatch(sessionLogoutSuccess());
+			}
+		});
 	};
 };
 
