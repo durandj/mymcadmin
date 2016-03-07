@@ -18,13 +18,16 @@ class Form extends React.Component {
 		const domNode = ReactDOM.findDOMNode(this);
 
 		let formChildren = Array.prototype.slice.call(domNode.querySelectorAll('[name]'));
-		let initialState = formChildren.reduce((state, child) => {
-			state[child.getAttribute('name')] = child.value;
+
+		let initialFormData = formChildren.reduce((state, child) => {
+			const name = child.getAttribute('name');
+
+			state[name] = child.value;
 
 			return state;
 		}, {});
 
-		this.setState({formData: initialState});
+		this.setState(initialFormData);
 	}
 
 	onChange(event) {

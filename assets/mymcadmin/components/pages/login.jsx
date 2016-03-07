@@ -4,10 +4,10 @@ import DocumentTitle from 'react-document-title';
 
 import Paper from 'material-ui/lib/paper';
 import RaisedButton from 'material-ui/lib/raised-button';
-import TextField from 'material-ui/lib/text-field';
 
 import Form from '../form';
 import {sessionLogin} from '../../actions';
+import TextField from '../textField';
 
 class Login extends React.Component {
 	componentDidMount() {
@@ -41,8 +41,12 @@ class Login extends React.Component {
 				display: 'inline-block',
 				padding: '24px'
 			},
-			textField: {
+			username: {
 				display: 'block'
+			},
+			password: {
+				display: 'block',
+				marginBottom: '14px'
 			},
 			raisedButton: {
 				display: 'block'
@@ -62,14 +66,16 @@ class Login extends React.Component {
 							<TextField
 								name="username"
 								hintText="Username"
+								floatingLabelText="Username"
 								required
-								style={styles.textField} />
+								style={styles.username} />
 							<TextField
 								name="password"
 								type="password"
 								hintText="Password"
+								floatingLabelText="Password"
 								required
-								style={styles.textField} />
+								style={styles.password} />
 							<RaisedButton
 								label="Login"
 								primary={true}
