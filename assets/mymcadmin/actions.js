@@ -8,9 +8,18 @@ export const SESSION_LOGOUT         = 'SESSION_LOGOUT';
 export const SESSION_LOGOUT_SUCCESS = 'SESSION_LOGOUT_SUCCESS';
 export const SESSION_LOGOUT_FAILURE = 'SESSION_LOGOUT_FAILURE';
 
-export const sessionLoginFailure = () => {
+export const sessionLoginFailure = (status) => {
+	let message = '';
+	if (status === 400) {
+		message = 'Invalid username or password';
+	}
+	else {
+		message = 'Unknown problem occurred. Try again in a few minutes.';
+	}
+
 	return {
-		type: SESSION_LOGIN_FAILURE
+		type: SESSION_LOGIN_FAILURE,
+		data: message
 	};
 };
 
@@ -28,7 +37,7 @@ export const sessionLogin = (credentials) => {
 			body: JSON.stringify(credentials)
 		}).then((response) => {
 			if (response.status >= 400) {
-				dispatch(sessionLoginFailure(response));
+				dispatch(sessionLoginFailure(response.status));
 			}
 			else {
 				response.json().then((jsonResp) => {
@@ -59,7 +68,7 @@ export const sessionLoginUser = (authToken) => {
 			credentials: 'same-origin'
 		}).then((response) => {
 			if (response.status >= 400) {
-				dispatch(sessionLoginFailure(response));
+				dispatch(sessionLoginFailure(response.status));
 			}
 			else {
 				response.json().then((jsonResp) => {

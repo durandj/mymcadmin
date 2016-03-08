@@ -4,6 +4,8 @@ import ReactDOM from 'react-dom';
 import cookie from 'react-cookie';
 import {connect} from 'react-redux';
 
+import Forms from 'formsy-react';
+
 import CircularProgress from 'material-ui/lib/circular-progress';
 import Overlay from 'material-ui/lib/overlay';
 
@@ -11,7 +13,9 @@ class Form extends React.Component {
 	constructor(props) {
 		super(props);
 
-		this.state = {};
+		this.state = {
+			formData: null,
+		};
 	}
 
 	componentDidMount() {
@@ -27,28 +31,27 @@ class Form extends React.Component {
 			return state;
 		}, {});
 
-		this.setState(initialFormData);
+		this.setState({formData: initialFormData});
 	}
 
-	onChange(event) {
-		const target = event.target;
-		const name   = target.getAttribute('name');
-
-		if (name === null) {
+	onChange(model) {
+		if (model.target) {
 			return;
 		}
 
 		this.setState({
-			[name]: target.value
+			formData: Object.assign(
+				{},
+				this.state.formData,
+				model
+			)
 		});
 	}
 
-	onSubmit(event) {
-		event.preventDefault();
-
+	onSubmit() {
 		let { dispatch, submitAction } = this.props;
 
-		dispatch(submitAction(this.state));
+		dispatch(submitAction(this.state.formData));
 	}
 
 	getStyles() {
@@ -94,17 +97,17 @@ class Form extends React.Component {
 		}
 
 		return (
-			<form
+			<Formsy.Form
 					action={action}
 					method={method}
 					style={styles.form}
 					onChange={this.onChange.bind(this)}
-					onSubmit={onSubmit}
+					onValidSubmit={onSubmit}
 					{...otherProps}>
 				{this.renderCSRFToken()}
 				{children}
 				{this.renderLoader(styles)}
-			</form>
+			</Formsy.Form>
 		);
 	}
 

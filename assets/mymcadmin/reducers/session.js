@@ -11,7 +11,8 @@ const defaultSessionState = {
 	meta: {
 		dirty:       true,
 		inProgress:  false,
-		lastUpdated: null
+		lastUpdated: null,
+		error:       null
 	}
 };
 
@@ -23,7 +24,8 @@ const session = (session = defaultSessionState, action) => {
 				meta: {
 					dirty:       true,
 					inProgress:  true,
-					lastUpdated: null
+					lastUpdated: null,
+					error:       null
 				}
 			});
 		case SESSION_LOGIN_SUCCESS:
@@ -32,16 +34,25 @@ const session = (session = defaultSessionState, action) => {
 					dirty:       false,
 					inProgress:  false,
 					lastUpdated: new Date(),
+					error:       null
 				}
 			}, action.data);
 		case SESSION_LOGIN_FAILURE:
-			throw new Error('Not implemented error'); // TODO(durandj): implement
+			return Object.assign({}, session, {
+				meta: {
+					dirty:       false,
+					inProgress:  false,
+					lastUpdated: new Date(),
+					error:       action.data
+				}
+			});
 		case SESSION_LOGOUT_SUCCESS:
 			return {
 				meta: {
 					dirty:       false,
 					inProgress:  false,
-					lastUpdated: new Date()
+					lastUpdated: new Date(),
+					error:       null
 				}
 			};
 		case SESSION_LOGOUT_FAILURE:

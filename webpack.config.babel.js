@@ -81,7 +81,7 @@ export default (() => {
 	config.module = {
 		/**
 		 * Preloaders
-		 * Reference: https://webpack.github.io/docs/configuration.html#module-preloaders-module-postloaders
+		 * Reference: http://webpack.github.io/docs/configuration.html#module-preloaders-module-postloaders
 		 * Configures how we pre-process modules
 		 */
 		preLoaders: [
@@ -255,7 +255,7 @@ export default (() => {
 	 */
 	config.jscs = {
 		emitErrors: true,
-		failOnHint: true,
+		failOnHint: true
 	};
 
 	/**

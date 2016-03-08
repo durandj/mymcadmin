@@ -1,5 +1,7 @@
 {
 	"disallowKeywordsOnNewLine": [],
+	"esnext":                    true,
+	"fileExtensions":            [".js", ".jsx"],
 	"preset":                    "google",
 	"validateIndentation":       "\t"
 }

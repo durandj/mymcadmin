@@ -5,11 +5,20 @@ import DocumentTitle from 'react-document-title';
 import Paper from 'material-ui/lib/paper';
 import RaisedButton from 'material-ui/lib/raised-button';
 
+import FormsyText from 'formsy-material-ui/lib/FormsyText';
+
 import Form from '../form';
 import {sessionLogin} from '../../actions';
-import TextField from '../textField';
 
 class Login extends React.Component {
+	constructor(props) {
+		super(props);
+
+		this.state = {
+			isValid: false
+		};
+	}
+
 	componentDidMount() {
 		this.unsubscribe = this.context.store.subscribe(this.onStoreUpdate.bind(this));
 	}
@@ -26,10 +35,23 @@ class Login extends React.Component {
 			return;
 		}
 
-		this.context.router.push('/');
+		this.setState({error: meta.error});
+		if (!meta.error) {
+			this.context.router.push('/');
+		}
+	}
+
+	onFormValid() {
+		this.setState({isValid: true});
+	}
+
+	onFormInvalid() {
+		this.setState({isValid: false});
 	}
 
 	getStyles() {
+		const muiTheme = this.context.muiTheme;
+
 		return {
 			wrapper: {
 				alignItems:     'center',
@@ -40,6 +62,9 @@ class Login extends React.Component {
 			paper: {
 				display: 'inline-block',
 				padding: '24px'
+			},
+			formErrors: {
+				color: muiTheme.textField.errorColor
 			},
 			username: {
 				display: 'block'
@@ -60,26 +85,36 @@ class Login extends React.Component {
 		return (
 			<DocumentTitle title="Login">
 				<div style={styles.wrapper}>
-					<Form submitAction={sessionLogin} storeState="session">
+					<Form
+							submitAction={sessionLogin}
+							storeState="session"
+							onValid={this.onFormValid.bind(this)}
+							onInvalid={this.onFormInvalid.bind(this)}>
 						<Paper zDepth={2} style={styles.paper}>
 							<h3>Login</h3>
-							<TextField
+							<div style={styles.formErrors}>
+								{this.state.error}
+							</div>
+							<FormsyText
 								name="username"
 								hintText="Username"
 								floatingLabelText="Username"
+								validationError="Username is required"
 								required
 								style={styles.username} />
-							<TextField
+							<FormsyText
 								name="password"
 								type="password"
 								hintText="Password"
 								floatingLabelText="Password"
+								validationError="Password is required"
 								required
 								style={styles.password} />
 							<RaisedButton
 								label="Login"
 								primary={true}
 								type="submit"
+								disabled={!this.state.isValid}
 								style={styles.raisedButton} />
 						</Paper>
 					</Form>
@@ -90,8 +125,9 @@ class Login extends React.Component {
 }
 
 Login.contextTypes = {
-	router: React.PropTypes.object.isRequired,
-	store:  React.PropTypes.object.isRequired
+	muiTheme: React.PropTypes.object.isRequired,
+	router:   React.PropTypes.object.isRequired,
+	store:    React.PropTypes.object.isRequired
 };
 
 export default Login;

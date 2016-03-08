@@ -86,7 +86,7 @@ class ServerCard extends React.Component {
 
 ServerCard.propTypes = {
 	server: React.PropTypes.object.isRequired
-}
+};
 
 export default ServerCard;
 
